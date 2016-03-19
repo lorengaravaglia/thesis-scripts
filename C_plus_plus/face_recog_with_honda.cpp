@@ -62,9 +62,9 @@ static void show_image(Mat& img)
 
 int main(int argc, const char *argv[]) {
 
-	// Min and max face sizes used to speed up face detection.
-	int min_face_size=150;
-	int max_face_size=300;
+    // Min and max face sizes used to speed up face detection.
+    int min_face_size=150;
+    int max_face_size=300;
 
     // Image height and width for the resized image used in prediction.
     // These values match the dimensions of the training images to improve
@@ -82,11 +82,11 @@ int main(int argc, const char *argv[]) {
 
     // Read in the data (fails if no valid input filename is given, but you'll get an error message):
     try 
-	{
+    {
         read_csv(fn_csv, images, labels);
     } 
-	catch (cv::Exception& e) 
-	{
+    catch (cv::Exception& e) 
+    {
         cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
         exit(1);
     }
@@ -97,19 +97,19 @@ int main(int argc, const char *argv[]) {
     cout<<"training"<<endl;
     model->train(images, labels);
 	    
-	// That's it for learning the Face Recognition model. You now
+    // That's it for learning the Face Recognition model. You now
     // need to create the classifier for the task of Face Detection.
     // We are going to use the haar cascade you have specified earlier.
     
     CascadeClassifier haar_cascade;
     haar_cascade.load(fn_haar);
    
-	// Get a handle to the Video device:
+    // Get a handle to the Video device:
     VideoCapture cap("test.sdp");
 
     // Check if we can use this device at all:
     if(!cap.isOpened()) 
-	{
+    {
         cerr << "Capture cannot be opened." << endl;
         return -1;
     }
@@ -117,8 +117,8 @@ int main(int argc, const char *argv[]) {
     // Holds the current frame from the Video device:
     Mat frame;
     
-	for(;;) 
-	{
+    for(;;) 
+    {
         cap >> frame;
         // Clone the current frame:
         Mat original = frame.clone();
@@ -181,7 +181,7 @@ int main(int argc, const char *argv[]) {
             // And now put it into the image:
             //putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0,255,0), 2);  //thickness was 2.0, changed to int -> 2
         }
-		show_image(gray);
+        show_image(gray);
     }
     return 0;
 }
