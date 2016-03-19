@@ -52,11 +52,16 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
     }
 }
 
+static void show_image(Mat& img)
+{
+	// Show the result:
+    imshow("face_recognizer", img); //used to be original
+    // And display it:
+    char key = (char) waitKey(20);
+}
+
 int main(int argc, const char *argv[]) {
 
-	clock_t startTime;
-	double secondsPassed;
-	double secondsPassed1;
 	/* Min and max face sizes used to speed up face detection */
 	int min_face_size=150;
 	int max_face_size=300;
@@ -117,11 +122,11 @@ int main(int argc, const char *argv[]) {
         cap >> frame;
         // Clone the current frame:
         Mat original = frame.clone();
+
         // Convert the current frame to grayscale:
         Mat gray;
         cvtColor(original, gray, CV_BGR2GRAY);
-		//equalizeHist(gray, gray);
-		//equalizeHist(gray, gray);
+
         // Find the faces in the frame:
         vector< Rect_<int> > faces;
         //haar_cascade.detectMultiScale(gray, faces);
@@ -149,23 +154,18 @@ int main(int argc, const char *argv[]) {
             //
             // Since I am showing the Fisherfaces algorithm here, I also show how to resize the
             // face you have just found:
-            Mat face_resized;
-			//startTime = clock();
-			cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
-			//secondsPassed = (clock() - startTime);
-			
-			//startTime = clock();
+            //Mat face_resized;
+
+			//cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
+
             // Now perform the prediction, see how easy that is:
-            int prediction = model->predict(face_resized);
+            int prediction = model->predict(face);  // was face_resized
 			if(prediction == 0)
 			{
 				correctPredictions++;
 			}
 			totalPredictions++;
 
-			//secondsPassed1 = (clock() - startTime);
-			//std::cout<<"time to resize = "<<setprecision(10)<<secondsPassed<<endl;
-			//cout<<"time to predict = "<<setprecision(10)<<secondsPassed1<<endl;
 			cout<<"Prediction = "<<prediction<<endl;
 			cout<<"Percentage correct = "<<((double)correctPredictions/(double)totalPredictions)*100.0<<"%"<<endl;
             // And finally write all we've found out to the original image!
@@ -180,13 +180,7 @@ int main(int argc, const char *argv[]) {
             // And now put it into the image:
             //putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0,255,0), 2);  //thickness was 2.0, changed to int -> 2
         }
-        // Show the result:
-        imshow("face_recognizer", gray); //used to be original
-        // And display it:
-        char key = (char) waitKey(20);
-        // Exit this loop on escape:
-        if(key == 27)
-            break;
+		show_image(gray);
     }
     return 0;
 }
