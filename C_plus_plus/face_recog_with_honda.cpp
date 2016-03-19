@@ -54,7 +54,7 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 static void show_image(Mat& img)
 {
-	// Show the result:
+    // Show the result:
     imshow("face_recognizer", img); //used to be original
     // And display it:
     char key = (char) waitKey(20);
@@ -62,63 +62,63 @@ static void show_image(Mat& img)
 
 int main(int argc, const char *argv[]) {
 
-	/* Min and max face sizes used to speed up face detection */
+	// Min and max face sizes used to speed up face detection.
 	int min_face_size=150;
 	int max_face_size=300;
 
-    // Check for valid command line arguments, print usage
-    /* if no arguments were given.
-    if (argc != 4) {
-        cout << "usage: " << argv[0] << " </path/to/haar_cascade> </path/to/csv.ext> </path/to/device id>" << endl;
-        cout << "\t </path/to/haar_cascade> -- Path to the Haar Cascade for face detection." << endl;
-        cout << "\t </path/to/csv.ext> -- Path to the CSV file with the face database." << endl;
-        cout << "\t <device id> -- The webcam device id to grab frames from." << endl;
-        exit(1);
-    }*/
+    // Image height and width for the resized image used in prediction.
+    // These values match the dimensions of the training images to improve
+    // recognition accuracy.
+    int im_width =	75;	//images[0].cols;
+    int im_height =	75;	//images[0].rows;
+
     // Get the path to your CSV:
     string fn_haar = "C:\\OpenCV new\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_default.xml";
     string fn_csv = "G:\\Masters_Thesis_Files\\Honda1.csv"; 
-    int deviceId = 0;
+    
     // These vectors hold the images and corresponding labels:
     vector<Mat> images;
     vector<int> labels;
+
     // Read in the data (fails if no valid input filename is given, but you'll get an error message):
-    try {
+    try 
+	{
         read_csv(fn_csv, images, labels);
-    } catch (cv::Exception& e) {
+    } 
+	catch (cv::Exception& e) 
+	{
         cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
-        // nothing more we can do
         exit(1);
     }
-    // Get the height from the first image. We'll need this
-    // later in code to reshape the images to their original
-    // size AND we need to reshape incoming faces to this size:
-    int im_width =	75;	//images[0].cols;
-    int im_height =	75;	//images[0].rows;
-    cout<<im_width<<" & "<<im_height<<endl;
-	// Create a FaceRecognizer and train it on the given images:
-	cout<<"creating face recognizer"<<endl;
+
+    // Create a FaceRecognizer and train it on the given images:
     Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
-	cout<<"training"<<endl;
+	
+    cout<<"training"<<endl;
     model->train(images, labels);
-	cout<<"done training"<<endl;
-    // That's it for learning the Face Recognition model. You now
+	    
+	// That's it for learning the Face Recognition model. You now
     // need to create the classifier for the task of Face Detection.
-    // We are going to use the haar cascade you have specified in the
-    // command line arguments:
-    //
+    // We are going to use the haar cascade you have specified earlier.
+    
     CascadeClassifier haar_cascade;
     haar_cascade.load(fn_haar);
-    // Get a handle to the Video device:
+   
+	// Get a handle to the Video device:
     VideoCapture cap("test.sdp");
+
     // Check if we can use this device at all:
-    if(!cap.isOpened()) {
-        cerr << "Capture Device ID " << deviceId << "cannot be opened." << endl;
+    if(!cap.isOpened()) 
+	{
+        cerr << "Capture cannot be opened." << endl;
         return -1;
     }
+
     // Holds the current frame from the Video device:
     Mat frame;
-    for(;;) {
+    
+	for(;;) 
+	{
         cap >> frame;
         // Clone the current frame:
         Mat original = frame.clone();
@@ -129,21 +129,21 @@ int main(int argc, const char *argv[]) {
 
         // Find the faces in the frame:
         vector< Rect_<int> > faces;
-        //haar_cascade.detectMultiScale(gray, faces);
-
-		//changed gray to original
-		haar_cascade.detectMultiScale(gray, faces, 1.2, 2, 0|CV_HAAR_SCALE_IMAGE, Size(min_face_size, min_face_size),Size(max_face_size, max_face_size) );
-		//cout<<"Number of detected faces this loop = "<<(int)faces.size()<<endl;
+        
+        // Detect the faces in the image.
+        haar_cascade.detectMultiScale(gray, faces, 1.2, 2, 0|CV_HAAR_SCALE_IMAGE, Size(min_face_size, min_face_size),Size(max_face_size, max_face_size) );
+		
         // At this point you have the position of the faces in
         // faces. Now we'll get the faces, make a prediction and
         // annotate it in the video. Cool or what?
-        for(int i = 0; i < faces.size(); i++) {
+        for(int i = 0; i < faces.size(); i++) 
+		{
             // Process face by face:
             Rect face_i = faces[i];
             // Crop the face from the image. So simple with OpenCV C++:
 
-			//changed gray to original
             Mat face = gray(face_i);
+
             // Resizing the face is necessary for Eigenfaces and Fisherfaces. You can easily
             // verify this, by reading through the face recognition tutorial coming with OpenCV.
             // Resizing IS NOT NEEDED for Local Binary Patterns Histograms, so preparing the
@@ -154,20 +154,21 @@ int main(int argc, const char *argv[]) {
             //
             // Since I am showing the Fisherfaces algorithm here, I also show how to resize the
             // face you have just found:
-            //Mat face_resized;
+            Mat face_resized;
 
-			//cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
+            cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
 
             // Now perform the prediction, see how easy that is:
-            int prediction = model->predict(face);  // was face_resized
-			if(prediction == 0)
-			{
-				correctPredictions++;
-			}
-			totalPredictions++;
+            int prediction = model->predict(face_resized);  // was face_resized
+            if(prediction == 0)
+            {
+                correctPredictions++;
+            }
+            totalPredictions++;
 
-			cout<<"Prediction = "<<prediction<<endl;
-			cout<<"Percentage correct = "<<((double)correctPredictions/(double)totalPredictions)*100.0<<"%"<<endl;
+            cout<<"Prediction = "<<prediction<<endl;
+            cout<<"Percentage correct = "<<((double)correctPredictions/(double)totalPredictions)*100.0<<"%"<<endl;
+
             // And finally write all we've found out to the original image!
             // First of all draw a green rectangle around the detected face:
             //rectangle(original, face_i, CV_RGB(0, 255,0), 1);
