@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56EDF103 56EDF103 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56EE0A92 56EE0A92 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -13952,6 +13952,14 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
     im_height =	75;	//images[0].rows;
 
 	FIN (faceRecognition (img, testImg, d, src_addr));
+	
+	//Loren
+	if(LorenDebugFlag)
+	{
+		sprintf(myString,"Entering face recognition function with image from node %d", (int)src_addr);
+		op_prg_odb_print_major(myString,OPC_NIL);
+	}
+			
 
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
 	//for(int j = 0; j<4; j++)
@@ -14032,11 +14040,23 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				imwriteFlag = 1;
 			}
 			
-			int type = testImg.type();
+			if(LorenDebugFlag)
+			{
+				sprintf(myString,"passed print image instructions, about to get gray image type.");
+				op_prg_odb_print_major(myString,OPC_NIL);
+			}
+			
+			int type = gray.type();
+			
+			if(LorenDebugFlag)
+			{
+				sprintf(myString,"got gray image type, about to check it. (%d)", type);
+				op_prg_odb_print_major(myString,OPC_NIL);
+			}
 			if(type)
 			{
 				printf("about to call cvtcolor\n");
-				cvtColor(testImg, gray, CV_BGR2GRAY);
+				cvtColor(gray, gray, CV_BGR2GRAY);
 				printf("just called cvtcolor\n");
 			}
 		}
@@ -14069,10 +14089,22 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		
 		//deallocate frame data since it is no longer needed.
 		//frame.deallocate();
+	
 		
+		if(LorenDebugFlag)
+		{
+			sprintf(myString,"finished initializing gray image.");
+			op_prg_odb_print_major(myString,OPC_NIL);
+		}
 		// Find the faces in the frame:
 		std::vector< cv::Rect_<int> > faces;
 		
+		
+		if(LorenDebugFlag)
+		{
+			sprintf(myString,"About to detect faces.");
+			op_prg_odb_print_major(myString,OPC_NIL);
+		}
 		//haar_cascade.detectMultiScale(gray, faces);
 		
 		haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, Size(min_face_size, min_face_size),Size(max_face_size, max_face_size) );
@@ -14226,6 +14258,13 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	fprintf(opencvDebugFile,"Prediction = %d\nFace Recognition Accuracy = %.5f%%\n",prediction, recognitionAccuracy);
 	fclose(opencvDebugFile);
 	}
+	//Loren
+	if(LorenDebugFlag)
+	{
+		sprintf(myString,"Exiting face recognition function with image from node %d", (int)src_addr);
+		op_prg_odb_print_major(myString,OPC_NIL);
+	}
+	
 	FOUT;
 }
 
