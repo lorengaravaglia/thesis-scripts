@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56EE0A92 56EE0A92 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56F35521 56F35521 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -43,7 +43,7 @@ const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56EE0A9
 #include <prg_geo.h>
 #include <prg_bin_hash.h>
 //#include "engine.h" matlab
-#include <Windows.h>
+#include <windows.h>
 #include <stdio.h>
 #include <conio.h>
 #include <tchar.h>
@@ -788,6 +788,7 @@ CvMemStorage* storage = 0;
 char cascade_name[100];// =  "C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt2.xml";
 //Create a new Haar classifier
 CvHaarClassifierCascade* cascade = 0;
+//cv::CascadeClassifier cascade;
 
 int framesCounter = 0;
 
@@ -802,7 +803,9 @@ cv::Size s;
 int rows = 0, cols = 0;
 cv::VideoCapture cap;
 */
-
+HANDLE hPipe;
+DWORD dwWritten = 0;
+const char hello[] = "This is my hello message.";
 
 int imwriteFlag = 0;
 
@@ -1758,6 +1761,16 @@ wlan_hcf_sv_init (void)
 	config_log_handle	= op_prg_log_handle_create (OpC_Log_Category_Configuration, "Wireless LAN", "MAC Configuration", 128);
 	drop_pkt_log_handle	= op_prg_log_handle_create (OpC_Log_Category_Protocol,      "Wireless LAN", "Data packet Drop",  128);
     drop_pkt_entry_log_flag = 0;
+	
+	/* Named pipe initialization
+    hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
+                       GENERIC_READ | GENERIC_WRITE, 
+                       0,
+                       NULL,
+                       OPEN_EXISTING,
+                       0,
+                       NULL);
+	*/
 
 	/* Update the global variable if this is the first node to come up. If not the	*/ 
 	/* first node, then check for mismatches. A subnet can be a traditional subnet	*/
@@ -13826,20 +13839,15 @@ static void read_csv(const string& filename, std::vector<cv::Mat>& images, std::
 
 
 
-static void trainFaces(int src_addr)
+static void trainFaces()
 {
 	using namespace cv;
 	
 	std::string fn_csv;
-	FIN (trainFaces (scr_addr));
+	FIN (trainFaces ());
 	
-	// Get the path to your CSV:
-	if((int)src_addr == 1)
-	{
-		fn_csv = "G:\\Masters_Thesis_Files\\Honda1.csv"; 
-	}
-
-	else if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0 || 
+	// Get the path to your CSV.
+	if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0 || 
 	   strcmp(curve,"accu_quality_GT_withoutNI")==0 || strcmp(curve,"accu_quality_GT_withoutNI")==0)
 		{
 			//sprintf(fn_csv,"C:\\facedatabase\\gt_db50.csv");
@@ -13868,6 +13876,7 @@ static void trainFaces(int src_addr)
 		}
 			
 
+	fn_csv = "G:\\Masters_Thesis_Files\\Honda1.csv"; 
     //string fn_haar = cascade);		// we don't need to load the xml because it is a global assigned elsewhere.
     
     if(LorenDebugFlag)
@@ -13915,7 +13924,7 @@ static void trainFaces(int src_addr)
 	
 	if(LorenDebugFlag)
 	{
-		sprintf(myString,"Just created fisher face model about to train images.");
+		sprintf(myString,"Just created face model about to train images.");
 		op_prg_odb_print_major(myString,OPC_NIL);
 	}	
 		
@@ -13954,11 +13963,11 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	FIN (faceRecognition (img, testImg, d, src_addr));
 	
 	//Loren
-	if(LorenDebugFlag)
-	{
+	//if(LorenDebugFlag)
+	//{
 		sprintf(myString,"Entering face recognition function with image from node %d", (int)src_addr);
 		op_prg_odb_print_major(myString,OPC_NIL);
-	}
+	//}
 			
 
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
@@ -14018,6 +14027,17 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		
 		if((int)src_addr == 1)
 		{
+			//if(LorenDebugFlag)
+			//{
+				sprintf(myString,"About to check if testImg is empty, (%d)", (int)testImg.empty());
+				op_prg_odb_print_major(myString,OPC_NIL);
+			//}
+			
+			if(testImg.empty())
+			{
+				//exit the function
+				FOUT;
+			}
 			//Loren
 			if(LorenDebugFlag)
 			{
@@ -14033,12 +14053,12 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				op_prg_odb_print_major(myString,OPC_NIL);
 			}
 			
-			if(imwriteFlag == 0)
-			{
+			//if(imwriteFlag == 0)
+			//{
 				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", testImg);
 				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
 				imwriteFlag = 1;
-			}
+			//}
 			
 			if(LorenDebugFlag)
 			{
@@ -14105,9 +14125,9 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
-		//haar_cascade.detectMultiScale(gray, faces);
+		haar_cascade.detectMultiScale(gray, faces);
 		
-		haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, Size(min_face_size, min_face_size),Size(max_face_size, max_face_size) );
+		//haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		// At this point you have the position of the faces in
 		// faces. Now we'll get the faces, make a prediction and
@@ -14318,7 +14338,7 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	
 	/* Named Pipe Stuff */
 	
-	/*
+	
 	hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
                        GENERIC_READ | GENERIC_WRITE, 
                        0,
@@ -14326,17 +14346,17 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
                        OPEN_EXISTING,
                        0,
                        NULL);
+	
     if (hPipe != INVALID_HANDLE_VALUE)
     {
         WriteFile(hPipe,
-                  "Hello Pipe\n",
-                  12,   // = length of string + terminating '\0' !!!
+				  hello,				//"Hello Pipe\n",
+				  sizeof(hello),								//12,   // = length of string + terminating '\0' !!!
                   &dwWritten,
                   NULL);
-		
+		std::cout<<dwWritten<<std::endl;
         CloseHandle(hPipe);
     }
-	*/
 	
 	/* End Named Pipe Stuff */
 	
@@ -15039,7 +15059,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
 						{
-							trainFaces((int)src_addr);
+							trainFaces();
 							trainingCompleteFlag = 1;
 						}
 						if(trainingCompleteFlag)
@@ -15364,7 +15384,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					//Loren Call Face Recognition 2
 					if(trainingCompleteFlag == 0)
 					{
-						trainFaces((int)src_addr);
+						trainFaces();
 						trainingCompleteFlag = 1;
 					}
 					if(trainingCompleteFlag)
@@ -20278,7 +20298,11 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 					
 					sprintf(myString,"I am  %d:cascade name is %s",(int)my_address,cascade_name);
 					op_prg_odb_print_major(myString,OPC_NIL);
+					
+					//Loren, commented out deprecated code.
 					cascade = (CvHaarClassifierCascade*)cvLoad( cascade_name, 0, 0, 0 );
+					
+					//cascade.load(cascade_name);
 					storage = cvCreateMemStorage(0);
 					
 					if(!cascade)
