@@ -16,13 +16,6 @@
  *   See <http://www.opensource.org/licenses/bsd-license>
  */
 
-/*
-#include "opencv2/core/core.hpp"
-#include "opencv2/contrib/contrib.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/objdetect/objdetect.hpp"
-*/
 
 #include <iostream>
 #include <fstream>
@@ -31,15 +24,9 @@
 #include <stdio.h>
 #include <conio.h>
 #include <tchar.h>
-#include <time.h>
+//#include <time.h>
 
-//using namespace cv;
 using namespace std;
-
-//VideoCapture cap;
-#define BUFSIZE 512
-
-clock_t init;
 
 int main(int argc, const char *argv[]) {
 
@@ -52,11 +39,10 @@ int main(int argc, const char *argv[]) {
 	si1.cb = sizeof(si1);
     ZeroMemory( &pi, sizeof(pi) );
 	ZeroMemory( &pi1, sizeof(pi1) );
-	const TCHAR input[] = TEXT("ffmpeg -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi -vcodec libx264 -vf format=gray -g 30 -an -f rtp rtp://127.0.0.1:1234");
+	const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 5 -vf format=gray -an -f rtp rtp://127.0.0.1:1234");
 	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 30 -an -f rtp rtp://127.0.0.1:1234");
-	const TCHAR input1[] = TEXT("ffmpeg -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi -vcodec libx264 -vf format=gray -g 30 -crf 40 -an -f rtp rtp://127.0.0.1:1234");
+	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 5 -vf format=gray -crf 40 -an -f rtp rtp://127.0.0.1:1234");
 	//G:\\Master's Thesis Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi
-	//F:\\Downloads\\jap.avi
     // Start the child process. 
 
 
@@ -78,9 +64,9 @@ int main(int argc, const char *argv[]) {
     }
 
 	cout<<"first process created, sleep for 20 seconds"<<endl;
-	Sleep(20000);
+	Sleep(40000);
 	cout<<"done sleeping"<<endl;
-	int j = 1;
+	//int j = 1;
 
     // Get a handle to the Video device:
     
@@ -103,26 +89,6 @@ int main(int argc, const char *argv[]) {
 		//if(j%6600 == 0)
 		//{
 
-		TerminateProcess(pi1.hProcess, NULL);
-
-			CreateProcess( NULL,   // No module name (use command line)
-						  (LPWSTR)input,        // Command line
-						  NULL,           // Process handle not inheritable
-						  NULL,           // Thread handle not inheritable
-						  FALSE,          // Set handle inheritance to FALSE
-						  0,              // No creation flags
-						  NULL,           // Use parent's environment block
-						  NULL,           // Use parent's starting directory 
-						  &si,            // Pointer to STARTUPINFO structure
-						  &pi);
-			Sleep(30000);
-
-
-			//cap.open("C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp");
-			//cout<<"stream opened"<<endl;
-		//}
-		//else if(j %3300 == 0)
-		//{
 			TerminateProcess(pi.hProcess, NULL);
 
 			CreateProcess( NULL,   // No module name (use command line)
@@ -135,7 +101,29 @@ int main(int argc, const char *argv[]) {
 						  NULL,           // Use parent's starting directory 
 						  &si1,            // Pointer to STARTUPINFO structure
 						  &pi1);
-			Sleep(30000);
+			Sleep(60000);
+
+		TerminateProcess(pi1.hProcess, NULL);
+
+			CreateProcess( NULL,   // No module name (use command line)
+						  (LPWSTR)input,        // Command line
+						  NULL,           // Process handle not inheritable
+						  NULL,           // Thread handle not inheritable
+						  FALSE,          // Set handle inheritance to FALSE
+						  0,              // No creation flags
+						  NULL,           // Use parent's environment block
+						  NULL,           // Use parent's starting directory 
+						  &si,            // Pointer to STARTUPINFO structure
+						  &pi);
+			Sleep(60000);
+
+
+			//cap.open("C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp");
+			//cout<<"stream opened"<<endl;
+		//}
+		//else if(j %3300 == 0)
+		//{
+
 			//cap.open("C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp");
 			//cout<<"stream opened"<<endl;
 			//j = 0;
@@ -151,8 +139,8 @@ int main(int argc, const char *argv[]) {
 		if(key == 27)
 			break;
 		*/
-		j++;
-		cout<<j<<endl;
+		//j++;
+		//cout<<j<<endl;
 		}
     return 0;
 }
