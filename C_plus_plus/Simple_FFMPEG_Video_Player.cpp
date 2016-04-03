@@ -46,6 +46,11 @@ extern "C"
 
 int main(int argc, char **argv)
 {
+
+
+	av_register_all();
+	avformat_network_init();
+
 	hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"),
 		GENERIC_READ | GENERIC_WRITE,
 		0,
@@ -54,13 +59,11 @@ int main(int argc, char **argv)
 		0,
 		NULL);
 
-	av_register_all();
-	avformat_network_init();
-
 	while (true)
 	{
-		begin = clock();
 
+
+		
 		pFormatCtx = avformat_alloc_context();
 
 		if (avformat_open_input(&pFormatCtx, filepath, NULL, NULL) < 0)
@@ -122,6 +125,8 @@ int main(int argc, char **argv)
 		convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
 			pCodecCtx->width, pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
+		begin = clock();
+
 		while (true)
 		{
 			/*
@@ -165,7 +170,9 @@ int main(int argc, char **argv)
 						cv::waitKey(20);
 						end = clock();
 						double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-						if (elapsed_secs >= 60)
+						printf("elapsed time = %0.2f\n", elapsed_secs);
+
+						if (elapsed_secs >= 30)
 						{
 							if (hPipe != INVALID_HANDLE_VALUE)
 							{
@@ -174,7 +181,7 @@ int main(int argc, char **argv)
 									sizeof(hello),								//12,   // = length of string + terminating '\0' !!!
 									&dwWritten,
 									NULL);
-								
+								printf("wrote to pipe\n");
 								//CloseHandle(hPipe);
 							}
 							Sleep(1000);
