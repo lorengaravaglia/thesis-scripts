@@ -51,6 +51,8 @@ int main(int argc, const char *argv[]) {
 	//G:\\Master's Thesis Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi
     // Start the child process. 
 	
+	TCHAR input2[1024];
+
 	hPipe = CreateNamedPipe(TEXT("\\\\.\\pipe\\Pipe"),
 		PIPE_ACCESS_DUPLEX | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,   // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
 		PIPE_WAIT,
@@ -94,9 +96,18 @@ int main(int argc, const char *argv[]) {
 					{
 						printf("data from named pipe did match string comparison.\n");
 						TerminateProcess(pi.hProcess, NULL);
+						int a = rand() % 2;
 
+						if (a > 0)
+						{
+							_tcscpy_s(input2, input);
+						}
+						else
+						{
+							_tcscpy_s(input2, input1);
+						}
 						if (!CreateProcess(NULL,   // No module name (use command line)
-							(LPWSTR)input,        // Command line  (LPWSTR)input
+							(LPWSTR)input2,        // Command line  (LPWSTR)input
 							NULL,           // Process handle not inheritable
 							NULL,           // Thread handle not inheritable
 							FALSE,          // Set handle inheritance to FALSE
