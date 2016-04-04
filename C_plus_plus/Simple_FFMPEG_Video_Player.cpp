@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <Windows.h>
 #include <ctime>
 #include "opencv2/core/core.hpp"
@@ -44,6 +45,10 @@ extern "C"
 	DWORD dwWritten = 0;
 	clock_t begin, end;
 
+	int randBase = 30;
+
+	int randValue = 0;
+
 int main(int argc, char **argv)
 {
 
@@ -61,8 +66,9 @@ int main(int argc, char **argv)
 
 	while (true)
 	{
+		randValue = rand() % 100 + randBase;
 
-
+		printf("time for this loop = %d", randValue);
 		
 		pFormatCtx = avformat_alloc_context();
 
@@ -172,7 +178,7 @@ int main(int argc, char **argv)
 						double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 						printf("elapsed time = %0.2f\n", elapsed_secs);
 
-						if (elapsed_secs >= 30)
+						if (elapsed_secs >= randValue)
 						{
 							if (hPipe != INVALID_HANDLE_VALUE)
 							{
