@@ -135,19 +135,6 @@ int main(int argc, char **argv)
 
 		while (true)
 		{
-			/*
-			//if (av_read_frame(pFormatCtx, packet) != AVERROR(EAGAIN))
-			if (av_read_frame(pFormatCtx, packet) < 0) {
-				if (pFormatCtx->pb->error == 0) {
-					SDL_Delay(100);  // no error; wait for user input
-					continue;
-				}
-				else {
-					break;
-				}
-			}
-			else
-		    */
 			if (av_read_frame(pFormatCtx, packet) != AVERROR(EAGAIN))
 			{
 				if (packet->stream_index == videoindex)
@@ -190,7 +177,7 @@ int main(int argc, char **argv)
 								printf("wrote to pipe\n");
 								//CloseHandle(hPipe);
 							}
-							Sleep(1000);
+							//Sleep(1000);
 							break;
 						}
 					}
