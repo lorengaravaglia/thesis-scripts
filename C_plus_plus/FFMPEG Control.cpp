@@ -24,12 +24,66 @@
 #include <stdio.h>
 #include <conio.h>
 #include <tchar.h>
+#include <assert.h>
 
 using namespace std;
 
 int sleepTime = 30000;
 
+char** str_split(char* a_str, const char a_delim)
+{
+	char** result = 0;
+	size_t count = 0;
+	char* tmp = a_str;
+	char* last_comma = 0;
+	char delim[2];
+	delim[0] = a_delim;
+	delim[1] = 0;
+	char *next_token = NULL;
+
+	/* Count how many elements will be extracted. */
+	while (*tmp)
+	{
+		if (a_delim == *tmp)
+		{
+			count++;
+			last_comma = tmp;
+		}
+		tmp++;
+	}
+
+	/* Add space for trailing token. */
+	count += last_comma < (a_str + strlen(a_str) - 1);
+
+	/* Add space for terminating null string so caller
+	knows where the list of returned strings ends. */
+	count++;
+
+	result = (char**)malloc(sizeof(char*) * count);
+
+	if (result)
+	{
+		size_t idx = 0;
+		char* token = strtok_s(a_str, delim, &next_token);
+
+		while (token)
+		{
+			assert(idx < count);
+			*(result + idx++) = _strdup(token);
+			token = strtok_s(0, delim, &next_token);
+		}
+		assert(idx == count - 1);
+		*(result + idx) = 0;
+	}
+
+	return result;
+}
+
 int main(int argc, const char *argv[]) {
+
+	char** tokens;
+	char   bitrate[10];
+	char   node[4];
 
 	HANDLE hPipe;
 	char buffer[1024];
@@ -47,7 +101,7 @@ int main(int argc, const char *argv[]) {
 	const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234");
 	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 30 -an -f rtp rtp://127.0.0.1:1234");
 	
-	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -crf 45 -an -f rtp rtp://127.0.0.1:1234");   //-b:v 32k -bufsize -64k
+	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1234");   //-b:v 32k -bufsize -64k
 	//G:\\Master's Thesis Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi
     // Start the child process. 
 	
@@ -86,13 +140,27 @@ int main(int argc, const char *argv[]) {
 			if (ConnectNamedPipe(hPipe, NULL) != FALSE)   // wait for someone to connect to the pipe
 			{
 				printf("connect pipe != to false\n");
-				//while (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &dwRead, NULL) != FALSE)
+				
 				while (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &dwRead, NULL) != FALSE)
 				{
 					// add terminating zero
 					buffer[dwRead] = '\0';
-					printf("got data from named pipe, checking the value.\n");
-					if (strcmp(buffer, "1") == 0)
+
+					tokens = str_split(buffer, ',');
+
+					if (tokens)
+					{
+						strcpy_s(node, *(tokens));
+						printf("node = %s\n", node);
+						strcpy_s(bitrate, *(tokens + 1));
+						printf("bitrate = %s\n", bitrate);
+					}
+
+					free(tokens);
+
+					printf("got data from named pipe, checking the node.\n");
+
+					if (strcmp(node, "1") == 0)
 					{
 						printf("data from named pipe did match string comparison.\n");
 						TerminateProcess(pi.hProcess, NULL);
