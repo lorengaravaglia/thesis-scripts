@@ -41,7 +41,7 @@ struct FFMPEGData {
 cv::Mat m;
 
 char filepath[] = "test.sdp";
-const char hello[] = "1";
+const char hello[] = "1,600";
 
 HANDLE hPipe;
 DWORD dwWritten = 0;
