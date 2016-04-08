@@ -79,11 +79,13 @@ int main(int argc, const char *argv[]) {
 	si1.cb = sizeof(si1);
     ZeroMemory( &pi, sizeof(pi) );
 	ZeroMemory( &pi1, sizeof(pi1) );
-	const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234");
+	
+	wchar_t command[250]; //= L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234";
+	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234");
 	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 30 -an -f rtp rtp://127.0.0.1:1234");
 	
 	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1234");   //-b:v 32k -bufsize -64k
-	//G:\\Master's Thesis Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.avi
+
     // Start the child process. 
 	
 	TCHAR input2[1024];
@@ -96,11 +98,11 @@ int main(int argc, const char *argv[]) {
 		1024 * 16,
 		NMPWAIT_USE_DEFAULT_WAIT,
 		NULL);
-	
+	swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %dk -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234", 500);
 	//while (TRUE)
 	//{
 	if (!CreateProcess(NULL,   // No module name (use command line)
-			(LPWSTR)input,        // Command line  (LPWSTR)input
+			(LPWSTR)command,        // Command line  (LPWSTR)input
 			NULL,           // Process handle not inheritable
 			NULL,           // Thread handle not inheritable
 			FALSE,          // Set handle inheritance to FALSE
@@ -114,7 +116,23 @@ int main(int argc, const char *argv[]) {
 			printf("CreateProcess failed (%d).\n", GetLastError());
 			return 0;
 		}
-		
+	/*
+	if (!CreateProcess(NULL,   // No module name (use command line)
+		(LPWSTR)input1,        // Command line  (LPWSTR)input
+		NULL,           // Process handle not inheritable
+		NULL,           // Thread handle not inheritable
+		FALSE,          // Set handle inheritance to FALSE
+		0,              // No creation flags
+		NULL,           // Use parent's environment block
+		NULL,           // Use parent's starting directory 
+		&si1,            // Pointer to STARTUPINFO structure
+		&pi1)           // Pointer to PROCESS_INFORMATION structure
+		)
+	{
+		printf("CreateProcess failed (%d).\n", GetLastError());
+		return 0;
+	}
+	*/	
 		while (hPipe != INVALID_HANDLE_VALUE)
 		{
 			printf("waiting for named pipe\n");
@@ -149,7 +167,7 @@ int main(int argc, const char *argv[]) {
 
 						if (a > 0)
 						{
-							_tcscpy_s(input2, input);
+							//_tcscpy_s(input2, input);
 						}
 						else
 						{
