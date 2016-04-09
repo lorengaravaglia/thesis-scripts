@@ -162,7 +162,11 @@ int main(int argc, const char *argv[]) {
 					if (strcmp(node, "1") == 0)
 					{
 						printf("data from named pipe did match string comparison.\n");
+						
+						swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234", bitrate);
+						
 						TerminateProcess(pi.hProcess, NULL);
+						/*
 						int a = rand() % 2;
 
 						if (a > 0)
@@ -173,8 +177,11 @@ int main(int argc, const char *argv[]) {
 						{
 							_tcscpy_s(input2, input1);
 						}
+						*/
+
+
 						if (!CreateProcess(NULL,   // No module name (use command line)
-							(LPWSTR)input2,        // Command line  (LPWSTR)input
+							(LPWSTR)command,        // Command line  (LPWSTR)input
 							NULL,           // Process handle not inheritable
 							NULL,           // Thread handle not inheritable
 							FALSE,          // Set handle inheritance to FALSE
