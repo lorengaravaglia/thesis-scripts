@@ -41,7 +41,7 @@ struct FFMPEGData {
 cv::Mat m;
 
 char filepath[] = "test.sdp";
-const char hello[] = "1,600";
+char hello[10];
 
 HANDLE hPipe;
 DWORD dwWritten = 0;
@@ -50,7 +50,9 @@ clock_t begin, end;
 int ret;
 int randBase = 30;
 int randValue = 0;
-
+int randBitrateBase = 20;
+int randBitrateValue = 0;
+int previousBitrate = 0;
 
 int startFFMPEG(FFMPEGData &data)
 {
@@ -136,20 +138,23 @@ int main(int argc, char **argv)
 
 	while (true)
 	{
-		randValue = rand() % 100 + randBase;
+		//get random time value for keeping the stream alive.
+		randValue = randBase + (rand() % 100);
 
+		//(re)start my ffmepg stream.
 		if (startFFMPEG(vidData) < 0)
 		{
 			printf("should not get here.\n");
 			return 0;
 		}
 
-		printf("time for this loop = %d", randValue);
+		printf("time for this loop = %d\n", randValue);
 
 		begin = clock();
 
 		while (true)
 		{
+			// Read frames from the stream.
 			if (av_read_frame(vidData.pFormatCtx, vidData.packet) != AVERROR(EAGAIN))
 			{
 				if (vidData.packet->stream_index == vidData.videoindex)
@@ -172,28 +177,50 @@ int main(int argc, char **argv)
 						sws_scale(vidData.convert_ctx, vidData.pFrame->data, vidData.pFrame->linesize, 0,
 							vidData.pFrame->height, vidData.dst.data, vidData.dst.linesize);
 
+						//Convert the received frame to OpenCV format.
 						m = cv::Mat(vidData.pFrame->height, vidData.pFrame->width, CV_8UC1,
 							vidData.dst.data[0], vidData.dst.linesize[0]);
 
 						cv::imshow("MyVid", m);
 						cv::waitKey(20);
+
+						//Calculate the elapsed time.
 						end = clock();
 						double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 						printf("elapsed time = %0.2f\n", elapsed_secs);
 
+						// Have we reached the time to restart the stream?
 						if (elapsed_secs >= randValue)
 						{
-							if (hPipe != INVALID_HANDLE_VALUE)
+							//Store the old bitrate so that we can do some hysteresis
+							previousBitrate = randBitrateValue;
+
+							//get random bitrate, for the next loop, with a specified minimum and intervals of 10.
+							randBitrateValue = randBitrateBase + (10 * (rand() % 100));
+							
+							printf("random bitrate value = %d\n", randBitrateValue);
+
+							if (randBitrateValue >= (previousBitrate + 50) || randBitrateValue <= (previousBitrate - 50))
 							{
-								WriteFile(hPipe,
-									hello,				//"Hello Pipe\n",
-									sizeof(hello),		// = length of string + terminating '\0' !!!
-									&dwWritten,
-									NULL);
-								printf("wrote to pipe\n");
-								//CloseHandle(hPipe);
+								//create the string with the correct format to be handled by the server program.
+								sprintf_s(hello, "1,%d", randBitrateValue);
+
+								printf("%s\n", hello);
+
+								//Check if the named pipe is still valid and then send the data.
+								if (hPipe != INVALID_HANDLE_VALUE)
+								{
+									WriteFile(hPipe,
+										hello,
+										sizeof(hello),		// = length of string + terminating '\0' !!!
+										&dwWritten,
+										NULL);
+
+									printf("wrote to pipe\n");
+								}
+								//Now exit the loop to restart the stream.
+								break;
 							}
-							break;
 						}
 					}
 				}
@@ -206,5 +233,8 @@ int main(int argc, char **argv)
 		avcodec_close(vidData.pCodecCtx);
 		avformat_close_input(&vidData.pFormatCtx);
 	}
+
+	//If the code ever reaches here close the pipe before finishing.
+	CloseHandle(hPipe);
 	return 0;
 }
