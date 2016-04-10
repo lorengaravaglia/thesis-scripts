@@ -6,10 +6,26 @@
 #include <conio.h>
 #include <tchar.h>
 #include <assert.h>
+#include <vector>
 
 using namespace std;
 
 int sleepTime = 30000;
+
+int nodeNumber = 2;
+
+struct processes 
+{
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	processes()
+	{
+		ZeroMemory(&si, sizeof(si));
+		si.cb = sizeof(si);
+		ZeroMemory(&pi, sizeof(pi));
+	}
+};
 
 char** str_split(char* a_str, const char a_delim)
 {
@@ -70,6 +86,14 @@ int main(int argc, const char *argv[]) {
 	char buffer[1024];
 	DWORD dwRead;
 
+	vector<processes> proc;
+
+	for (int i = 0; i < nodeNumber; i++)
+	{
+		proc.push_back(processes());
+	}
+
+	/*
 	STARTUPINFO si, si1;
     PROCESS_INFORMATION pi, pi1;
 
@@ -79,12 +103,13 @@ int main(int argc, const char *argv[]) {
 	si1.cb = sizeof(si1);
     ZeroMemory( &pi, sizeof(pi) );
 	ZeroMemory( &pi1, sizeof(pi1) );
+	*/
 	
 	wchar_t command[250]; //= L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234";
 	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234");
 	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 30 -an -f rtp rtp://127.0.0.1:1234");
 	
-	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1234");   //-b:v 32k -bufsize -64k
+	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1235");   //-b:v 32k -bufsize -64k
 
     // Start the child process. 
 	
@@ -116,6 +141,7 @@ int main(int argc, const char *argv[]) {
 			printf("CreateProcess failed (%d).\n", GetLastError());
 			return 0;
 		}
+	
 	/*
 	if (!CreateProcess(NULL,   // No module name (use command line)
 		(LPWSTR)input1,        // Command line  (LPWSTR)input
@@ -132,7 +158,7 @@ int main(int argc, const char *argv[]) {
 		printf("CreateProcess failed (%d).\n", GetLastError());
 		return 0;
 	}
-	*/	
+	*/
 		while (hPipe != INVALID_HANDLE_VALUE)
 		{
 			printf("waiting for named pipe\n");
@@ -166,19 +192,6 @@ int main(int argc, const char *argv[]) {
 						swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234", bitrate);
 						
 						TerminateProcess(pi.hProcess, NULL);
-						/*
-						int a = rand() % 2;
-
-						if (a > 0)
-						{
-							//_tcscpy_s(input2, input);
-						}
-						else
-						{
-							_tcscpy_s(input2, input1);
-						}
-						*/
-
 
 						if (!CreateProcess(NULL,   // No module name (use command line)
 							(LPWSTR)command,        // Command line  (LPWSTR)input
