@@ -3,6 +3,7 @@
 #include <sstream>
 #include <Windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <conio.h>
 #include <tchar.h>
 #include <assert.h>
@@ -11,8 +12,7 @@
 using namespace std;
 
 int sleepTime = 30000;
-
-int nodeNumber = 2;
+int nodeNumber = 10;
 
 struct processes 
 {
@@ -88,33 +88,10 @@ int main(int argc, const char *argv[]) {
 
 	vector<processes> proc;
 
-	for (int i = 0; i < nodeNumber; i++)
-	{
-		proc.push_back(processes());
-	}
-
-	/*
-	STARTUPINFO si, si1;
-    PROCESS_INFORMATION pi, pi1;
-
-    ZeroMemory( &si, sizeof(si) );
-	ZeroMemory( &si1, sizeof(si1) );
-    si.cb = sizeof(si);
-	si1.cb = sizeof(si1);
-    ZeroMemory( &pi, sizeof(pi) );
-	ZeroMemory( &pi1, sizeof(pi1) );
-	*/
-	
 	wchar_t command[250]; //= L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234";
-	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 500k -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234");
-	//const TCHAR input[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 30 -an -f rtp rtp://127.0.0.1:1234");
+	//const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1235");   //-b:v 32k -bufsize -64k
 	
-	const TCHAR input1[] = TEXT("ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v 20k -bufsize -40k -an -f rtp rtp://127.0.0.1:1235");   //-b:v 32k -bufsize -64k
-
-    // Start the child process. 
-	
-	TCHAR input2[1024];
-
+	// Initialze the Named Pipe.
 	hPipe = CreateNamedPipe(TEXT("\\\\.\\pipe\\Pipe"),
 		PIPE_ACCESS_DUPLEX | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,   // FILE_FLAG_FIRST_PIPE_INSTANCE is not needed but forces CreateNamedPipe(..) to fail if the pipe already exists...
 		PIPE_WAIT,
@@ -123,99 +100,106 @@ int main(int argc, const char *argv[]) {
 		1024 * 16,
 		NMPWAIT_USE_DEFAULT_WAIT,
 		NULL);
-	swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %dk -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234", 500);
-	//while (TRUE)
-	//{
-	if (!CreateProcess(NULL,   // No module name (use command line)
+
+
+	// Initialize the FFMPEG processes for all nodes.
+	for (int i = 0; i < nodeNumber; i++)
+	{
+		// Create a struct entry for every node.
+		proc.push_back(processes());
+
+		swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %dk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", 500, (10+i));
+		
+		if (!CreateProcess(NULL,    // No module name (use command line)
 			(LPWSTR)command,        // Command line  (LPWSTR)input
-			NULL,           // Process handle not inheritable
-			NULL,           // Thread handle not inheritable
-			FALSE,          // Set handle inheritance to FALSE
-			0,              // No creation flags
-			NULL,           // Use parent's environment block
-			NULL,           // Use parent's starting directory 
-			&si,            // Pointer to STARTUPINFO structure
-			&pi)           // Pointer to PROCESS_INFORMATION structure
+			NULL,                   // Process handle not inheritable
+			NULL,                   // Thread handle not inheritable
+			FALSE,                  // Set handle inheritance to FALSE
+			0,                      // No creation flags
+			NULL,                   // Use parent's environment block
+			NULL,                   // Use parent's starting directory 
+			&proc[i].si,            // Pointer to STARTUPINFO structure
+			&proc[i].pi)            // Pointer to PROCESS_INFORMATION structure
 			)
 		{
 			printf("CreateProcess failed (%d).\n", GetLastError());
 			return 0;
 		}
-	
-	/*
-	if (!CreateProcess(NULL,   // No module name (use command line)
-		(LPWSTR)input1,        // Command line  (LPWSTR)input
-		NULL,           // Process handle not inheritable
-		NULL,           // Thread handle not inheritable
-		FALSE,          // Set handle inheritance to FALSE
-		0,              // No creation flags
-		NULL,           // Use parent's environment block
-		NULL,           // Use parent's starting directory 
-		&si1,            // Pointer to STARTUPINFO structure
-		&pi1)           // Pointer to PROCESS_INFORMATION structure
-		)
-	{
-		printf("CreateProcess failed (%d).\n", GetLastError());
-		return 0;
 	}
-	*/
-		while (hPipe != INVALID_HANDLE_VALUE)
+
+	// Keep looping while the pipe is valid.
+	while (hPipe != INVALID_HANDLE_VALUE)
+	{
+		printf("waiting for named pipe.\n");
+
+		// Wait for someone to connect to the pipe.
+		if (ConnectNamedPipe(hPipe, NULL) != FALSE)   
 		{
-			printf("waiting for named pipe\n");
-			if (ConnectNamedPipe(hPipe, NULL) != FALSE)   // wait for someone to connect to the pipe
+			printf("Someone connected to the pipe.\n");
+			
+			while (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &dwRead, NULL) != FALSE)
 			{
-				printf("connect pipe != to false\n");
+				// Add terminating zero
+				buffer[dwRead] = '\0';
+
+				// Split the input string into two parts, node number and new bitrate.
+				tokens = str_split(buffer, ',');
 				
-				while (ReadFile(hPipe, buffer, sizeof(buffer) - 1, &dwRead, NULL) != FALSE)
+				if (tokens)
 				{
-					// add terminating zero
-					buffer[dwRead] = '\0';
-
-					tokens = str_split(buffer, ',');
-
-					if (tokens)
-					{
-						strcpy_s(node, *(tokens));
-						printf("node = %s\n", node);
-						strcpy_s(bitrate, *(tokens + 1));
-						printf("bitrate = %s\n", bitrate);
-					}
-
-					free(tokens);
-
-					printf("got data from named pipe, checking the node.\n");
-
-					if (strcmp(node, "1") == 0)
-					{
-						printf("data from named pipe did match string comparison.\n");
-						
-						swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:1234", bitrate);
-						
-						TerminateProcess(pi.hProcess, NULL);
-
-						if (!CreateProcess(NULL,   // No module name (use command line)
-							(LPWSTR)command,        // Command line  (LPWSTR)input
-							NULL,           // Process handle not inheritable
-							NULL,           // Thread handle not inheritable
-							FALSE,          // Set handle inheritance to FALSE
-							0,              // No creation flags
-							NULL,           // Use parent's environment block
-							NULL,           // Use parent's starting directory 
-							&si,            // Pointer to STARTUPINFO structure
-							&pi)           // Pointer to PROCESS_INFORMATION structure
-							)
-						{
-							printf("CreateProcess failed (%d).\n", GetLastError());
-							return 0;
-						}
-					}
-					// do something with data in buffer 
-					printf("%s\n", buffer);
+					strcpy_s(node, *(tokens));
+					printf("node = %s\n", node);
+					strcpy_s(bitrate, *(tokens + 1));
+					printf("bitrate = %s\n", bitrate);
 				}
-			}	
-		}
-	//}
 
+				free(tokens);
+
+				printf("got data from named pipe, checking the node.\n");
+
+				// Convert the node number to int for easier comparison.
+				// Subtract 1 from the value to match the range of the vector.
+				int n = atoi(node) - 1;
+
+				//if (strcmp(node, "1") == 0)
+				//{
+
+				// Is this a valid node?
+				if(n < nodeNumber)
+				{
+					printf("Node is in range.\n");
+						
+					// Create the string associated with each node.  The node number is used to select a port number.
+					swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", bitrate, (10 + n));
+					
+					TerminateProcess(proc[n].pi.hProcess, NULL);
+
+					if (!CreateProcess(NULL,    // No module name (use command line)
+						(LPWSTR)command,        // Command line  (LPWSTR)input
+						NULL,                   // Process handle not inheritable
+						NULL,                   // Thread handle not inheritable
+						FALSE,                  // Set handle inheritance to FALSE
+						0,                      // No creation flags
+						NULL,                   // Use parent's environment block
+						NULL,                   // Use parent's starting directory 
+						&proc[n].si,        // Pointer to STARTUPINFO structure
+						&proc[n].pi)        // Pointer to PROCESS_INFORMATION structure
+						)
+					{
+						printf("CreateProcess failed (%d).\n", GetLastError());
+						return 0;
+					}
+				}
+				else
+				{
+					printf("Node not in range.\n");
+				}
+
+				// Do something with data in buffer. 
+				printf("%s\n", buffer);
+			}
+		}	
+	}
 	DisconnectNamedPipe(hPipe);
     return 0;
 }
