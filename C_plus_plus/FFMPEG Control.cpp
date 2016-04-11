@@ -12,7 +12,7 @@
 using namespace std;
 
 int sleepTime = 30000;
-int nodeNumber = 1;
+int nodeNumber = 2;
 
 struct processes 
 {
