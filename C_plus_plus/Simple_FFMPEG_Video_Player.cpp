@@ -53,6 +53,8 @@ struct FFMPEGData {
 		randValue = 0;
 		sprintf_s(filepath, "None");
 	}
+	
+	int startFFMPEG();
 };
 
 //cv::Mat m;
@@ -71,7 +73,75 @@ int randBitrateBase = 20;
 //int previousBitrate = 0;
 int nodeNumber = 2;
 
-int startFFMPEG(FFMPEGData &data)
+
+int FFMPEGData::startFFMPEG()
+{
+	pFormatCtx = avformat_alloc_context();
+
+	if (avformat_open_input(&pFormatCtx, filepath, NULL, NULL) < 0)
+	{
+		printf("Couldn't open input stream.\n");
+		return -1;
+	}
+
+	if (avformat_find_stream_info(pFormatCtx, NULL) < 0)
+	{
+		printf("Couldn't find stream information.\n");
+		return -1;
+	}
+
+	videoindex = -1;
+	for (unsigned int i = 0; i < pFormatCtx->nb_streams; i++)
+	{
+		if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+		{
+			videoindex = i;
+			break;
+		}
+	}
+
+	if (videoindex == -1)
+	{
+		printf("Didn't find a video stream.\n");
+		return -1;
+	}
+
+	pCodecCtx = pFormatCtx->streams[videoindex]->codec;
+	pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
+
+	if (pCodec == NULL)
+	{
+		printf("Codec not found.\n");
+		return -1;
+	}
+
+	if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0)
+	{
+		printf("Could not open codec.\n");
+		return -1;
+	}
+
+	pFrame = av_frame_alloc();
+
+	out_buffer = (uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, pCodecCtx->width, pCodecCtx->height));
+
+	avpicture_fill((AVPicture *)&dst, out_buffer, dst_pixfmt, pCodecCtx->width, pCodecCtx->height);
+
+	packet = (AVPacket *)av_malloc(sizeof(AVPacket));
+
+	//Output Info-----------------------------
+	printf("--------------- File Information ----------------\n");
+	av_dump_format(pFormatCtx, 0, filepath, 0);
+	printf("-------------------------------------------------\n");
+
+	convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
+		pCodecCtx->width, pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+
+	return 0;
+}
+
+/*
+int FFMPEGData::startFFMPEG(FFMPEGData &data)
 {
 	data.pFormatCtx = avformat_alloc_context();
 
@@ -136,7 +206,7 @@ int startFFMPEG(FFMPEGData &data)
 
 	return 0;
 }
-
+*/
 using namespace std;
 
 int main(int argc, char **argv)
@@ -180,7 +250,8 @@ int main(int argc, char **argv)
 			//(re)start my ffmepg stream.
 			if (vidData[i].restart == 1)
 			{
-				if (startFFMPEG(vidData[i]) < 0)
+				// changed this to use member function.
+				if (vidData[i].startFFMPEG() < 0)
 				{
 					printf("should not get here.\n");
 					return 0;
