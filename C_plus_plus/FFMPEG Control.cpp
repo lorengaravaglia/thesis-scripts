@@ -12,7 +12,7 @@
 using namespace std;
 
 int sleepTime = 30000;
-int nodeNumber = 1;
+int nodeNumber = 2;
 
 struct processes 
 {
@@ -108,7 +108,8 @@ int main(int argc, const char *argv[]) {
 		// Create a struct entry for every node.
 		proc.push_back(processes());
 
-		swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %dk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", 500, (10+i));
+		// The port number needs to be intervals of 2 to work right.  Sequential port numbers caused errors.
+		swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %dk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", 500, (10+(2*i)));
 		
 		if (!CreateProcess(NULL,    // No module name (use command line)
 			(LPWSTR)command,        // Command line  (LPWSTR)input
@@ -170,7 +171,7 @@ int main(int argc, const char *argv[]) {
 					printf("Node is in range.\n");
 						
 					// Create the string associated with each node.  The node number is used to select a port number.
-					swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", bitrate, (10 + n));
+					swprintf_s(command, sizeof(command), L"ffmpeg -f concat -re -i G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\behzad.txt -vcodec libx264 -g 10 -vf format=gray -b:v %hsk -bufsize -1000k -an -f rtp rtp://127.0.0.1:12%d", bitrate, (10 + (2 * n)));
 					
 					TerminateProcess(proc[n].pi.hProcess, NULL);
 
