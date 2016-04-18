@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56DCD0FB 56DCD0FB 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5714475D 5714475D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -119,7 +119,7 @@ AVPacket		     *ffmpeg_packet;
 
 	
 //enum PixelFormat	 dst_pixfmt = PIX_FMT_BGR24;
-char 				 filepath[]= "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp";  
+char 				 filepath[]= "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test.sdp";  
 //cv::Mat			 m;
 
 //opencv declarations.
@@ -629,15 +629,13 @@ bursty_source_sv_init ()
 		if(avcodec_open2(pCodecCtx, pCodec,NULL)<0)
 		{
 			printf("Could not open codec.\n");
-		//return -1;
+		    //return -1;
 		}
 
 		//Allocate memory for ffmpeg packet.
 		ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
 
 	}
-	//printf("Attempting to capture stream.\n");
-	//cap.open(" C:\\OPNET\\test.sdp");
 	
 	FOUT;
 }
@@ -1308,10 +1306,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								//Load ffmpeg stream
 						printf("Calling ffmpeg code outside of init.\n");
-				
+					
 					printf("about to check parent name for node number.\n");
 					compare = strcmp(parentName, "node_1");
 					printf("compare = %d\n", compare);
+					
 					if(compare == 0)
 					{
 						//Output Info-----------------------------
