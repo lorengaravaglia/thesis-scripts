@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5714475D 5714475D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5716E07B 5716E07B 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -73,6 +73,7 @@ extern "C"
 
 /* Function Declarations.	*/
 static void			bursty_source_sv_init ();
+void				startFFMPEG();
 
 /*
 OmsT_Dist_Handle           on_state_dist_handle;
@@ -89,8 +90,8 @@ double				 newValue;
 int					 flag = 0;
 int 				 appOpencvDebugFlag = 1;
 int 				 Node_LorenDebugFlag = 0;
-int 				 EAestimationTimeApp = 20;//should match EAestimationTime in mac
-int 				 transitionTimeApp = 20; // used to be 460
+int 				 EAestimationTimeApp = 20;	//should match EAestimationTime in mac
+int 				 transitionTimeApp = 20; 	// used to be 460
 int 				 frameSizeAverageCalculationPeriod = 0.5;
 
 char 			 	 curveInApp[100]="";
@@ -108,18 +109,28 @@ cv::Mat 			 newCap;
 
 
 //Loren: Added for running ffmpeg process.
-
+struct FFMPEGData {
 AVFormatContext		 *pFormatCtx;
-int					 videoindex;
-unsigned int     	 i;
 AVCodecContext		 *pCodecCtx;
 AVCodec				 *pCodec;
 AVPacket		     *ffmpeg_packet;
-//AVFrame				 dst;
+//AVFrame		     dst;
 
-	
+int					 videoindex, restart;
 //enum PixelFormat	 dst_pixfmt = PIX_FMT_BGR24;
-char 				 filepath[]= "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test.sdp";  
+char 				 filepath[100]; // = "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test.sdp";
+
+	FFMPEGData()
+	{
+		// Initialize some of the values to defaults.
+		restart = 1;
+		videoindex = 0;
+		sprintf_s(filepath, "None");
+	}
+
+};
+
+
 //cv::Mat			 m;
 
 //opencv declarations.
@@ -344,6 +355,10 @@ bursty_source_sv_init ()
 	op_ima_sim_attr_get_str("Bnadwidth Allocation Method",99, methodInApp);
 	op_ima_sim_attr_get_int32("Network Size",&nodes_no_app);
 	
+	
+	//Start FFMPEG by first registering the use of all codecs and network streams.
+	av_register_all();
+	avformat_network_init();
 
 	if(strcmp(methodInApp,"EDCA")==0 || strcmp(methodInApp,"dist_withoutAnyEnhancement")==0)
 	{
@@ -574,68 +589,75 @@ bursty_source_sv_init ()
 	printf("compare = %d\n", compare);
 	if(compare == 0)
 	{
-		/* This FFMPEG code is based off the Dranger Tutorials at http://dranger.com/ffmpeg/ */
-		/* FFMPEG version 2.8 Zeranoe implementation used. 									 */
-	
-		//Load ffmpeg stream
-		printf("Calling ffmpeg code.\n");
-		
-		//Start FFMPEG by first registering the use of all codecs and network streams.
-		av_register_all();
-		avformat_network_init();
-		pFormatCtx = avformat_alloc_context();
-		
-		//printf("ffmpeg_flag = %d\n", ffmpeg_flag);
 
-		//Open the input stream using the filepath. In this case it is the external stream from my FFMPEG streaming program.
-		if(avformat_open_input(&pFormatCtx,filepath,NULL,NULL)!=0)
-		{
-			printf("Couldn't open input stream.\n");
-			ffmpeg_flag = 1;
-		}
-	
-
-		if(avformat_find_stream_info(pFormatCtx,NULL)<0)
-		{
-			printf("Couldn't find stream information.\n");
-			//return -1;
-		}
-
-		videoindex=-1;
-		for(i=0; i<pFormatCtx->nb_streams; i++)
-		{
-			if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
-			{
-				videoindex=i;
-				break;
-			}
-		}
-
-		if(videoindex==-1)
-		{
-			printf("Didn't find a video stream.\n");
-			//return -1;
-		}
-
-		pCodecCtx=pFormatCtx->streams[videoindex]->codec;
-		pCodec=avcodec_find_decoder(pCodecCtx->codec_id);
-
-		if(pCodec==NULL)
-		{
-			printf("Codec not found.\n");
-			//return -1;
-		}
-
-		if(avcodec_open2(pCodecCtx, pCodec,NULL)<0)
-		{
-			printf("Could not open codec.\n");
-		    //return -1;
-		}
-
-		//Allocate memory for ffmpeg packet.
-		ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
-
+		startFFMPEG();
 	}
+	
+	FOUT;
+}
+
+
+void startFFMPEG()
+{
+	FIN (startFFMPEG());
+	
+	/* This FFMPEG code is based off the Dranger Tutorials at http://dranger.com/ffmpeg/ */
+	/* FFMPEG version 2.8 Zeranoe implementation used. 									 */
+
+	//Load ffmpeg stream
+	printf("Calling ffmpeg code.\n");
+	
+	pFormatCtx = avformat_alloc_context();
+		
+	//printf("ffmpeg_flag = %d\n", ffmpeg_flag);
+
+	//Open the input stream using the filepath. In this case it is the external stream from my FFMPEG streaming program.
+	if(avformat_open_input(&pFormatCtx,filepath,NULL,NULL)!=0)
+	{
+		printf("Couldn't open input stream.\n");
+		ffmpeg_flag = 1;
+	}
+	
+
+	if(avformat_find_stream_info(pFormatCtx,NULL)<0)
+	{
+		printf("Couldn't find stream information.\n");
+		//return -1;
+	}
+
+	videoindex=-1;
+	for(unsigned int i=0; i<pFormatCtx->nb_streams; i++)
+	{
+		if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+		{
+			videoindex=i;
+			break;
+		}
+	}
+
+	if(videoindex==-1)
+	{
+		printf("Didn't find a video stream.\n");
+		//return -1;
+	}
+
+	pCodecCtx=pFormatCtx->streams[videoindex]->codec;
+	pCodec=avcodec_find_decoder(pCodecCtx->codec_id);
+
+	if(pCodec==NULL)
+	{
+		printf("Codec not found.\n");
+		//return -1;
+	}
+
+	if(avcodec_open2(pCodecCtx, pCodec,NULL)<0)
+	{
+		printf("Could not open codec.\n");
+	    //return -1;
+	}
+
+	//Allocate memory for ffmpeg packet.
+	ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
 	
 	FOUT;
 }
