@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 56F35521 56F35521 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 571D69A9 571D69A9 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -794,9 +794,14 @@ int framesCounter = 0;
 
 enum PixelFormat	 dst_pixfmt = AV_PIX_FMT_YUV420P; //AV_PIX_FMT_GRAY8; //PIX_FMT_BGR24;
 
+/*
 extern AVCodecContext		 *pCodecCtx;
 extern char 				 filepath[];
 extern int					 videoindex;
+*/
+
+//extern std::vector<FFMPEGData> vidData;
+extern FFMPEGData* vidData;
 
 /*
 cv::Size s;
@@ -14055,9 +14060,9 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			
 			//if(imwriteFlag == 0)
 			//{
-				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", testImg);
-				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
-				imwriteFlag = 1;
+			//	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", testImg);
+			//	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
+			//	imwriteFlag = 1;
 			//}
 			
 			if(LorenDebugFlag)
@@ -14447,9 +14452,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		AVFrame				 dst;
 
 		struct SwsContext    *convert_ctx;
-	
+		int ID = (int)src_addr - 1;
 		
-		
+		printf("ID = %d\n", ID);
 		
 		recv_ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
 		//Loren
@@ -14474,7 +14479,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		printf("I am  %d: seg_pkptr is of type %s\n",(int)my_address, fmt_name);
 		
 		//printf("pFormatcontext max delay = %d\n", (int)pFormatCtx->max_delay);
-		printf("filepath: %s\n", filepath);
+		printf("filepath: %s\n", vidData[ID].filepath);
 		
 		//hoon the code that read the data from the packet.
 			
@@ -14487,6 +14492,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			if(LorenDebugFlag)
 			{
 				printf("entered formatted packet statement\n\n");
+				op_pk_print(seg_pkptr);
 			}
 			op_pk_nfd_get(seg_pkptr, "frame_counter", &frameN);
 			if(LorenDebugFlag)
@@ -14584,21 +14590,21 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 				pFrame=av_frame_alloc();
 				
-				out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, pCodecCtx->width, pCodecCtx->height));
+				out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height));
 				
-				avpicture_fill((AVPicture *)&dst, out_buffer, dst_pixfmt, pCodecCtx->width, pCodecCtx->height);
+				avpicture_fill((AVPicture *)&dst, out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
 				
-				convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt, pCodecCtx->width, 
-					                         pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+				convert_ctx = sws_getContext(vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height, vidData[ID].pCodecCtx->pix_fmt, vidData[ID].pCodecCtx->width, 
+					                         vidData[ID].pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 				
 				printf("packet = %d\n", sizeof(recv_ffmpeg_packet->data));
 				printf("packet size = %d\n", recv_ffmpeg_packet->size);
-				printf("got packet, checking stream index. it equals: %d. videoindex = %d\n", (int)recv_ffmpeg_packet->stream_index, videoindex);
+				printf("got packet, checking stream index. it equals: %d. videoindex = %d\n", (int)recv_ffmpeg_packet->stream_index, vidData[ID].videoindex);
 				
-				if(recv_ffmpeg_packet->stream_index==videoindex)
+				if(recv_ffmpeg_packet->stream_index == vidData[ID].videoindex)
 				{
 					printf("about to decode packet.\n");
-					ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, recv_ffmpeg_packet);
+					ret = avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &got_picture, recv_ffmpeg_packet);
 					printf("frame type = %d, return value = %d got_picture = %d\n", (int)pFrame->pict_type, ret, got_picture);
 					if(ret < 0)
 					{
@@ -14640,8 +14646,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 					}
 				}
-				printf("I am %d: freeing packet.\n", (int)my_address);
-				av_free_packet(recv_ffmpeg_packet);
+				//printf("I am %d: freeing packet.\n", (int)my_address);
+				//av_free_packet(recv_ffmpeg_packet);
 				printf("I am %d: freeing codec context and format context.\n", (int)my_address);
 				sws_freeContext(convert_ctx);
 				av_frame_free(&pFrame);

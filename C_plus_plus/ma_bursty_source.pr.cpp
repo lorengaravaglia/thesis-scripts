@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5716E07B 5716E07B 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 571D699C 571D699C 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -17,7 +17,6 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 571
 /* Header Block */
 
 /* Include files. */
-
 
 #include <math.h>
 
@@ -36,7 +35,7 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 571
 
 #include "myRTPJPEGheader.h"
 #include "myffmpegheader.h"
-//#include <vector>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -73,7 +72,7 @@ extern "C"
 
 /* Function Declarations.	*/
 static void			bursty_source_sv_init ();
-void				startFFMPEG();
+void				startFFMPEG(FFMPEGData &vidData, int node);
 
 /*
 OmsT_Dist_Handle           on_state_dist_handle;
@@ -108,28 +107,8 @@ FILE 				 *outFile;
 cv::Mat 			 newCap;
 
 
-//Loren: Added for running ffmpeg process.
-struct FFMPEGData {
-AVFormatContext		 *pFormatCtx;
-AVCodecContext		 *pCodecCtx;
-AVCodec				 *pCodec;
-AVPacket		     *ffmpeg_packet;
-//AVFrame		     dst;
-
-int					 videoindex, restart;
-//enum PixelFormat	 dst_pixfmt = PIX_FMT_BGR24;
-char 				 filepath[100]; // = "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test.sdp";
-
-	FFMPEGData()
-	{
-		// Initialize some of the values to defaults.
-		restart = 1;
-		videoindex = 0;
-		sprintf_s(filepath, "None");
-	}
-
-};
-
+//std::vector<FFMPEGData> vidData;
+FFMPEGData* vidData;
 
 //cv::Mat			 m;
 
@@ -140,6 +119,13 @@ cv::VideoCapture 	 cap;
 long int 			 MatLocation = 0;
 int 				 ffmpeg_flag = 0;
 char 				 parentName[60];
+int 				 nodeNumber = 0;
+int 				 allocateFlag = 0;
+int					 numOff = 5;
+
+FILE * appRateOutputFile;
+char myAppRateTraceName[100];
+
 
 /* End of Header Block */
 
@@ -574,90 +560,119 @@ bursty_source_sv_init ()
 		{
 			fscanf(sizeInfoFile,"%d",&sizeInfo[lineNo][q]);
 		}
+		/*
 		if(Node_LorenDebugFlag)
 		{
 			printf("%s%s\n",imageName[lineNo], directoryName[lineNo]);		
 		}
+		*/
 	}
 	
 	fclose(sizeInfoFile);
-
 	
+	printf("allocateFlag = %d\n", allocateFlag);
+	
+	//Allocate the structs for each node. This only needs to be done once.
+	if(allocateFlag == 0)
+	{
+		printf("allocateFlag == 0, allocating ffmpeg struct\n");
+		op_ima_sim_attr_get_int32("Network Size",&nodeNumber);
+		
+		//Subtract 1 from the number of nodes since node 0 doesn't need a struct.
+		vidData = new FFMPEGData[nodeNumber-1];
+        allocateFlag = 1;
+	}
+
+
 	//First check if this is the right node for executing this code.
 	printf("about to check parent name for node number.\n");
+	
 	compare = strcmp(parentName, "node_1");
+	
 	printf("compare = %d\n", compare);
+	
+	int ID = parentName[numOff] - '0' - 1;
+	printf("ID = %d\n", ID);
 	if(compare == 0)
 	{
-
-		startFFMPEG();
+		//vidData.push_back(FFMPEGData());
+		startFFMPEG(vidData[ID], ID);
+		printf("filepath = %s\n", vidData[ID].filepath);
 	}
 	
 	FOUT;
 }
 
 
-void startFFMPEG()
+void startFFMPEG(FFMPEGData &vidData, int node)
 {
-	FIN (startFFMPEG());
+	char sdp[100];
+	FIN (startFFMPEG(vidData, node));
 	
 	/* This FFMPEG code is based off the Dranger Tutorials at http://dranger.com/ffmpeg/ */
 	/* FFMPEG version 2.8 Zeranoe implementation used. 									 */
 
-	//Load ffmpeg stream
+	
 	printf("Calling ffmpeg code.\n");
 	
-	pFormatCtx = avformat_alloc_context();
+	//translate the node number into the proper sdp file name.
+	sprintf(sdp, "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test%d.sdp", node + 1);
+	printf("%s\n", sdp);
+	
+	strcpy(vidData.filepath, sdp);
+	
+	//Load ffmpeg stream
+	vidData.pFormatCtx = avformat_alloc_context();
 		
 	//printf("ffmpeg_flag = %d\n", ffmpeg_flag);
 
 	//Open the input stream using the filepath. In this case it is the external stream from my FFMPEG streaming program.
-	if(avformat_open_input(&pFormatCtx,filepath,NULL,NULL)!=0)
+	if(avformat_open_input(&vidData.pFormatCtx, vidData.filepath,NULL,NULL)!=0)
 	{
 		printf("Couldn't open input stream.\n");
 		ffmpeg_flag = 1;
 	}
 	
 
-	if(avformat_find_stream_info(pFormatCtx,NULL)<0)
+	if(avformat_find_stream_info(vidData.pFormatCtx,NULL)<0)
 	{
 		printf("Couldn't find stream information.\n");
 		//return -1;
 	}
 
-	videoindex=-1;
-	for(unsigned int i=0; i<pFormatCtx->nb_streams; i++)
+	vidData.videoindex=-1;
+	for(unsigned int i=0; i<vidData.pFormatCtx->nb_streams; i++)
 	{
-		if(pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+		if(vidData.pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
 		{
-			videoindex=i;
+			vidData.videoindex=i;
 			break;
 		}
 	}
 
-	if(videoindex==-1)
+	if(vidData.videoindex==-1)
 	{
 		printf("Didn't find a video stream.\n");
 		//return -1;
 	}
 
-	pCodecCtx=pFormatCtx->streams[videoindex]->codec;
-	pCodec=avcodec_find_decoder(pCodecCtx->codec_id);
+	vidData.pCodecCtx = vidData.pFormatCtx->streams[vidData.videoindex]->codec;
+	vidData.pCodec = avcodec_find_decoder(vidData.pCodecCtx->codec_id);
 
-	if(pCodec==NULL)
+	if(vidData.pCodec==NULL)
 	{
 		printf("Codec not found.\n");
 		//return -1;
 	}
 
-	if(avcodec_open2(pCodecCtx, pCodec,NULL)<0)
+	if(avcodec_open2(vidData.pCodecCtx, vidData.pCodec,NULL)<0)
 	{
 		printf("Could not open codec.\n");
 	    //return -1;
 	}
 
 	//Allocate memory for ffmpeg packet.
-	ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
+	vidData.ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
 	
 	FOUT;
 }
@@ -966,8 +981,18 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 				else if( (intrpt_code==ON_TO_ON || intrpt_code==OFF_TO_ON) && intrpt_type ==OPC_INTRPT_SELF )//&&added by me
 				{
-				
+					Objid				my_id;
+					Objid				parent_id;
 					printf("Start of ma_bursty_source on-on\n");
+					
+					//Added to determine how often the apprate changes.
+					my_id = op_id_self ();
+					parent_id = op_topo_parent(my_id);
+					op_ima_obj_attr_get_str (parent_id, "name", 60, parentName);
+					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_%s.txt", parentName);
+					appRateOutputFile = fopen(myAppRateTraceName, "a");
+					fprintf(appRateOutputFile, "%f: %s apprate = %f\n", op_sim_time(), parentName, (float)appRate);
+					fclose(appRateOutputFile);
 					
 					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
 					{
@@ -1001,6 +1026,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						my_id = op_id_self ();
 						parent_id = op_topo_parent(my_id);
 						op_ima_obj_attr_get_str (parent_id, "name", 60, parentName);
+						int ID = parentName[numOff] - '0' - 1;
 						
 						printf("I am: %s\n", myName);
 						printf("Parent is %s\n", parentName);
@@ -1329,22 +1355,23 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								//Load ffmpeg stream
 						printf("Calling ffmpeg code outside of init.\n");
 					
-					printf("about to check parent name for node number.\n");
-					compare = strcmp(parentName, "node_1");
-					printf("compare = %d\n", compare);
+						printf("about to check parent name for node number.\n");
+						compare = strcmp(parentName, "node_1");
+						printf("compare = %d\n", compare);
 					
-					if(compare == 0)
-					{
-						//Output Info-----------------------------
-						printf("--------------- File Information ----------------\n");
-						av_dump_format(pFormatCtx,0,filepath,0);
-						printf("-------------------------------------------------\n");
-						if(av_read_frame(pFormatCtx, ffmpeg_packet) < 0)
-						{
-							printf("packet no good.\n");
-						}
+						if(compare == 0)
+					    {
+							printf("filepath = %s\n", vidData[ID].filepath);
+							//Output Info-----------------------------
+							printf("--------------- File Information ----------------\n");
+							av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
+							printf("-------------------------------------------------\n");
+							if(av_read_frame(vidData[ID].pFormatCtx, vidData[ID].ffmpeg_packet) < 0)
+							{
+								printf("packet no good.\n");
+							}
 						
-					}
+						}
 						
 						
 						/*
@@ -1459,7 +1486,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								if(compare == 0)
 								{
 								//char myarray[7400] = {0};
-									op_pk_nfd_set (pkptr, "data", ffmpeg_packet, op_prg_mem_copy_create, op_prg_mem_free, sizeof(AVPacket));
+									op_pk_nfd_set (pkptr, "data", vidData[ID].ffmpeg_packet, op_prg_mem_copy_create, op_prg_mem_free, sizeof(AVPacket));
 								
 									
 									//av_free_packet(ffmpeg_packet);
