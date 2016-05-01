@@ -140,79 +140,12 @@ int FFMPEGData::startFFMPEG()
 	return 0;
 }
 
-/*
-int FFMPEGData::startFFMPEG(FFMPEGData &data)
-{
-	data.pFormatCtx = avformat_alloc_context();
-
-	if (avformat_open_input(&data.pFormatCtx, data.filepath, NULL, NULL) < 0)
-	{
-		printf("Couldn't open input stream.\n");
-		return -1;
-	}
-
-	if (avformat_find_stream_info(data.pFormatCtx, NULL) < 0)
-	{
-		printf("Couldn't find stream information.\n");
-		return -1;
-	}
-
-	data.videoindex = -1;
-	for (unsigned int i = 0; i < data.pFormatCtx->nb_streams; i++)
-	{
-		if (data.pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-		{
-			data.videoindex = i;
-			break;
-		}
-	}
-
-	if (data.videoindex == -1)
-	{
-		printf("Didn't find a video stream.\n");
-		return -1;
-	}
-
-	data.pCodecCtx = data.pFormatCtx->streams[data.videoindex]->codec;
-	data.pCodec = avcodec_find_decoder(data.pCodecCtx->codec_id);
-
-	if (data.pCodec == NULL)
-	{
-		printf("Codec not found.\n");
-		return -1;
-	}
-
-	if (avcodec_open2(data.pCodecCtx, data.pCodec, NULL) < 0)
-	{
-		printf("Could not open codec.\n");
-		return -1;
-	}
-
-	data.pFrame = av_frame_alloc();
-
-	data.out_buffer = (uint8_t *)av_malloc(avpicture_get_size(data.dst_pixfmt, data.pCodecCtx->width, data.pCodecCtx->height));
-
-	avpicture_fill((AVPicture *)&data.dst, data.out_buffer, data.dst_pixfmt, data.pCodecCtx->width, data.pCodecCtx->height);
-
-	data.packet = (AVPacket *)av_malloc(sizeof(AVPacket));
-
-	//Output Info-----------------------------
-	printf("--------------- File Information ----------------\n");
-	av_dump_format(data.pFormatCtx, 0, data.filepath, 0);
-	printf("-------------------------------------------------\n");
-
-	data.convert_ctx = sws_getContext(data.pCodecCtx->width, data.pCodecCtx->height, data.pCodecCtx->pix_fmt,
-		data.pCodecCtx->width, data.pCodecCtx->height, data.dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-
-	return 0;
-}
-*/
 using namespace std;
 
 int main(int argc, char **argv)
 {
-	std::vector<FFMPEGData> vidData;
-	//FFMPEGData vidData;
+	//std::vector<FFMPEGData> vidData;
+	FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
 	av_register_all();
 	avformat_network_init();
@@ -220,7 +153,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < nodeNumber; i++)
 	{
 		// Create a struct entry for every node.
-		vidData.push_back(FFMPEGData());
+		//vidData.push_back(FFMPEGData());
 
 		// Set the sdp file for each node.
 		sprintf_s(vidData[i].filepath, "test%d.sdp", (i+1));
@@ -364,5 +297,6 @@ int main(int argc, char **argv)
 	}
 	//If the code ever reaches here close the pipe before finishing.
 	CloseHandle(hPipe);
+	delete[] vidData;
 	return 0;
 }

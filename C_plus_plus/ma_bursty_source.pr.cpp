@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 571D699C 571D699C 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 572577B4 572577B4 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -19,6 +19,8 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 5
 /* Include files. */
 
 #include <math.h>
+#include <stdio.h> 
+
 
 #include "opencv2\core\core.hpp"
 #include "opencv2\contrib\contrib.hpp"
@@ -39,6 +41,9 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 5
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <windows.h>
+#include <tchar.h>
+#include <string>
 
 #define __STDC_CONSTANT_MACROS
 extern "C"
@@ -99,24 +104,20 @@ int 				 nodes_no_app;
 char	             fmt_name[20];
 int					 pk_size = 0;
 int					 byte_load = 0;
-int 				 outFileFlag = 0;
+//int 				 outFileFlag = 0;
 
-//Loren
-int 				 im_write_counter = 0;
-FILE 				 *outFile;
-cv::Mat 			 newCap;
+
 
 
 //std::vector<FFMPEGData> vidData;
 FFMPEGData* vidData;
 
-//cv::Mat			 m;
 
 //opencv declarations.
 cv::Size 			 s;
 int 				 rows = 0, cols = 0;
-cv::VideoCapture 	 cap;
-long int 			 MatLocation = 0;
+
+// Assorted declarations.
 int 				 ffmpeg_flag = 0;
 char 				 parentName[60];
 int 				 nodeNumber = 0;
@@ -125,6 +126,12 @@ int					 numOff = 5;
 
 FILE * appRateOutputFile;
 char myAppRateTraceName[100];
+int frameCount = 0;
+FILE * frameTime;
+
+HANDLE hPipe;
+DWORD dwWritten = 0;
+const char hello[] = "This is my hello message.";
 
 
 /* End of Header Block */
@@ -994,6 +1001,32 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					fprintf(appRateOutputFile, "%f: %s apprate = %f\n", op_sim_time(), parentName, (float)appRate);
 					fclose(appRateOutputFile);
 					
+					
+					/* Named Pipe Stuff */
+					
+					
+					hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
+				                       GENERIC_READ | GENERIC_WRITE, 
+				                       0,
+				                       NULL,
+				                       OPEN_EXISTING,
+				                       0,
+				                       NULL);
+					
+					if (hPipe != INVALID_HANDLE_VALUE)
+					{
+						printf("About to write to pipe.\n");
+				       	WriteFile(hPipe,
+								hello,				//"Hello Pipe\n",
+								sizeof(hello),								//12,   // = length of string + terminating '\0' !!!
+								&dwWritten,
+								NULL);
+						//std::cout<<dwWritten<<std::endl;
+						CloseHandle(hPipe);
+					}
+					
+					/* End Named Pipe Stuff */
+					
 					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
 					{
 				
@@ -1038,7 +1071,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						}
 						
 						
-						
+				
 					
 						/*
 						if(!cap.isOpened())
@@ -1369,6 +1402,22 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							if(av_read_frame(vidData[ID].pFormatCtx, vidData[ID].ffmpeg_packet) < 0)
 							{
 								printf("packet no good.\n");
+							}
+							else
+							{
+								frameCount++;
+								time_t rawtime;
+								struct tm * timeinfo;
+								char buffer[80];
+				
+								time (&rawtime);
+								timeinfo = localtime(&rawtime);
+				
+								strftime(buffer,80,"%d-%m-%Y %I:%M:%S",timeinfo);
+												
+								frameTime = fopen("C:\\AppRateTraceFiles\\frameTime.txt", "a");
+								fprintf(frameTime, "%s: frameCount = %d\n",buffer, frameCount);
+								fclose(frameTime);
 							}
 						
 						}

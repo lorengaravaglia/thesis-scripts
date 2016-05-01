@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 571D69A9 571D69A9 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 572577C1 572577C1 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -808,9 +808,6 @@ cv::Size s;
 int rows = 0, cols = 0;
 cv::VideoCapture cap;
 */
-HANDLE hPipe;
-DWORD dwWritten = 0;
-const char hello[] = "This is my hello message.";
 
 int imwriteFlag = 0;
 
@@ -1767,15 +1764,6 @@ wlan_hcf_sv_init (void)
 	drop_pkt_log_handle	= op_prg_log_handle_create (OpC_Log_Category_Protocol,      "Wireless LAN", "Data packet Drop",  128);
     drop_pkt_entry_log_flag = 0;
 	
-	/* Named pipe initialization
-    hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
-                       GENERIC_READ | GENERIC_WRITE, 
-                       0,
-                       NULL,
-                       OPEN_EXISTING,
-                       0,
-                       NULL);
-	*/
 
 	/* Update the global variable if this is the first node to come up. If not the	*/ 
 	/* first node, then check for mismatches. A subnet can be a traditional subnet	*/
@@ -14320,10 +14308,6 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	FILE * truthFile;
 	char truthFileName[300] = "";
 
-	/*
-	HANDLE hPipe;
-    DWORD dwWritten;
-	*/
 
 	/** This function processes MSDUs that are fully received through	**/
 	/** the physical layer, reassembled, and destined to this MAC.		**/
@@ -14341,29 +14325,7 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 		op_prg_odb_print_major(myString,OPC_NIL);
 	}
 	
-	/* Named Pipe Stuff */
-	
-	
-	hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
-                       GENERIC_READ | GENERIC_WRITE, 
-                       0,
-                       NULL,
-                       OPEN_EXISTING,
-                       0,
-                       NULL);
-	
-    if (hPipe != INVALID_HANDLE_VALUE)
-    {
-        WriteFile(hPipe,
-				  hello,				//"Hello Pipe\n",
-				  sizeof(hello),								//12,   // = length of string + terminating '\0' !!!
-                  &dwWritten,
-                  NULL);
-		std::cout<<dwWritten<<std::endl;
-        CloseHandle(hPipe);
-    }
-	
-	/* End Named Pipe Stuff */
+
 	
 if (ap_flag == OPC_BOOLINT_ENABLED) 
 	{
