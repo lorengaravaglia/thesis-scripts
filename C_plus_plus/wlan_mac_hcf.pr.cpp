@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 572577C1 572577C1 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5726B8FC 5726B8FC 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14407,13 +14407,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		int ret, got_picture;
 		cv::Size s_source;
 		
-		
+		/*
 		AVFrame				 *pFrame;
 		uint8_t				 *out_buffer;
-		AVPacket			 *recv_ffmpeg_packet;
+		
 		AVFrame				 dst;
 
 		struct SwsContext    *convert_ctx;
+		*/
+		
+		AVPacket			 *recv_ffmpeg_packet;
+		
 		int ID = (int)src_addr - 1;
 		
 		printf("ID = %d\n", ID);
@@ -14550,13 +14554,13 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 			if((int)src_addr == 1)
 			{
-				pFrame=av_frame_alloc();
+				vidData[ID].pFrame=av_frame_alloc();
 				
-				out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height));
+				vidData[ID].out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height));
 				
-				avpicture_fill((AVPicture *)&dst, out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+				avpicture_fill((AVPicture *)&vidData[ID].dst, vidData[ID].out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
 				
-				convert_ctx = sws_getContext(vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height, vidData[ID].pCodecCtx->pix_fmt, vidData[ID].pCodecCtx->width, 
+				vidData[ID].convert_ctx = sws_getContext(vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height, vidData[ID].pCodecCtx->pix_fmt, vidData[ID].pCodecCtx->width, 
 					                         vidData[ID].pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 				
 				printf("packet = %d\n", sizeof(recv_ffmpeg_packet->data));
@@ -14566,8 +14570,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				if(recv_ffmpeg_packet->stream_index == vidData[ID].videoindex)
 				{
 					printf("about to decode packet.\n");
-					ret = avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &got_picture, recv_ffmpeg_packet);
-					printf("frame type = %d, return value = %d got_picture = %d\n", (int)pFrame->pict_type, ret, got_picture);
+					ret = avcodec_decode_video2(vidData[ID].pCodecCtx, vidData[ID].pFrame, &got_picture, recv_ffmpeg_packet);
+					printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
 					if(ret < 0)
 					{
 						printf("Decode Error.\n");
@@ -14577,7 +14581,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					printf("got_picture = %d\n", got_picture);
 					if(got_picture)
 					{
-						if(convert_ctx == NULL)
+						if(vidData[ID].convert_ctx == NULL)
 						{
 							printf("Cannot initialize the conversion context!\n");
 							//break;
@@ -14587,8 +14591,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						{
 						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
 						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
-						sws_scale(convert_ctx, (const uint8_t* const*)pFrame->data, pFrame->linesize, 0, pFrame->height,
-						          dst.data, dst.linesize);
+						sws_scale(vidData[ID].convert_ctx, (const uint8_t* const*)vidData[ID].pFrame->data, vidData[ID].pFrame->linesize, 0, vidData[ID].pFrame->height,
+						          vidData[ID].dst.data, vidData[ID].dst.linesize);
 				
 						s_source = m.size();
 						rows = s_source.height;
@@ -14597,7 +14601,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 									
 									
-						m = cv::Mat(pFrame->height, pFrame->width, CV_8UC1, dst.data[0], dst.linesize[0]);
+						m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC1, vidData[ID].dst.data[0], vidData[ID].dst.linesize[0]);
 									
 						s_source = m.size();
 						rows = s_source.height;
@@ -14611,9 +14615,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//printf("I am %d: freeing packet.\n", (int)my_address);
 				//av_free_packet(recv_ffmpeg_packet);
 				printf("I am %d: freeing codec context and format context.\n", (int)my_address);
-				sws_freeContext(convert_ctx);
-				av_frame_free(&pFrame);
-			//av_free_packet(ffmpeg_packet);
+				sws_freeContext(vidData[ID].convert_ctx);
+				av_frame_free(&vidData[ID].pFrame);
+				//av_free_packet(ffmpeg_packet);
 			}
 			
 	
@@ -14623,27 +14627,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			//avcodec_close(pCodecCtx);
 			//avformat_close_input(&pFormatCtx);
 			
-			/*
-			if(!cap.isOpened())
-				{
-				printf("Attempting to capture stream.\n");
-				cap.open("C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp");
-				if(!cap.isOpened()) {
-					printf("Capture cannot be opened.\n");
-					}
-				}
-			
-			
-			cv::Mat frame;
-			
-			printf("Capturing frame from stream.\n");
-			cap >> frame;
-			
-			s = frame.size();
-			rows = s.height;
-			cols = s.width;
-			printf("Frame height = %d, Frame width = %d\n", rows, cols);
-			*/
 		}
 		
 		//Loren

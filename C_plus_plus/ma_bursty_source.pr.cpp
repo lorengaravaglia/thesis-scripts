@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 572577B4 572577B4 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57269D89 57269D89 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -123,6 +123,7 @@ char 				 parentName[60];
 int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
+double				 prevAppRate = 0;
 
 FILE * appRateOutputFile;
 char myAppRateTraceName[100];
@@ -131,7 +132,7 @@ FILE * frameTime;
 
 HANDLE hPipe;
 DWORD dwWritten = 0;
-const char hello[] = "This is my hello message.";
+char message[20];
 
 
 /* End of Header Block */
@@ -602,9 +603,12 @@ bursty_source_sv_init ()
 	printf("ID = %d\n", ID);
 	if(compare == 0)
 	{
-		//vidData.push_back(FFMPEGData());
-		startFFMPEG(vidData[ID], ID);
-		printf("filepath = %s\n", vidData[ID].filepath);
+		if(vidData[ID].restart == 1)
+		{
+			startFFMPEG(vidData[ID], ID);
+			printf("filepath = %s\n", vidData[ID].filepath);
+			//vidData[ID].restart = 0;
+		}
 	}
 	
 	FOUT;
@@ -890,7 +894,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				//if a new value of the application rate arrived from the mac layer
 				if(intrpt_type == OPC_INTRPT_STAT)
 				{
-						
+					// Store the last apprate for later comparison.
+					prevAppRate = appRate; 
+					
 					newValue = op_stat_local_read(0)/8.0;
 					
 					//if(newValue > 54000000.0/8.0/nodes_no_app)
@@ -992,40 +998,65 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					Objid				parent_id;
 					printf("Start of ma_bursty_source on-on\n");
 					
-					//Added to determine how often the apprate changes.
+					
 					my_id = op_id_self ();
 					parent_id = op_topo_parent(my_id);
 					op_ima_obj_attr_get_str (parent_id, "name", 60, parentName);
+					
+					// Get the ID of this node to use for the vidData array.
+					int ID = parentName[numOff] - '0' - 1;
+					
+					//Added to determine how often the apprate changes.
 					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_%s.txt", parentName);
 					appRateOutputFile = fopen(myAppRateTraceName, "a");
 					fprintf(appRateOutputFile, "%f: %s apprate = %f\n", op_sim_time(), parentName, (float)appRate);
 					fclose(appRateOutputFile);
 					
 					
-					/* Named Pipe Stuff */
-					
-					
-					hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
-				                       GENERIC_READ | GENERIC_WRITE, 
-				                       0,
-				                       NULL,
-				                       OPEN_EXISTING,
-				                       0,
-				                       NULL);
-					
-					if (hPipe != INVALID_HANDLE_VALUE)
+					// Determine whether we need to notify the control program that the bitrate has changed.
+					// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
+					if((appRate >= (prevAppRate + 50)) || (appRate <= (prevAppRate - 50)))
 					{
-						printf("About to write to pipe.\n");
-				       	WriteFile(hPipe,
-								hello,				//"Hello Pipe\n",
-								sizeof(hello),								//12,   // = length of string + terminating '\0' !!!
-								&dwWritten,
-								NULL);
-						//std::cout<<dwWritten<<std::endl;
-						CloseHandle(hPipe);
-					}
 					
-					/* End Named Pipe Stuff */
+						printf("Node: %s, ID: %d\n", parentName, ID);
+						// Create the string with the correct format to be handled by the control program.
+						sprintf_s(message, "%d,%d", ID, (int)appRate);
+						
+						/* Named Pipe Stuff */
+						
+					
+						hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
+										  GENERIC_READ | GENERIC_WRITE, 
+				                          0,
+				                          NULL,
+				                          OPEN_EXISTING,
+				                          0,
+				                          NULL);
+					
+						if (hPipe != INVALID_HANDLE_VALUE)
+						{
+							printf("About to write to pipe.\n");
+							WriteFile(hPipe,
+									 message,				
+								     sizeof(message),						 // = length of string + terminating '\0' !!!
+								     &dwWritten,
+								     NULL);
+							
+							CloseHandle(hPipe);
+						}
+					
+						/* End Named Pipe Stuff */
+						
+						// Prepare for restart
+						av_free_packet(vidData[ID].ffmpeg_packet);
+						sws_freeContext(vidData[ID].convert_ctx);
+						av_frame_free(&vidData[ID].pFrame);
+						avcodec_close(vidData[ID].pCodecCtx);
+						avformat_close_input(&vidData[ID].pFormatCtx);
+						
+						// Restart the stream.
+						startFFMPEG(vidData[ID], ID);
+					}
 					
 					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
 					{
@@ -1049,17 +1080,10 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						double 	alpha = 0.5;
 						int size = 0;
 						int compare = 0;
-						cv::Mat			m;
+						
 						
 						//Loren, counter value
 						int x = 0;
-						Objid				my_id;
-						Objid				parent_id;
-						
-						my_id = op_id_self ();
-						parent_id = op_topo_parent(my_id);
-						op_ima_obj_attr_get_str (parent_id, "name", 60, parentName);
-						int ID = parentName[numOff] - '0' - 1;
 						
 						printf("I am: %s\n", myName);
 						printf("Parent is %s\n", parentName);
@@ -1070,33 +1094,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							RTPoverhead = 0;
 						}
 						
-						
-				
-					
-						/*
-						if(!cap.isOpened())
-						{
-							printf("Attempting to capture stream.\n");
-							cap.open("C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\OpencvSetup\\OpencvSetup\\test.sdp");
-							if(!cap.isOpened()) 
-							{
-								printf("Capture cannot be opened.\n");
-							}
-						}
-							
-						*/	
-						//cv::Mat frame;
 							
 						printf("Capturing frame from stream.\n");
-						//cap >> frame;
-						/*	
-						s = frame.size();
-						rows = s.height;
-						cols = s.width;
-						printf("Frame height = %d, Frame width = %d\n", rows, cols);
-						*/
-						//if(appRate > 54000000.0/8.0/nodes_no_app)
-						//	appRate = 54000000.0/8.0/nodes_no_app;
+				
 						
 				
 						frameSize = appRate/frameRate;
@@ -1354,131 +1354,44 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								tPS = (PacketCounter==0 ? pksize -  (64+23)*8 : pksize -  23*8);
 								printf("tPS = %d\n", (int)tPS);
 								
-								/*
-								//std::vector<std::vector<uchar>>myArray(641, std::vector<uchar>(tPS));
-								unsigned char *myArray = new unsigned char [7968];
-								
-								printf("about to divide image\n");
-								int k = 0;
-								for(k = 0; k < 7968; k++)
-								{
-									if(MatLocation<(640*480))
-									{
-										myArray[k] = frame.data[MatLocation];
-										MatLocation++;
-										//printf("i = %d,  j = %d,  k = %d", i, j, k);
-									}
-									else
-									{	
-										MatLocation = 0;
-										break;
-									}
-								}
-								
-								printf("finished dividing image, FrameSizeInPackets = %d, k = %d, MatLocation = %d\n", FrameSizeInPackets, k, MatLocation);
-								
-								if(PacketCounter == (FrameSizeInPackets - 1))
-								{
-									MatLocation = 0;
-								}
-								*/
-								
-								
 								
 								//Load ffmpeg stream
-						printf("Calling ffmpeg code outside of init.\n");
+								printf("Calling ffmpeg code outside of init.\n");
 					
-						printf("about to check parent name for node number.\n");
-						compare = strcmp(parentName, "node_1");
-						printf("compare = %d\n", compare);
+								printf("about to check parent name for node number.\n");
+								compare = strcmp(parentName, "node_1");
+								printf("compare = %d\n", compare);
 					
-						if(compare == 0)
-					    {
-							printf("filepath = %s\n", vidData[ID].filepath);
-							//Output Info-----------------------------
-							printf("--------------- File Information ----------------\n");
-							av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
-							printf("-------------------------------------------------\n");
-							if(av_read_frame(vidData[ID].pFormatCtx, vidData[ID].ffmpeg_packet) < 0)
-							{
-								printf("packet no good.\n");
-							}
-							else
-							{
-								frameCount++;
-								time_t rawtime;
-								struct tm * timeinfo;
-								char buffer[80];
-				
-								time (&rawtime);
-								timeinfo = localtime(&rawtime);
-				
-								strftime(buffer,80,"%d-%m-%Y %I:%M:%S",timeinfo);
-												
-								frameTime = fopen("C:\\AppRateTraceFiles\\frameTime.txt", "a");
-								fprintf(frameTime, "%s: frameCount = %d\n",buffer, frameCount);
-								fclose(frameTime);
-							}
-						
-						}
-						
-						
-						/*
-							//printf("packet = %d\n", sizeof(packet->data));
-							//printf("packet size = %d\n", packet->size);
-							printf("got packet, checking stream index.\n");
-							if(ffmpeg_packet->stream_index==videoindex)
-							{
-								printf("about to decode packet.\n");
-								ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, ffmpeg_packet);
-								printf("frame type = %d, return value = %d got_picture = %d\n", (int)pFrame->pict_type, ret, got_picture);
-								if(ret < 0)
+								if(compare == 0)
 								{
-									printf("Decode Error.\n");
-									break;
-									//return -1;
-								}
-								printf("got_picture = %d\n", got_picture);
-								if(got_picture)
-								{
-									if(convert_ctx == NULL)
+									printf("filepath = %s\n", vidData[ID].filepath);
+									//Output Info-----------------------------
+									printf("--------------- File Information ----------------\n");
+									av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
+									printf("-------------------------------------------------\n");
+									
+									if(av_read_frame(vidData[ID].pFormatCtx, vidData[ID].ffmpeg_packet) < 0)
 									{
-										printf("Cannot initialize the conversion context!\n");
-										break;
-										//exit(1);
+										printf("packet no good.\n");
 									}
-									//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
-									//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
-									sws_scale(convert_ctx, pFrame->data, pFrame->linesize, 0, pFrame->height,
-										 dst.data, dst.linesize);
+									else
+									{
+										frameCount++;
+										time_t rawtime;
+										struct tm * timeinfo;
+										char buffer[80];
 				
-									s = m.size();
-									rows = s.height;
-									cols = s.width;
-									
-									printf("First Frame height = %d, Frame width = %d\n", rows, cols);
-									
-									
-									m = cv::Mat(pFrame->height, pFrame->width, CV_8UC3, dst.data[0], dst.linesize[0]);
-									
-									s = m.size();
-									rows = s.height;
-									cols = s.width;
-									printf("Second Frame height = %d, Frame width = %d\n", rows, cols);
-									av_free_packet(ffmpeg_packet);
-									break;
-								}
-							}
-							//av_free_packet(ffmpeg_packet);
-						}
-						printf("freeing codec context and format context.\n");
-					}
+										time (&rawtime);
+										timeinfo = localtime(&rawtime);
+				
+										strftime(buffer,80,"%d-%m-%Y %I:%M:%S",timeinfo);
+												
+										frameTime = fopen("C:\\AppRateTraceFiles\\frameTime.txt", "a");
+										fprintf(frameTime, "%s: frameCount = %d\n",buffer, frameCount);
+										fclose(frameTime);
+									}
 						
-						*/
-						//sws_freeContext(convert_ctx);
-						//av_frame_free(&pFrame);
-						//avcodec_close(pCodecCtx);
-						//avformat_close_input(&pFormatCtx);
+								}
 								
 								
 								//Loren, for debug only
@@ -1609,11 +1522,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 							}
 							
-							
-							//test location for deleting the image structure.
-							//deleteImageDataStructure(ids);
-							//deleteImageDataStructure(originalids);
-							
+				
 							if(appOpencvDebugFlag)
 							{
 								printf("image data structure deleted\n");
