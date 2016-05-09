@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5726B8FC 5726B8FC 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 572F6C24 572F6C24 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -718,7 +718,7 @@ int myStringDebug = 0;
 int fee_lambda_trace_flag = 1;
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
-int LorenDebugFlag = 1;
+int LorenDebugFlag = 0;
 
 FILE * opencvDebugFile;
 

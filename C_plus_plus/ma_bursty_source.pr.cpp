@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57269D89 57269D89 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 572FC638 572FC638 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -20,6 +20,7 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 572
 
 #include <math.h>
 #include <stdio.h> 
+#include <stdlib.h> 
 
 
 #include "opencv2\core\core.hpp"
@@ -124,6 +125,7 @@ int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
 double				 prevAppRate = 0;
+int					 createPipeFlag = 0;
 
 FILE * appRateOutputFile;
 char myAppRateTraceName[100];
@@ -332,6 +334,7 @@ bursty_source_sv_init ()
 	char				on_state_string [128], off_state_string [128];
 	char				packet_size_string [128];
 	char				intarrvl_rate_string[128],start_time_string [128];
+	char				temp[5];
 	
 	OmsT_Dist_Handle	start_time_dist_handle;
 	
@@ -599,8 +602,12 @@ bursty_source_sv_init ()
 	
 	printf("compare = %d\n", compare);
 	
-	int ID = parentName[numOff] - '0' - 1;
+	//int ID = parentName[numOff] - '0' - 1;
+	snprintf(temp, 5, &parentName[numOff]);
+	printf("temp string = %s\n", temp);
+	int ID = atoi(temp) - 1;
 	printf("ID = %d\n", ID);
+	
 	if(compare == 0)
 	{
 		if(vidData[ID].restart == 1)
@@ -609,6 +616,15 @@ bursty_source_sv_init ()
 			printf("filepath = %s\n", vidData[ID].filepath);
 			//vidData[ID].restart = 0;
 		}
+		printf("about to create pipe file.\n");
+		hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
+						  GENERIC_READ | GENERIC_WRITE, 
+	                      0,
+	                      NULL,
+	                      OPEN_EXISTING,
+	                      0,
+	                      NULL);
+
 	}
 	
 	FOUT;
@@ -996,6 +1012,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				{
 					Objid				my_id;
 					Objid				parent_id;
+					char 				temp[5];
 					printf("Start of ma_bursty_source on-on\n");
 					
 					
@@ -1004,7 +1021,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					op_ima_obj_attr_get_str (parent_id, "name", 60, parentName);
 					
 					// Get the ID of this node to use for the vidData array.
-					int ID = parentName[numOff] - '0' - 1;
+					//int ID = parentName[numOff] - '0' - 1;
+					snprintf(temp, 5, &parentName[numOff]);
+					printf("temp string = %s\n", temp);
+					int ID = atoi(temp) - 1;
+					printf("ID = %d\n", ID);
 					
 					//Added to determine how often the apprate changes.
 					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_%s.txt", parentName);
@@ -1015,6 +1036,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 					// Determine whether we need to notify the control program that the bitrate has changed.
 					// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
+					if(ID == 0)
+					{
 					if((appRate >= (prevAppRate + 50)) || (appRate <= (prevAppRate - 50)))
 					{
 					
@@ -1024,15 +1047,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						/* Named Pipe Stuff */
 						
-					
-						hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
-										  GENERIC_READ | GENERIC_WRITE, 
-				                          0,
-				                          NULL,
-				                          OPEN_EXISTING,
-				                          0,
-				                          NULL);
-					
+								
+						printf("checking if pipe handle is valid.\n");
 						if (hPipe != INVALID_HANDLE_VALUE)
 						{
 							printf("About to write to pipe.\n");
@@ -1042,20 +1058,31 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								     &dwWritten,
 								     NULL);
 							
-							CloseHandle(hPipe);
+							printf("about to close pipe handle.\n");				
+							//CloseHandle(hPipe);
 						}
-					
-						/* End Named Pipe Stuff */
 						
-						// Prepare for restart
-						av_free_packet(vidData[ID].ffmpeg_packet);
-						sws_freeContext(vidData[ID].convert_ctx);
-						av_frame_free(&vidData[ID].pFrame);
+						// Prepare for restartj
+						printf("preparing for restart\n");
+						//av_free_packet(vidData[ID].ffmpeg_packet);
+						printf("1\n");
+						//sws_freeContext(vidData[ID].convert_ctx);
+						printf("2\n");
+						//av_frame_free(&vidData[ID].pFrame);
+						printf("3\n");
 						avcodec_close(vidData[ID].pCodecCtx);
+						printf("4\n");
 						avformat_close_input(&vidData[ID].pFormatCtx);
+						
+						printf("about to sleep\n");
+						Sleep(1000);
+						printf("done sleeping, calling startFFMPEG.\n");
 						
 						// Restart the stream.
 						startFFMPEG(vidData[ID], ID);
+						printf("done with startFFMPEG.\n");
+						prevAppRate = appRate;
+					}
 					}
 					
 					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
