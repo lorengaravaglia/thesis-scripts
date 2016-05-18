@@ -28,12 +28,15 @@ extern "C"
 #pragma comment(lib, "SDL2.lib")
 #pragma comment(lib, "SDL2main.lib") 
 
+int packetNum = 5000;
+
 struct FFMPEGData {
 	AVFormatContext	*pFormatCtx;
 	AVCodecContext	*pCodecCtx;
 	AVCodec			*pCodec;
 	AVFrame			*pFrame, dst;
 	AVPacket		*packet;
+	AVPacket* pack = new AVPacket[packetNum];
 
 	struct SwsContext *convert_ctx;
 
@@ -45,6 +48,7 @@ struct FFMPEGData {
 	char            filepath[15];
 	clock_t         begin, end;
 	cv::Mat         m;
+	int				windowName;
 
 	FFMPEGData()
 	{
@@ -69,30 +73,10 @@ DWORD dwWritten = 0;
 int ret;
 int randBase = 30;
 int randBitrateBase = 20;
-int nodeNumber = 1;
-int packetNum = 20000;
-AVPacket* pack = new AVPacket[packetNum];
-FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
-void thread()
-{
-	int counter = 0;
-	while (true)
-	{
-		printf("\tthread count = %d\n", counter);
-		// Read frames from the stream.
-		av_read_frame(vidData[0].pFormatCtx, &pack[counter]);
-		if (counter < packetNum)
-		{
-			counter++;
-		}
-		else
-		{
-			counter = 0;
-		}
-		//Sleep(25);
-	}
-}
+int nodeNumber = 2;
+
+FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
 int FFMPEGData::startFFMPEG()
 {
@@ -160,12 +144,89 @@ int FFMPEGData::startFFMPEG()
 	return 0;
 }
 
+
+void thread(FFMPEGData &vidData)
+{
+	int counter = 0;
+	while (true)
+	{
+		printf("\tthread count = %d\n", counter);
+		// Read frames from the stream.
+		if (av_read_frame(vidData.pFormatCtx, &vidData.pack[counter]) != AVERROR(EAGAIN))
+		{
+			if (counter < packetNum)
+			{
+				counter++;
+			}
+			else
+			{
+				counter = 0;
+			}
+		}
+
+		//Sleep(25);
+	}
+}
+
+
+void play(FFMPEGData &vidData)
+{
+	int i = 0;
+	int count = 0;
+	Sleep(1000);
+	while (true)
+	{
+		printf("count = %d\n", count);
+		if (vidData.pack[count].stream_index == vidData.videoindex)
+		{
+			ret = avcodec_decode_video2(vidData.pCodecCtx, vidData.pFrame, &vidData.got_picture, &vidData.pack[count]);
+			if (ret < 0)
+			{
+				printf("Decode Error.\n");
+				//return -1;
+			}
+			if (vidData.got_picture)
+			{
+				if (vidData.convert_ctx == NULL)
+				{
+					fprintf(stderr, "Cannot initialize the conversion context!\n");
+					exit(1);
+				}
+
+				sws_scale(vidData.convert_ctx, vidData.pFrame->data, vidData.pFrame->linesize, 0,
+					vidData.pFrame->height, vidData.dst.data, vidData.dst.linesize);
+
+				//Convert the received frame to OpenCV format.
+				vidData.m = cv::Mat(vidData.pFrame->height, vidData.pFrame->width, CV_8UC1,
+					vidData.dst.data[0], vidData.dst.linesize[0]);
+				char window[5];
+				sprintf_s(window, "%d", vidData.windowName);
+				cv::imshow(window, vidData.m);
+				cv::waitKey(20);
+
+			}
+		}
+		//av_free_packet(&pack[count]);
+		if (count < packetNum)
+		{
+			count++;
+		}
+		else
+		{
+			count = 0;
+		}
+		Sleep(333);
+	}
+
+}
+
 using namespace std;
 
 int main(int argc, char **argv)
 {
 	int i = 0;
-	int count = 0;
+	boost::thread_group reads;
+	boost::thread_group plays;
 	//std::vector<FFMPEGData> vidData;
 	//FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
@@ -174,68 +235,34 @@ int main(int argc, char **argv)
 	// Create a struct entry for every node.
 	//vidData.push_back(FFMPEGData());
 
-	// Set the sdp file for each node.
-	sprintf_s(vidData[i].filepath, "test%d.sdp", (i + 1));
 
-	// Print the file path for debugging.
-	printf("Filepath = %s\n", vidData[i].filepath);
-
-	// changed this to use member function.
-	if (vidData[i].startFFMPEG() < 0)
+	for (i = 0; i < nodeNumber; i++)
 	{
-		printf("should not get here.\n");
-		return 0;
-	}
-	vidData[i].restart = 0;
+		// Set the sdp file for each node.
+		sprintf_s(vidData[i].filepath, "test%d.sdp", (i + 1));
+
+		// Print the file path for debugging.
+		printf("Filepath = %s\n", vidData[i].filepath);
+
+		// changed this to use member function.
+		if (vidData[i].startFFMPEG() < 0)
+		{
+			printf("should not get here.\n");
+			return 0;
+		}
+		vidData[i].restart = 0;
+		vidData[i].windowName = i;
 
 		// Getting the start time for the node.
 		//vidData[i].begin = clock();
-	boost::scoped_thread<> t{ boost::thread{ thread } };
+		reads.add_thread(new boost::thread(thread, vidData[i]));
+		plays.add_thread(new boost::thread(play, vidData[i]));
+		//boost::scoped_thread<> t{ boost::thread{ thread } };
+		//boost::scoped_thread<> f{ boost::thread{ play } };
 
-		while (true)
-		{
-			//Sleep(100);
-			printf("count = %d\n", count);
-			if (pack[count].stream_index == vidData[i].videoindex)
-			{
-				ret = avcodec_decode_video2(vidData[i].pCodecCtx, vidData[i].pFrame, &vidData[i].got_picture, &pack[count]);
-				if (ret < 0)
-				{
-					printf("Decode Error.\n");
-					return -1;
-				}
-				if (vidData[i].got_picture)
-				{
-					if (vidData[i].convert_ctx == NULL)
-					{
-						fprintf(stderr, "Cannot initialize the conversion context!\n");
-						exit(1);
-					}
-
-					sws_scale(vidData[i].convert_ctx, vidData[i].pFrame->data, vidData[i].pFrame->linesize, 0,
-						vidData[i].pFrame->height, vidData[i].dst.data, vidData[i].dst.linesize);
-
-					//Convert the received frame to OpenCV format.
-					vidData[i].m = cv::Mat(vidData[i].pFrame->height, vidData[i].pFrame->width, CV_8UC1,
-						vidData[i].dst.data[0], vidData[i].dst.linesize[0]);
-					char window[5];
-					sprintf_s(window, "%d", i);
-					cv::imshow(window, vidData[i].m);
-					cv::waitKey(20);
-
-				}
-			}
-			av_free_packet(&pack[count]);
-			if (count < packetNum)
-			{
-				count++;
-			}
-			else
-			{
-				count = 0;
-			}
-		}
-
+	}
+	reads.join_all();
+	plays.join_all();
 	//If the code ever reaches here close the pipe before finishing.
 	delete[] vidData;
 	return 0;
