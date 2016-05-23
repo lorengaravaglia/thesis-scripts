@@ -21,6 +21,9 @@ extern char 				 filepath[];
 extern int				     videoindex;
 */
 
+
+int packetNum = 5000;
+
 //Loren: Added for running ffmpeg process.
 struct FFMPEGData {
 AVFormatContext		 *pFormatCtx;
@@ -36,6 +39,9 @@ struct SwsContext    *convert_ctx;
 int					 videoindex, restart;
 //enum PixelFormat	 dst_pixfmt = PIX_FMT_BGR24;
 char 				 filepath[100]; // = "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test.sdp";
+
+
+AVPacket* pack;// = new AVPacket[5000];
 
 	FFMPEGData()
 	{
