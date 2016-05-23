@@ -78,6 +78,8 @@ int nodeNumber = 2;
 
 FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
+boost::thread_group plays;
+
 int FFMPEGData::startFFMPEG()
 {
 	pFormatCtx = avformat_alloc_context();
@@ -145,29 +147,6 @@ int FFMPEGData::startFFMPEG()
 }
 
 
-void thread(FFMPEGData &vidData)
-{
-	int counter = 0;
-	while (true)
-	{
-		printf("\tthread count = %d\n", counter);
-		// Read frames from the stream.
-		if (av_read_frame(vidData.pFormatCtx, &vidData.pack[counter]) != AVERROR(EAGAIN))
-		{
-			if (counter < packetNum)
-			{
-				counter++;
-			}
-			else
-			{
-				counter = 0;
-			}
-		}
-
-		//Sleep(25);
-	}
-}
-
 
 void play(FFMPEGData &vidData)
 {
@@ -220,13 +199,45 @@ void play(FFMPEGData &vidData)
 
 }
 
+
+void thread(FFMPEGData &vidData)
+{
+	int counter = 0;
+	// changed this to use member function.
+	if (vidData.startFFMPEG() < 0)
+	{
+		printf("should not get here.\n");
+	}
+	plays.add_thread(new boost::thread(play, vidData));
+	while (true)
+	{
+		printf("\t\tthread count = %d\n", counter);
+		// Read frames from the stream.
+		if (av_read_frame(vidData.pFormatCtx, &vidData.pack[counter]) != AVERROR(EAGAIN))
+		{
+			if (counter < packetNum)
+			{
+				counter++;
+			}
+			else
+			{
+				counter = 0;
+			}
+		}
+
+		//Sleep(25);
+	}
+}
+
+
+
 using namespace std;
 
 int main(int argc, char **argv)
 {
 	int i = 0;
 	boost::thread_group reads;
-	boost::thread_group plays;
+	
 	//std::vector<FFMPEGData> vidData;
 	//FFMPEGData* vidData = new FFMPEGData[nodeNumber];
 
@@ -244,19 +255,11 @@ int main(int argc, char **argv)
 		// Print the file path for debugging.
 		printf("Filepath = %s\n", vidData[i].filepath);
 
-		// changed this to use member function.
-		if (vidData[i].startFFMPEG() < 0)
-		{
-			printf("should not get here.\n");
-			return 0;
-		}
 		vidData[i].restart = 0;
 		vidData[i].windowName = i;
 
-		// Getting the start time for the node.
-		//vidData[i].begin = clock();
-		reads.add_thread(new boost::thread(thread, vidData[i]));
-		plays.add_thread(new boost::thread(play, vidData[i]));
+		reads.add_thread(new boost::thread(thread, boost::ref(vidData[i])));
+		// plays.add_thread(new boost::thread(play, vidData[i]));
 		//boost::scoped_thread<> t{ boost::thread{ thread } };
 		//boost::scoped_thread<> f{ boost::thread{ play } };
 
