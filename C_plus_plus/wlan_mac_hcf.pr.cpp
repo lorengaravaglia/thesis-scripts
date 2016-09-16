@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 573798F7 573798F7 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57DB5D74 57DB5D74 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -695,6 +695,8 @@ static void							wlan_hcf_cw_values_adjust (void);
 static void 						wlan_hcf_find_new_ap_virtual (void);
 static int							wlan_hcf_seq_a_minus_seq_b (int seq_a, int seq_b, int block_size);
 static void							wlan_hcf_ptr_fields_print_functions_set (void);
+						
+void				startFFMPEGH264(FFMPEGData &vidData, int node);
 
 						
 						
@@ -792,7 +794,7 @@ CvHaarClassifierCascade* cascade = 0;
 
 int framesCounter = 0;
 
-enum PixelFormat	 dst_pixfmt = AV_PIX_FMT_YUV420P; //AV_PIX_FMT_GRAY8; //PIX_FMT_BGR24;
+enum PixelFormat	 dst_pixfmt = AV_PIX_FMT_BGR24;//AV_PIX_FMT_YUV420P; //AV_PIX_FMT_GRAY8; //PIX_FMT_BGR24;
 
 /*
 extern AVCodecContext		 *pCodecCtx;
@@ -810,6 +812,7 @@ cv::VideoCapture cap;
 */
 
 int imwriteFlag = 0;
+int imgCount = 1;
 
 /* Callback functions		*/
 #if defined (__cplusplus)
@@ -13960,11 +13963,11 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	FIN (faceRecognition (img, testImg, d, src_addr));
 	
 	//Loren
-	if(LorenDebugFlag)
-	{
+	//if(LorenDebugFlag)
+	//{
 		sprintf(myString,"Entering face recognition function with image from node %d", (int)src_addr);
 		op_prg_odb_print_major(myString,OPC_NIL);
-	}
+	//}
 			
 
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
@@ -14014,68 +14017,78 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
 		
 		//Loren
-		if(LorenDebugFlag)
-		{
+		//if(LorenDebugFlag)
+		//{
 			sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//}
 
 
 		
 		if((int)src_addr == 1)
 		{
-			if(LorenDebugFlag)
-			{
+		
+			//if(LorenDebugFlag)
+			//{
 				sprintf(myString,"About to check if testImg is empty, (%d)", (int)testImg.empty());
 				op_prg_odb_print_major(myString,OPC_NIL);
-			}
+			//}
 			
 			if(testImg.empty())
 			{
 				//exit the function
+				printf("Exiting the function.\n");
 				FOUT;
 			}
+				
+			imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg1.jpg", testImg);
 			//Loren
-			if(LorenDebugFlag)
-			{
+			//if(LorenDebugFlag)
+			//{
 				sprintf(myString,"About to clone testImg into gray");
 				op_prg_odb_print_major(myString,OPC_NIL);
-			}
+			//}
 			
 			gray = testImg.clone();
 			
-			if(LorenDebugFlag)
-			{
+			//if(LorenDebugFlag)
+			//{
 				sprintf(myString,"About to print images");
 				op_prg_odb_print_major(myString,OPC_NIL);
+			//}
+				
+			if(gray.empty())
+			{
+				FOUT;
 			}
 			
 			//if(imwriteFlag == 0)
 			//{
-			//	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", testImg);
-			//	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
+				
+				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
 			//	imwriteFlag = 1;
 			//}
 			
-			if(LorenDebugFlag)
-			{
+			//if(LorenDebugFlag)
+			//{
 				sprintf(myString,"passed print image instructions, about to get gray image type.");
 				op_prg_odb_print_major(myString,OPC_NIL);
-			}
+			//}
 			
 			int type = gray.type();
 			
-			if(LorenDebugFlag)
-			{
+			//if(LorenDebugFlag)
+			//{
 				sprintf(myString,"got gray image type, about to check it. (%d)", type);
 				op_prg_odb_print_major(myString,OPC_NIL);
-			}
+			//}
 			if(type)
 			{
 				//printf("about to call cvtcolor\n");
 				cvtColor(gray, gray, CV_BGR2GRAY);
 				//printf("just called cvtcolor\n");
 			}
+
 		}
 		else
 		{
@@ -14108,20 +14121,20 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		//frame.deallocate();
 	
 		
-		if(LorenDebugFlag)
-		{
+		//if(LorenDebugFlag)
+		//{
 			sprintf(myString,"finished initializing gray image.");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//}
 		// Find the faces in the frame:
 		std::vector< cv::Rect_<int> > faces;
 		
 		
-		if(LorenDebugFlag)
-		{
+		//if(LorenDebugFlag)
+		//{
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//}
 		haar_cascade.detectMultiScale(gray, faces);
 		
 		//haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
@@ -14133,11 +14146,11 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		int size = (int)faces.size();
 		
 		// print number of detected faces
-		if(LorenDebugFlag)
-		{
+		//if(LorenDebugFlag)
+		//{
 			sprintf(myString,"Number of detected faces this loop = %d", size);
 			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//}
 
 		if(size != 0)
 		{
@@ -14298,6 +14311,38 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 
 
 
+void startFFMPEGH264(FFMPEGData &vidData, int node)
+{
+
+	FIN (startFFMPEGH264(vidData,node));
+	
+	/* find the mpeg1 video decoder */
+    vidData.pCodec1 = avcodec_find_decoder(AV_CODEC_ID_H264);
+    if (!vidData.pCodec1) {
+        fprintf(stderr, "Codec not found\n");
+        //exit(1);
+    }
+	
+    vidData.pCodecCtx1 = avcodec_alloc_context3(vidData.pCodec1);
+    if (!vidData.pCodecCtx1) {
+        fprintf(stderr, "Could not allocate video codec context\n");
+        //exit(1);
+    }
+	
+    if(vidData.pCodec1->capabilities&CODEC_CAP_TRUNCATED)
+        vidData.pCodecCtx1->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
+   
+	/* For some codecs, such as msmpeg4 and mpeg4, width and height
+       MUST be initialized there because this information is not
+       available in the bitstream. */
+	
+    /* open it */
+    if (avcodec_open2(vidData.pCodecCtx1, vidData.pCodec1, NULL) < 0) {
+        fprintf(stderr, "Could not open codec\n");
+        //exit(1);
+    }
+	FOUT;
+}
 
 
 
@@ -14420,23 +14465,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		int rows = 0, cols = 0;
 		int ret, got_picture;
 		cv::Size s_source;
+		int faceRecogFlag = 1;
 		
-		/*
-		AVFrame				 *pFrame;
-		uint8_t				 *out_buffer;
 		
-		AVFrame				 dst;
-
-		struct SwsContext    *convert_ctx;
-		*/
-		
-		AVPacket			 *recv_ffmpeg_packet;
+		//AVPacket			 recv_ffmpeg_packet;
 		
 		int ID = (int)src_addr - 1;
 		
 		//printf("ID = %d\n", ID);
 		
-		recv_ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
+		//recv_ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
+		
 		//Loren
 		if(LorenDebugFlag)
 		{
@@ -14494,6 +14533,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 				printf("got frame size in packets\n\n");
 			}
+			
 		
 		}
 		else
@@ -14513,8 +14553,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		//printf("I am %d: got packet from node %d. Frame Number = %d  Packet Number = %d  Frame Size in Packets = %d\n", (int)my_address, (int)src_addr, (int)frameN, (int)packetN, (int)FrameSizeInPackets);
 		
 		
-		if(current_time > EAestimationTime+1)// time sensitive
+		if(current_time > EAestimationTime)// time sensitive
 		{
+		
+			if(strcmp(fmt_name, "my_rtp_pkt") == 0)
+			{
 			//loren debugging
 			if(LorenDebugFlag)
 			{
@@ -14555,40 +14598,70 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				printf("after getting creating array.\n");
 			}
 			
-			
+			//av_init_packet(recv_ffmpeg_packet);
 			/* don't want to do this right now */
-			op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
+			//op_pk_nfd_get (seg_pkptr, "data", recv_ffmpeg_packet);
 			 
-			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("after getting data array.\n");
-			}
-			
-			
+		
 			if((int)src_addr == 1)
 			{
+				//printf("Initializing packet.\n");
+				//av_init_packet(&recv_ffmpeg_packet);
+				//recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
+				//recv_ffmpeg_packet.size = 0;
+				//printf("Getting rtp data\n");
+				//op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
+				//printf("done getting rtp data\n");
+			
+				if(vidData[ID].startH264 == 1)
+				{
+					startFFMPEGH264(vidData[ID], ID);
+					vidData[ID].startH264 = 0;
+				}
+			
+				//printf("about to allocate frame.\n");
 				vidData[ID].pFrame=av_frame_alloc();
+				vidData[ID].dst = av_frame_alloc();
 				
-				vidData[ID].out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height));
+				//printf("allocated frame, about to allocate out buffer.\n");
 				
-				avpicture_fill((AVPicture *)&vidData[ID].dst, vidData[ID].out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+				vidData[ID].out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height) * sizeof(uint8_t));
+				
+				//printf("allocated out buffer, about to fill picture.\n");
+				
+				avpicture_fill((AVPicture *)vidData[ID].dst, vidData[ID].out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+				
+				//printf("filled picture, setting convert context.\n");
 				
 				vidData[ID].convert_ctx = sws_getContext(vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height, vidData[ID].pCodecCtx->pix_fmt, vidData[ID].pCodecCtx->width, 
 					                         vidData[ID].pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+				/*vidData[ID].pCodecCtx->pix_fmt*/
+				
+				//printf("finished setting convert context.\n");
 				
 				if(LorenDebugFlag)
 				{
-					printf("packet = %d\n", sizeof(recv_ffmpeg_packet->data));
-					printf("packet size = %d\n", recv_ffmpeg_packet->size);
-					printf("got packet, checking stream index. it equals: %d. videoindex = %d\n", (int)recv_ffmpeg_packet->stream_index, vidData[ID].videoindex);
+					//printf("packet = %d\n", sizeof(recv_ffmpeg_packet.data));
+					//printf("packet size = %d\n", recv_ffmpeg_packet.size);
+					//printf("got packet, checking stream index. it equals: %d. videoindex = %d\n", (int)recv_ffmpeg_packet.stream_index, vidData[ID].videoindex);
 				}
 				
-				if(recv_ffmpeg_packet->stream_index == vidData[ID].videoindex)
+				//printf("about to check stream index.\n");
+				
+				if(vidData[ID].pkt.stream_index == vidData[ID].videoindex)
 				{
+					
+					//char* filename = "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\FFMPEG testing\\FFMPEG testing\\test1.h264";
+					uint8_t end[] = { 0, 0, 1, 0xb7 };
+					
+										
 					//printf("about to decode packet.\n");
-					ret = avcodec_decode_video2(vidData[ID].pCodecCtx, vidData[ID].pFrame, &got_picture, recv_ffmpeg_packet);
+
+					printf("decoding packet\n");
+					ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
+
+						
+					//printf("finished decode.\n");
 					//printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
 					if(ret < 0)
 					{
@@ -14596,9 +14669,23 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						//break;
 						//return -1;
 					}
-					//printf("got_picture = %d\n", got_picture);
+					
+					//printf(" adjusting the packet\n");
+					if(vidData[ID].pkt.data)
+					{
+						printf("packet stuff\n");
+						vidData[ID].pkt.size -= ret;
+						vidData[ID].pkt.data += ret;
+					}
+					
+					//printf("checking got picture.\n");
+					printf("got_picture = %d\n", got_picture);
+					faceRecogFlag = got_picture;
 					if(got_picture)
 					{
+					
+						
+						printf("got picture.\n");
 						if(vidData[ID].convert_ctx == NULL)
 						{
 							printf("Cannot initialize the conversion context!\n");
@@ -14607,44 +14694,83 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 						else
 						{
+						
+						printf("about to set scale.\n");
 						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
 						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
 						sws_scale(vidData[ID].convert_ctx, (const uint8_t* const*)vidData[ID].pFrame->data, vidData[ID].pFrame->linesize, 0, vidData[ID].pFrame->height,
-						          vidData[ID].dst.data, vidData[ID].dst.linesize);
-				
+						          vidData[ID].dst->data, vidData[ID].dst->linesize);
+						
+						
+						printf("about to print image.\n");
+						FILE *e;
+						int i;
+						char buf[1024];
+						
+						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
+						e=fopen(buf,"w");
+						fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
+						for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
+							fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
+						fclose(e);
+						
+						imgCount++;
+						
+						
+						
+						printf("populating mat size.\n");
 						s_source = m.size();
 						rows = s_source.height;
 						cols = s_source.width;
 						
+						
+						
 						//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 									
-									
-						m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC1, vidData[ID].dst.data[0], vidData[ID].dst.linesize[0]);
+						printf("populating mat data.\n");			
+						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].dst->data[0], vidData[ID].dst->linesize[0]);
+						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
+						
+						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
+						
 									
 						s_source = m.size();
 						rows = s_source.height;
 						cols = s_source.width;
-						//printf("I am %d: Second Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
+						printf("I am %d: Second Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 						
 						//break;
 						}
 					}
 				}
 				//printf("I am %d: freeing packet.\n", (int)my_address);
-				//av_free_packet(recv_ffmpeg_packet);
+				//av_free_packet(&recv_ffmpeg_packet);
+				
+				//Don't do this one.
+				
+				//printf("Freeing buffer\n");
+				av_free(vidData[ID].out_buffer);
+				
+				//printf("Freeing recv_ffmpeg_packet\n");
+				//av_free_packet(&recv_ffmpeg_packet);
 				
 				//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
+				
+				
+				//printf("trying to unref pkt\n");
+				av_packet_unref(&vidData[ID].pkt);
+				
+				//printf("freeing sws context.\n");
 				sws_freeContext(vidData[ID].convert_ctx);
+				
+				//printf("freeing frame.\n");
 				av_frame_free(&vidData[ID].pFrame);
-				//av_free_packet(ffmpeg_packet);
+				
+				//printf("trying to free dst\n");
+				av_frame_free(&vidData[ID].dst);
 			}
-			
-	
-						
-			
-			
-			//avcodec_close(pCodecCtx);
-			//avformat_close_input(&pFormatCtx);
+
+			}
 			
 		}
 		
@@ -15036,7 +15162,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							trainFaces();
 							trainingCompleteFlag = 1;
 						}
-						if(trainingCompleteFlag)
+						if(trainingCompleteFlag  && faceRecogFlag)
 						{
 							faceRecognition(cvImage, m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 						}
@@ -15049,6 +15175,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n",accuracy, accuracyError);
 							fclose(opencvDebugFile);
 						}
+						
+						//m.release();
 								
 						cvReleaseImage( &cvImage );
 						cvReleaseImage( &originalImage );
@@ -15368,7 +15496,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						trainFaces();
 						trainingCompleteFlag = 1;
 					}
-					if(trainingCompleteFlag)
+					if(trainingCompleteFlag  && faceRecogFlag)
 					{
 						faceRecognition(cvImage, m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 					}
@@ -15380,6 +15508,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					{
 						printf("from accuracy = %lf, accuracyError = %lf\n",accuracy, accuracyError);
 					}
+					
+					//printf("releasing images.\n");
+					//m.release();
 					
 					cvReleaseImage( &cvImage );
 					cvReleaseImage( &originalImage );
@@ -15685,6 +15816,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		}
 		
 		packetCounter[(int)src_addr]++;
+		
+		
 		//if(opencvDebugFlag)
 		//printf("my statistics done\n");
 		

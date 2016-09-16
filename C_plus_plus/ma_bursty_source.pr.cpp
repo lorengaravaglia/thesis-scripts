@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5742014B 5742014B 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57DB4AAD 57DB4AAD 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -29,9 +29,6 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 574
 #include "opencv2\imgproc\imgproc.hpp"
 #include "opencv2\objdetect\objdetect.hpp"
 
-#include <boost/thread.hpp>
-#include <boost/thread/scoped_thread.hpp>
-#include <boost/chrono.hpp>
 
 //#include "cv.h"
 //#include "highgui.h"
@@ -53,10 +50,16 @@ const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 574
 #define __STDC_CONSTANT_MACROS
 extern "C"
 {
+#include "libavutil/opt.h"
 #include "libavcodec/avcodec.h"
+#include "libavutil/channel_layout.h"
+#include "libavutil/common.h"
 #include "libavformat/avformat.h"
 #include "libswscale/swscale.h"
 #include "libavutil/pixfmt.h"
+#include "libavutil/imgutils.h"
+#include "libavutil/mathematics.h"
+#include "libavutil/samplefmt.h"
 }
 
 #pragma comment(lib, "avcodec.lib")
@@ -80,10 +83,23 @@ extern "C"
 #define	REMAIN_ACTIVE		(intrpt_type == OPC_INTRPT_SELF && intrpt_code == ON_TO_ON || intrpt_type == OPC_INTRPT_STAT)//mohammad
 #define	ACTIVE_TO_INACTIVE	(intrpt_type == OPC_INTRPT_SELF && intrpt_code == ON_TO_OFF)
 
+#define INT64_MAX (9223372036854775807LL)
+#define INT64_MIN (-9223372036854775807LL-1)
+
+
+
+AVCodec *codec;
+AVCodecID codec_id = AV_CODEC_ID_H264;
+AVCodecContext *c = NULL;
+AVFrame *frame;
+
+
 /* Function Declarations.	*/
 static void			bursty_source_sv_init ();
-void				startFFMPEG(FFMPEGData &vidData, int node);
-void				read(FFMPEGData &vidData, int node);
+void				startFFMPEG(FFMPEGData &vidData, int bitrate);
+void				stopFFMPEG(FFMPEGData &vidData);
+//void				startFFMPEGH264(FFMPEGData &vidData, int node);
+//void				read(FFMPEGData &vidData, int node);
 
 /*
 OmsT_Dist_Handle           on_state_dist_handle;
@@ -132,17 +148,22 @@ int					 numOff = 5;
 double				 prevAppRate = 0;
 int					 createPipeFlag = 0;
 
+
+
 FILE * appRateOutputFile;
 char myAppRateTraceName[100];
 int frameCount = 0;
 FILE * frameTime;
 
+/*
 HANDLE hPipe;
 DWORD dwWritten = 0;
 char message[20];
-
-boost::thread_group reads;
-
+int start = 0;
+*/
+int64_t pts = 0, dts = 0;
+int64_t last_pts = 0;
+int64_t last_dts = 0;
 
 /* End of Header Block */
 
@@ -620,20 +641,12 @@ bursty_source_sv_init ()
 	{
 		if(vidData[ID].restart == 1)
 		{
-			startFFMPEG(vidData[ID], ID);
+			startFFMPEG(vidData[ID], (int)appRate);
 			//printf("filepath = %s\n", vidData[ID].filepath);
 			//vidData[ID].restart = 0;
-			vidData[ID].pack = new AVPacket[5000];
-			reads.add_thread(new boost::thread(read, boost::ref(vidData[ID]), ID));
+			//vidData[ID].pack = new AVPacket[5000];
+			//reads.add_thread(new boost::thread(read, boost::ref(vidData[ID]), ID));
 		}
-		//printf("about to create pipe file.\n");
-		hPipe = CreateFile(TEXT("\\\\.\\pipe\\Pipe"), 
-						  GENERIC_READ | GENERIC_WRITE, 
-	                      0,
-	                      NULL,
-	                      OPEN_EXISTING,
-	                      0,
-	                      NULL);
 
 	}
 	
@@ -641,10 +654,12 @@ bursty_source_sv_init ()
 }
 
 
-void startFFMPEG(FFMPEGData &vidData, int node)
+void startFFMPEG(FFMPEGData &vidData, int bitrate)
 {
-	char sdp[100];
-	FIN (startFFMPEG(vidData, node));
+	//char sdp[100];
+	FIN (startFFMPEG(vidData, bitrate));
+	
+	printf("Bitrate = %d\n", bitrate);
 	
 	/* This FFMPEG code is based off the Dranger Tutorials at http://dranger.com/ffmpeg/ */
 	/* FFMPEG version 2.8 Zeranoe implementation used. 									 */
@@ -653,10 +668,8 @@ void startFFMPEG(FFMPEGData &vidData, int node)
 	//printf("Calling ffmpeg code.\n");
 	
 	//translate the node number into the proper sdp file name.
-	sprintf(sdp, "C:\\OPNET\\14.5.A\\models\\std\\before GT30\\traf_gen\\test%d.sdp", node + 1);
-	printf("%s\n", sdp);
-	
-	strcpy(vidData.filepath, sdp);
+	sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad2.avi");
+	//strcpy(vidData.filepath, sdp);
 	
 	//Load ffmpeg stream
 	vidData.pFormatCtx = avformat_alloc_context();
@@ -664,6 +677,7 @@ void startFFMPEG(FFMPEGData &vidData, int node)
 	//printf("ffmpeg_flag = %d\n", ffmpeg_flag);
 
 	//Open the input stream using the filepath. In this case it is the external stream from my FFMPEG streaming program.
+	printf("%s\n", vidData.filepath);
 	if(avformat_open_input(&vidData.pFormatCtx, vidData.filepath,NULL,NULL)!=0)
 	{
 		printf("Couldn't open input stream.\n");
@@ -707,45 +721,82 @@ void startFFMPEG(FFMPEGData &vidData, int node)
 		printf("Could not open codec.\n");
 	    //return -1;
 	}
-
-	//Allocate memory for ffmpeg packet.
-	vidData.ffmpeg_packet=(AVPacket *)av_malloc(sizeof(AVPacket));
 	
+    /* find the mpeg1 video encoder */
+	codec = avcodec_find_encoder(codec_id);
+	if (!codec) 
+	{
+		fprintf(stderr, "Codec not found\n");
+		//exit(1);
+	}
+
+	c = avcodec_alloc_context3(codec);
+	if (!c) 
+	{
+		fprintf(stderr, "Could not allocate video codec context\n");
+		//exit(1);
+	}
+
+	/* put sample parameters */
+	c->bit_rate = bitrate;	//(int)appRate;
+	/* resolution must be a multiple of two */
+	c->width = 640;
+	c->height = 480;
+	/* frames per second */
+	AVRational test;
+	test.den = 14;
+	test.num = 1;
+	c->time_base = test;
+	/* emit one intra frame every ten frames
+	* check frame pict_type before passing frame
+	* to encoder, if frame->pict_type is AV_PICTURE_TYPE_I
+	* then gop_size is ignored and the output of encoder
+	* will always be I frame irrespective to gop_size
+	*/
+	c->gop_size = 10;
+	c->max_b_frames = 1;
+	c->pix_fmt = AV_PIX_FMT_YUV420P;
+
+	av_opt_set(c->priv_data, "preset", "slow", 0);
+
+	/* open it */
+	if (avcodec_open2(c, codec, NULL) < 0) 
+	{
+		fprintf(stderr, "Could not open codec\n");
+		//exit(1);
+	}
+
+
+	printf("pts = %lld\n", pts);
+	if (avformat_seek_file(vidData.pFormatCtx, vidData.videoindex, INT64_MIN, pts, INT64_MAX, 0) < 0)
+	{
+		printf("error moving to beginning of file.\n");
+	}
+	else
+	{
+		printf("succeeded seeking to beginning of file.\n");
+		last_dts += dts;
+		last_pts += pts;
+		// Need to flush codec buffer before starting encoding over.
+		avcodec_flush_buffers(vidData.pCodecCtx);
+	}
 	FOUT;
 }
 
 
-void read(FFMPEGData &vidData, int node)
+void stopFFMPEG(FFMPEGData &vidData)
 {
-	int counter = 0;
-	int packetNum = 10;
+	FIN (startFFMPEG(vidData));
+	avcodec_close(c);
 	
-	FIN (read(vidData));
-	// changed this to use member function.
-	/*
-	if (vidData.startFFMPEG() < 0)
-	{
-		printf("should not get here.\n");
-	}
-	*/
-	while (true)
-	{
-		printf("\t\tthread count = %d\n", counter);
-		// Read frames from the stream.
-		if (av_read_frame(vidData.pFormatCtx, &vidData.pack[counter]) != AVERROR(EAGAIN))
-		{
-			if (counter < packetNum)
-			{
-				counter++;
-			}
-			else
-			{
-				counter = 0;
-			}
-		}
+	//printf("Closing the codec context\n");
+	avcodec_close(vidData.pCodecCtx);
+	
+	//printf("Closing the format context\n");
+	avformat_close_input(&vidData.pFormatCtx);
+	
+	FOUT;
 
-		Sleep(333);
-	}
 }
 
 /* End of Function Block */
@@ -1083,56 +1134,35 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 					// Determine whether we need to notify the control program that the bitrate has changed.
 					// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
-					/*
+					
 					if(ID == 0)
 					{
 					if((appRate >= (prevAppRate + 100)) || (appRate <= (prevAppRate - 100)))
 					{
 					
-						//printf("Node: %s, ID: %d\n", parentName, ID);
-						// Create the string with the correct format to be handled by the control program.
-						sprintf_s(message, "%d,%d", ID, (int)appRate);
+						printf("Node: %s, ID: %d\n", parentName, ID);
 						
-						// Named Pipe Stuff 
+				
 						
-								
-						//printf("checking if pipe handle is valid.\n");
-						if (hPipe != INVALID_HANDLE_VALUE)
-						{
-							//printf("About to write to pipe.\n");
-							WriteFile(hPipe,
-									 message,				
-								     sizeof(message),						 // = length of string + terminating '\0' !!!
-								     &dwWritten,
-								     NULL);
-							
-							//printf("about to close pipe handle.\n");				
-							//CloseHandle(hPipe);
-						}
-						
-						// Prepare for restartj
-						//printf("preparing for restart\n");
-						//av_free_packet(vidData[ID].ffmpeg_packet);
-						//printf("1\n");
-						//sws_freeContext(vidData[ID].convert_ctx);
-						//printf("2\n");
-						//av_frame_free(&vidData[ID].pFrame);
-						//printf("3\n");
-						avcodec_close(vidData[ID].pCodecCtx);
-						//printf("4\n");
-						avformat_close_input(&vidData[ID].pFormatCtx);
+						// Prepare for restart
+						printf("preparing for restart\n");
+				
+						stopFFMPEG(vidData[ID]);
 						
 						//printf("about to sleep\n");
-						Sleep(1000);
+						
+						//uncomment this
+						//Sleep(1000);
 						//printf("done sleeping, calling startFFMPEG.\n");
 						
 						// Restart the stream.
-						startFFMPEG(vidData[ID], ID);
-						//printf("done with startFFMPEG.\n");
+						
+						//uncomment this
+						startFFMPEG(vidData[ID], (int)appRate);
+						printf("done with startFFMPEG.\n");
 						prevAppRate = appRate;
 					}
 					}
-					*/
 					
 					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
 					{
@@ -1447,14 +1477,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 								if(compare == 0)
 								{
-									if(Node_LorenDebugFlag)
-									{
-										printf("filepath = %s\n", vidData[ID].filepath);
-										//Output Info-----------------------------
-										printf("--------------- File Information ----------------\n");
-										av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
-										printf("-------------------------------------------------\n");
-									}
+				
 									
 									/*
 									
@@ -1535,10 +1558,200 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								if(compare == 0)
 								{
-								//char myarray[7400] = {0};
-									op_pk_nfd_set (pkptr, "data", vidData[ID].ffmpeg_packet, op_prg_mem_copy_create, op_prg_mem_free, sizeof(AVPacket));
 								
+									if(Node_LorenDebugFlag)
+									{
+										printf("filepath = %s\n", vidData[ID].filepath);
+										//Output Info-----------------------------
+										printf("--------------- File Information ----------------\n");
+										av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
+										printf("-------------------------------------------------\n");
+									}
 									
+									AVPacket          packt;
+									AVFrame           *pFrame = NULL;
+									AVFrame           *pFrameRGB = NULL;
+									uint8_t           *buffer = NULL;
+									int retrn, got_output, numBytes, frameFinished;
+									struct SwsContext *sws_ctx = NULL;
+						
+									//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
+				
+									printf("Encode video file %s\n", vidData[ID].filepath);
+				
+									frame = av_frame_alloc();
+									if (!frame) 
+									{
+										fprintf(stderr, "Could not allocate video frame\n");
+										//exit(1);
+									}
+									frame->format = c->pix_fmt;
+									frame->width = c->width;
+									frame->height = c->height;
+									
+									retrn = av_image_alloc(frame->data, frame->linesize, c->width, c->height,
+												c->pix_fmt, 32);
+									if (retrn < 0) 
+									{
+										fprintf(stderr, "Could not allocate raw picture buffer\n");
+										//exit(1);
+									}
+									
+									//printf("Passed av_image_alloc\n");
+				
+									// Allocate an AVFrame structure
+									pFrame = av_frame_alloc();
+									pFrameRGB = av_frame_alloc();
+									
+									if (pFrameRGB == NULL)
+										return;
+									
+				
+									
+									//printf("Passed frame allocation\n");
+				
+									// Determine required buffer size and allocate buffer
+									numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
+											vidData[ID].pCodecCtx->height);
+									buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+									
+									//printf("Passed numbytes and buffer initialization\n");
+				
+									// Assign appropriate parts of buffer to image planes in pFrameRGB
+									// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+									// of AVPicture
+									avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
+											vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+									
+									//printf("Passed avpicture_fill\n");
+				
+									// initialize SWS context for software scaling
+									sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
+											vidData[ID].pCodecCtx->height,
+											vidData[ID].pCodecCtx->pix_fmt,
+											vidData[ID].pCodecCtx->width,
+											vidData[ID].pCodecCtx->height,
+											AV_PIX_FMT_YUV420P,
+											SWS_BILINEAR,
+											NULL,
+											NULL,
+											NULL
+											);
+									
+									//printf("Passed sws_getContext\n");
+									
+									av_init_packet(&packt);
+									packt.data = NULL;    // packet data will be allocated by the encoder
+									packt.size = 0;
+									
+				
+									av_init_packet(&vidData[ID].pkt);
+									
+									//printf("Passed packet init\n");
+									
+									vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
+									vidData[ID].pkt.size = 0;
+									
+									//printf("Passed packet value set\n");
+				
+									fflush(stdout);
+									
+									//printf("Passed flush\n");
+				
+									if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
+									{
+										if (avformat_seek_file(vidData[ID].pFormatCtx, vidData[ID].videoindex, INT64_MIN, 0, INT64_MAX, 0) < 0)
+										{
+											printf("error moving to beginning of file.\n");
+										}
+										else
+										{
+											printf("succeeded seeking to beginning of file.\n");
+											last_dts += dts;
+											last_pts += pts;
+				
+											// Need to flush codec buffer before starting encoding over.
+											avcodec_flush_buffers(vidData[ID].pCodecCtx);
+										}
+									}
+									
+									packt.flags |= AV_PKT_FLAG_KEY;
+									pts = packt.pts;
+									packt.pts += last_pts;
+									dts = packt.dts;
+									packt.dts += last_dts;
+									//printf("Passed read frame\n");
+									
+									// Is this a packet from the video stream?
+									if (packt.stream_index == vidData[ID].videoindex) 
+									{
+									
+										//printf("about to decode frame\n");
+										// Decode video frame
+										avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
+										
+										//printf("Passed decode\n");
+										// Did we get a video frame?
+										if (frameFinished) 
+										{
+											//printf("frame finished.\n");
+											// Convert the image from its native format to RGB
+											sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+												pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
+												frame->data, frame->linesize);
+										}
+									}
+									
+									//printf("about to set frame pts\n");
+				
+									frame->pts = pFrame->pkt_pts;
+									
+									//printf("set frame pts, about to encode\n");
+				
+									/* encode the image */
+									retrn = avcodec_encode_video2(c, &vidData[ID].pkt, frame, &got_output);
+									//printf("Passed encode\n");
+									
+									if (retrn < 0) 
+									{
+										printf("Error encoding frame\n");
+										//exit(1);
+									}
+									
+									
+									printf("got_output = %d\n", got_output);
+									if (got_output)
+									{
+				
+										//printf("Setting packet data\n");
+										op_pk_nfd_set (pkptr, "data", vidData[ID].pkt, op_prg_mem_copy_create, op_prg_mem_free, vidData[ID].pkt.size);
+										
+										//printf("Finished Setting packet data\n");
+										
+										//fwrite(vidData[ID].pkt.data, 1, vidData[ID].pkt.size, f);
+										//op_pk_nfd_set (pkptr, "data", pkt.data, op_prg_mem_copy_create, op_prg_mem_free, pkt.size);
+										//fwrite(pkt.data, 1, pkt.size, f);
+										//av_packet_unref(&pkt);
+									}
+									
+									vidData[ID].frameCount++;
+									
+									av_packet_unref(&packt);
+									
+									sws_freeContext(sws_ctx);
+									
+									av_free(buffer);
+									
+									printf("attempting to free frame at source node\n");
+									av_frame_free(&frame);
+									av_frame_free(&pFrameRGB);
+				
+									// Free the YUV frame
+									av_frame_free(&pFrame);
+									//printf("\n");
+									//op_pk_nfd_set (pkptr, "data", vidData[ID].ffmpeg_packet, op_prg_mem_copy_create, op_prg_mem_free, sizeof(AVPacket));
+								
+									//op_pk_print(pkptr);
 									//av_free_packet(ffmpeg_packet);
 								}
 								
@@ -1622,7 +1835,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							op_stat_write(my_packet_data_size_stat,frameDataPacketsSizeSum/FrameSizeInPackets);
 						}
 						
-					
+						printf("\n exiting function\n");
 						FrameCounter++;
 						PacketCounter = 0;
 						
@@ -1809,7 +2022,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							op_prg_odb_print_major(myString,OPC_NIL);
 						}
 					}
-					//printf("end of ma_bursty_source.\n");
+					printf("end of ma_bursty_source.\n");
 				}
 				}
 				FSM_PROFILE_SECTION_OUT (state2_enter_exec)
