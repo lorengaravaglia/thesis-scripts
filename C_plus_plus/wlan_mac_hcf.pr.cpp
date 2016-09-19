@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57DB5D74 57DB5D74 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57DF3E3D 57DF3E3D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -3922,6 +3922,8 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			addba_info_ptr->starting_seq_num = start_seq_num;
 			
 			/* Insert the structure into the packet.					*/
+			//Loren Debug
+			printf("Here1\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, addba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_ADDBA_Fields));
 			frame_size = WLANC_ACT_MGMT_ADDBA_SIZE;
@@ -3956,6 +3958,8 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			delba_info_ptr->initiator = ba_initiator;        
 			
 			/* Insert the structure into the packet.					*/
+			//Loren Debug
+			printf("Here2\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, delba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_DELBA_Fields));
 			frame_size = WLANC_ACT_MGMT_DELBA_SIZE;
@@ -5420,6 +5424,8 @@ wlan_hcf_control_frame_send (WlanT_Mac_Frame_Type frame_type, OpT_Int64 dest_add
 		op_pk_fd_set_int32 (wlan_transmit_frame_ptr, WLANC_CNTL_ACCEPT_FD, OPC_TRUE, OPC_FIELD_SIZE_UNCHANGED);
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
+			//Loren Debug
+			printf("Here3\n");
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_BA_FD, peer_tid_ba_info_ptr->block_ack_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -5654,6 +5660,8 @@ wlan_hcf_data_frame_send (WlanT_HCF_Hld_Info* hld_ptr)
 			qos_fields_ptr = (WlanT_QoS_Control_Fields *) op_prg_mem_alloc (sizeof (WlanT_QoS_Control_Fields));
 			qos_fields_ptr->tid        = hld_ptr->up;
 			qos_fields_ptr->ack_policy = hld_ptr->ack_policy;
+			//Loren Debug
+			printf("Here4\n");
 			op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_DATA_QOS_FD, qos_fields_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_QoS_Control_Fields));
 		
@@ -7224,6 +7232,8 @@ wlan_hcf_beacon_send (void)
 	/* if we are configured to do so.										*/
 	if (bss_edca_params_arr != OPC_NIL)
 		{
+		//Loren Debug
+			printf("Here5\n");
 		pk_bbstruct_ptr->edca_param_set_arr = (WlanT_AC_EDCA_Param_Rec *)
 			op_prg_mem_copy_create (bss_edca_params_arr, sizeof (WlanT_AC_EDCA_Param_Rec) * WLANC_HCF_AC_COUNT);
 		
@@ -7968,6 +7978,8 @@ wlan_hcf_ba_control_frame_send (WlanT_HCF_Hld_Info* ba_cntl_info_ptr)
 		op_pk_fd_set_int32 (ba_control_pkptr, WLANC_CNTL_ACCEPT_FD, OPC_TRUE, OPC_FIELD_SIZE_UNCHANGED);
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
+		//Loren Debug
+			printf("Here6\n");
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_BA_FD, ba_cntl_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -14033,6 +14045,8 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				sprintf(myString,"About to check if testImg is empty, (%d)", (int)testImg.empty());
 				op_prg_odb_print_major(myString,OPC_NIL);
 			//}
+				
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg2.jpg", testImg);
 			
 			if(testImg.empty())
 			{
@@ -14041,7 +14055,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				FOUT;
 			}
 				
-			imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg1.jpg", testImg);
+			//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg1.jpg", testImg);
 			//Loren
 			//if(LorenDebugFlag)
 			//{
@@ -14065,7 +14079,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			//if(imwriteFlag == 0)
 			//{
 				
-				imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
 			//	imwriteFlag = 1;
 			//}
 			
@@ -14357,6 +14371,7 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	OpT_Packet_Size					pkt_size;
 	char							msg_string [128];
 	cv::Mat	m;
+	cv::Mat test;
 	
 	
 	//Loren: Added for running ffmpeg process.
@@ -14468,7 +14483,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		int faceRecogFlag = 1;
 		
 		
-		//AVPacket			 recv_ffmpeg_packet;
+		AVPacket			 recv_ffmpeg_packet;
 		
 		int ID = (int)src_addr - 1;
 		
@@ -14606,11 +14621,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			if((int)src_addr == 1)
 			{
 				//printf("Initializing packet.\n");
-				//av_init_packet(&recv_ffmpeg_packet);
-				//recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
-				//recv_ffmpeg_packet.size = 0;
+				av_init_packet(&recv_ffmpeg_packet);
+				recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
+				recv_ffmpeg_packet.size = 0;
 				//printf("Getting rtp data\n");
-				//op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
+				op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
 				//printf("done getting rtp data\n");
 			
 				if(vidData[ID].startH264 == 1)
@@ -14702,6 +14717,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						          vidData[ID].dst->data, vidData[ID].dst->linesize);
 						
 						
+						/*
 						printf("about to print image.\n");
 						FILE *e;
 						int i;
@@ -14715,7 +14731,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						fclose(e);
 						
 						imgCount++;
-						
+						*/
 						
 						
 						printf("populating mat size.\n");
@@ -14731,7 +14747,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].dst->data[0], vidData[ID].dst->linesize[0]);
 						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
 						
-						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
+						//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
 						
 									
 						s_source = m.size();
@@ -14747,6 +14763,10 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//av_free_packet(&recv_ffmpeg_packet);
 				
 				//Don't do this one.
+				test = m.clone();
+				
+				//printf("before testImg10\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg10.jpg", test);
 				
 				//printf("Freeing buffer\n");
 				av_free(vidData[ID].out_buffer);
@@ -14756,24 +14776,39 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				
 				//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
 				
+				//printf("before testImg9\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg9.jpg", test);
+				
 				
 				//printf("trying to unref pkt\n");
 				av_packet_unref(&vidData[ID].pkt);
 				
+				//printf("before testImg8\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg8.jpg", test);
+				
 				//printf("freeing sws context.\n");
 				sws_freeContext(vidData[ID].convert_ctx);
+				
+				//printf("before testImg7\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg7.jpg", test);
 				
 				//printf("freeing frame.\n");
 				av_frame_free(&vidData[ID].pFrame);
 				
+				//printf("before testImg5\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg5.jpg", test);
+				
 				//printf("trying to free dst\n");
 				av_frame_free(&vidData[ID].dst);
+				//printf("before testImg6\n");
+				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg6.jpg", test);
 			}
 
 			}
 			
 		}
 		
+
 		//Loren
 		//printf("got test value (%d)\n", testValue);
 		
@@ -15154,8 +15189,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						
 						//sprintf(myString,"End FaceDetect");
 						//op_prg_odb_print_major(myString,OPC_NIL);
-						//sprintf(myString,"Start Face Recognition");
-						//op_prg_odb_print_major(myString,OPC_NIL);
+						sprintf(myString,"Start Face Recognition");
+						op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
 						{
@@ -15164,6 +15199,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
+							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
 							faceRecognition(cvImage, m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 						}
 						
@@ -15487,8 +15523,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					
 					//sprintf(myString,"End FaceDetect 1");
 					//op_prg_odb_print_major(myString,OPC_NIL);
-					//sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
+					op_prg_odb_print_major(myString,OPC_NIL);
 					
 					//Loren Call Face Recognition 2
 					if(trainingCompleteFlag == 0)
@@ -15498,7 +15534,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
-						faceRecognition(cvImage, m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
+					    //imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg3.jpg", test);
+						faceRecognition(cvImage, test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 					}
 					
 					//sprintf(myString,"End FaceRecognition 1");
