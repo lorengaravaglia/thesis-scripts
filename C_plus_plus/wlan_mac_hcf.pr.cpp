@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57DF3E3D 57DF3E3D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E1E52C 57E1E52C 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -720,7 +720,7 @@ int myStringDebug = 0;
 int fee_lambda_trace_flag = 0;
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
-int LorenDebugFlag = 0;
+int LorenDebugFlag = 1;
 
 FILE * opencvDebugFile;
 
@@ -13961,9 +13961,11 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	cv::Mat gray;
 	char pred[5] = "s00";
 	int prediction = 0;
+	char path[200] = "";
+	int ID = (int)src_addr - 1;
 	
 	// Min and max face sizes used to speed up face detection.
-    int min_face_size = 150;
+    int min_face_size = 100;
     int max_face_size = 250;
 
     // Image height and width for the resized image used in prediction.
@@ -14037,8 +14039,8 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 
 
 		
-		if((int)src_addr == 1)
-		{
+		//if((int)src_addr == 1)
+		//{
 		
 			//if(LorenDebugFlag)
 			//{
@@ -14054,8 +14056,10 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				printf("Exiting the function.\n");
 				FOUT;
 			}
+		
+			sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg%d.jpg", (int)src_addr);
 				
-			//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg1.jpg", testImg);
+			imwrite(path, testImg);
 			//Loren
 			//if(LorenDebugFlag)
 			//{
@@ -14103,6 +14107,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				//printf("just called cvtcolor\n");
 			}
 
+		/*
 		}
 		else
 		{
@@ -14120,6 +14125,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				//printf("just called cvtcolor\n");
 			}
 		}
+		*/
 		
 		/*
 		// if the image is grayscale already there is no need to convert it again.
@@ -14258,60 +14264,62 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		FOUT;
 	}
 	
-	if((int)src_addr == 1)
-	{
-		if(prediction == 1)
+	//if((int)src_addr == 1)
+	//{
+		if(prediction == (int)src_addr)
 		{
-			node1total = node1total + 1.0;
-			node1correct = node1correct + 1.0;
-			printf("node 1 correct recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)node1total, (int)node1correct);
+			vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
+			vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
+			printf("node 1 correct recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 		}
 		else
 		{
-			node1total = node1total + 1.0;
-			printf("node 1 incorrect recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)node1total, (int)node1correct);
+			vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
+			printf("node 1 incorrect recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 		}
-		node1accuracy = (((double)node1correct/(double)node1total)*(double)100);
+		vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
 		// print out accuracy to the simulation console.
-		sprintf(myString,"node 1 Face Recognition Accuracy = %.5f%%", node1accuracy);
+		sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
 		op_prg_odb_print_major(myString,OPC_NIL);
 		
 		// print out the results to the opencv trace file.
 		//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 		//fprintf(opencvDebugFile,"Prediction = %d\n node 1 Face Recognition Accuracy = %.5f%%\n",prediction, node1accuracy);
 		//fclose(opencvDebugFile);
+	/*
 	}
 	
 	else
 	{
-	// check if the recognition was correct.
-	if(strncmp(d, pred, 4) == 0)
-	{
-		// there was a correct recognition, increment the number, always increment total recogntion count.
-		totalRecognitions = totalRecognitions + 1.0;
-		correctRecognitions = correctRecognitions + 1.0;
-		printf("correct recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
-	}
+		// check if the recognition was correct.
+		if(strncmp(d, pred, 4) == 0)
+		{
+			// there was a correct recognition, increment the number, always increment total recogntion count.
+			totalRecognitions = totalRecognitions + 1.0;
+			correctRecognitions = correctRecognitions + 1.0;
+			printf("correct recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
+		}
 	
-	else
-	{
-		// increment the total number of recognitions
-		totalRecognitions = totalRecognitions + 1.0;
-		printf("incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
-	}
+		else
+		{
+			// increment the total number of recognitions
+			totalRecognitions = totalRecognitions + 1.0;
+			printf("incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
+		}
 	
-	// find current total recogntion accuracy for the simulation so far.  Also protect for divide by zero condition.
-	recognitionAccuracy = (((double)correctRecognitions/(double)totalRecognitions)*(double)100);
+		// find current total recogntion accuracy for the simulation so far.  Also protect for divide by zero condition.
+		//recognitionAccuracy = (((double)correctRecognitions/(double)totalRecognitions)*(double)100);
 		
-	// print out accuracy to the simulation console.
-	sprintf(myString,"Face Recognition Accuracy = %.5f%%", recognitionAccuracy);
-	op_prg_odb_print_major(myString,OPC_NIL);
+		// print out accuracy to the simulation console.
+		//sprintf(myString,"Face Recognition Accuracy = %.5f%%", recognitionAccuracy);
+		//op_prg_odb_print_major(myString,OPC_NIL);
 		
-	// print out the results to the opencv trace file.
-	//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-	//fprintf(opencvDebugFile,"Prediction = %d\nFace Recognition Accuracy = %.5f%%\n",prediction, recognitionAccuracy);
-	//fclose(opencvDebugFile);
-	}
+		// print out the results to the opencv trace file.
+		//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
+		//fprintf(opencvDebugFile,"Prediction = %d\nFace Recognition Accuracy = %.5f%%\n",prediction, recognitionAccuracy);
+		//fclose(opencvDebugFile);
+	//}
+	*/
 	//Loren
 	if(LorenDebugFlag)
 	{
@@ -14393,11 +14401,11 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	
 	
 	/*Loren */
-	if(LorenDebugFlag)
-	{
+	//if(LorenDebugFlag)
+	//{
 		sprintf(myString,"I am %d, starting frame forward function. ap_flag = %d", (int)my_address, (int)ap_flag);
 		op_prg_odb_print_major(myString,OPC_NIL);
-	}
+	//}
 	
 
 	
@@ -14415,11 +14423,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		{
 		
 		//Loren
-		if(LorenDebugFlag)
-		{
+		//if(LorenDebugFlag)
+		//{
 			sprintf(myString,"I am %d, frame forward function, transmitting data.", (int)my_address);
 			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//}
 			
 		/* Printing out information to ODB.							*/
 		if (wlan_trace_active == OPC_TRUE)
@@ -14504,7 +14512,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 		
-		//printf("I am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
+		printf("I am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
 		
 		send_to_higher = OPC_TRUE;
 		
@@ -14573,53 +14581,53 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 			if(strcmp(fmt_name, "my_rtp_pkt") == 0)
 			{
-			//loren debugging
-			if(LorenDebugFlag)
-			{
-				op_pk_print(seg_pkptr);
-			}
+				//loren debugging
+				if(LorenDebugFlag)
+				{
+					op_pk_print(seg_pkptr);
+				}
 			
-			op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
+				op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
 			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("after getting image line number\n");
-			}
+				//loren, debugging
+				if(LorenDebugFlag)
+				{
+					printf("after getting image line number\n");
+				}
 			
-			op_pk_nfd_get (seg_pkptr, "quality", & q);
+				op_pk_nfd_get (seg_pkptr, "quality", & q);
 			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("I am %d: got quality, about to load image pointer.\n", (int)my_address);
-			}
+				//loren, debugging
+				if(LorenDebugFlag)
+				{
+					printf("I am %d: got quality, about to load image pointer.\n", (int)my_address);
+				}
 			
 			
-			//Loren commment this out if switching to actual image
-			op_pk_nfd_get (seg_pkptr, "total_packet_size", &myDatasize);
+				//Loren commment this out if switching to actual image
+				op_pk_nfd_get (seg_pkptr, "total_packet_size", &myDatasize);
 			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("after getting data size.\n");
-			}
+				//loren, debugging
+				if(LorenDebugFlag)
+				{
+					printf("after getting data size.\n");
+				}
 			
-			//unsigned char *getArray = new unsigned char [myDatasize];
+				//unsigned char *getArray = new unsigned char [myDatasize];
 			
-			//Loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("after getting creating array.\n");
-			}
+				//Loren, debugging
+				if(LorenDebugFlag)
+				{
+					printf("after getting creating array.\n");
+				}
 			
-			//av_init_packet(recv_ffmpeg_packet);
-			/* don't want to do this right now */
-			//op_pk_nfd_get (seg_pkptr, "data", recv_ffmpeg_packet);
+				//av_init_packet(recv_ffmpeg_packet);
+				/* don't want to do this right now */
+				//op_pk_nfd_get (seg_pkptr, "data", recv_ffmpeg_packet);
 			 
 		
-			if((int)src_addr == 1)
-			{
+			//if((int)src_addr == 1)
+			//{
 				//printf("Initializing packet.\n");
 				av_init_packet(&recv_ffmpeg_packet);
 				recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
@@ -14710,52 +14718,52 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						else
 						{
 						
-						printf("about to set scale.\n");
-						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
-						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
-						sws_scale(vidData[ID].convert_ctx, (const uint8_t* const*)vidData[ID].pFrame->data, vidData[ID].pFrame->linesize, 0, vidData[ID].pFrame->height,
-						          vidData[ID].dst->data, vidData[ID].dst->linesize);
+							printf("about to set scale.\n");
+							//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
+							//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
+							sws_scale(vidData[ID].convert_ctx, (const uint8_t* const*)vidData[ID].pFrame->data, vidData[ID].pFrame->linesize, 0, vidData[ID].pFrame->height,
+								vidData[ID].dst->data, vidData[ID].dst->linesize);
 						
 						
-						/*
-						printf("about to print image.\n");
-						FILE *e;
-						int i;
-						char buf[1024];
+							/*
+							printf("about to print image.\n");
+							FILE *e;
+							int i;
+							char buf[1024];
 						
-						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
-						e=fopen(buf,"w");
-						fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
-						for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
-							fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
-						fclose(e);
+							snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
+							e=fopen(buf,"w");
+							fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
+							for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
+								fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
+							fclose(e);
 						
-						imgCount++;
-						*/
-						
-						
-						printf("populating mat size.\n");
-						s_source = m.size();
-						rows = s_source.height;
-						cols = s_source.width;
+							imgCount++;
+							*/
 						
 						
+							printf("populating mat size.\n");
+							s_source = m.size();
+							rows = s_source.height;
+							cols = s_source.width;
 						
-						//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
+						
+						
+							//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 									
-						printf("populating mat data.\n");			
-						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].dst->data[0], vidData[ID].dst->linesize[0]);
-						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
+							printf("populating mat data.\n");			
+							m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].dst->data[0], vidData[ID].dst->linesize[0]);
+							//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
 						
-						//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
+							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
 						
 									
-						s_source = m.size();
-						rows = s_source.height;
-						cols = s_source.width;
-						printf("I am %d: Second Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
+							s_source = m.size();
+							rows = s_source.height;
+							cols = s_source.width;
+							printf("I am %d: Second Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 						
-						//break;
+							//break;
 						}
 					}
 				}
@@ -14802,7 +14810,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				av_frame_free(&vidData[ID].dst);
 				//printf("before testImg6\n");
 				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg6.jpg", test);
-			}
+			//}
 
 			}
 			
