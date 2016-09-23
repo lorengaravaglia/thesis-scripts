@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E1E52C 57E1E52C 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E48BEE 57E48BEE 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -720,7 +720,7 @@ int myStringDebug = 0;
 int fee_lambda_trace_flag = 0;
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
-int LorenDebugFlag = 1;
+int LorenDebugFlag = 0;
 
 FILE * opencvDebugFile;
 
@@ -13963,9 +13963,10 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	int prediction = 0;
 	char path[200] = "";
 	int ID = (int)src_addr - 1;
+	int predictionCheck = -1;
 	
 	// Min and max face sizes used to speed up face detection.
-    int min_face_size = 100;
+    int min_face_size = 150;
     int max_face_size = 250;
 
     // Image height and width for the resized image used in prediction.
@@ -14031,24 +14032,24 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
 		
 		//Loren
-		//if(LorenDebugFlag)
-		//{
+		if(LorenDebugFlag)
+		{
 			sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		//}
+		}
 
 
 		
 		//if((int)src_addr == 1)
 		//{
 		
-			//if(LorenDebugFlag)
-			//{
+			if(LorenDebugFlag)
+			{
 				sprintf(myString,"About to check if testImg is empty, (%d)", (int)testImg.empty());
 				op_prg_odb_print_major(myString,OPC_NIL);
-			//}
+			}
 				
-				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg2.jpg", testImg);
+			//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg2.jpg", testImg);
 			
 			if(testImg.empty())
 			{
@@ -14060,20 +14061,21 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg%d.jpg", (int)src_addr);
 				
 			imwrite(path, testImg);
+		
 			//Loren
-			//if(LorenDebugFlag)
-			//{
+			if(LorenDebugFlag)
+			{
 				sprintf(myString,"About to clone testImg into gray");
 				op_prg_odb_print_major(myString,OPC_NIL);
-			//}
+			}
 			
 			gray = testImg.clone();
 			
-			//if(LorenDebugFlag)
-			//{
+			if(LorenDebugFlag)
+			{
 				sprintf(myString,"About to print images");
 				op_prg_odb_print_major(myString,OPC_NIL);
-			//}
+			}
 				
 			if(gray.empty())
 			{
@@ -14087,19 +14089,19 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			//	imwriteFlag = 1;
 			//}
 			
-			//if(LorenDebugFlag)
-			//{
+			if(LorenDebugFlag)
+			{
 				sprintf(myString,"passed print image instructions, about to get gray image type.");
 				op_prg_odb_print_major(myString,OPC_NIL);
-			//}
+			}
 			
 			int type = gray.type();
 			
-			//if(LorenDebugFlag)
-			//{
+			if(LorenDebugFlag)
+			{
 				sprintf(myString,"got gray image type, about to check it. (%d)", type);
 				op_prg_odb_print_major(myString,OPC_NIL);
-			//}
+			}
 			if(type)
 			{
 				//printf("about to call cvtcolor\n");
@@ -14141,20 +14143,20 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		//frame.deallocate();
 	
 		
-		//if(LorenDebugFlag)
-		//{
+		if(LorenDebugFlag)
+		{
 			sprintf(myString,"finished initializing gray image.");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		//}
+		}
 		// Find the faces in the frame:
 		std::vector< cv::Rect_<int> > faces;
 		
 		
-		//if(LorenDebugFlag)
-		//{
+		if(LorenDebugFlag)
+		{
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
-		//}
+		}
 		haar_cascade.detectMultiScale(gray, faces);
 		
 		//haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
@@ -14206,7 +14208,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				face_resized.release();
 				
 				// adjust prediciton to be the same as it's corresponding directory name.
-				prediction = prediction + 1;
+				// prediction = prediction + 1;
 		
 				// size of character array "pred"
 				int n = sizeof(pred) / sizeof(pred[0]);
@@ -14214,11 +14216,11 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				// populate pred, hopefully it won't overflow by using snprintf rather than sprintf.
 				snprintf(pred,n,"s%02d", prediction);
 				
-				if(LorenDebugFlag)
-				{	
+				//if(LorenDebugFlag)
+				//{	
 					sprintf(myString,"Prediction = %d", prediction);
 					op_prg_odb_print_major(myString,OPC_NIL);
-				}
+				//}
 				pred[4] = '\0';
 				
 				//printf("prediction string = %s\n", pred);
@@ -14264,28 +14266,49 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		FOUT;
 	}
 	
-	//if((int)src_addr == 1)
-	//{
-		if(prediction == (int)src_addr)
-		{
-			vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
-			vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
-			printf("node 1 correct recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
-		}
-		else
-		{
-			vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
-			printf("node 1 incorrect recognition predicted, node 1 total recognitions = %d, node 1 correct recognitions = %d", (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
-		}
-		vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
-		// print out accuracy to the simulation console.
-		sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
-		op_prg_odb_print_major(myString,OPC_NIL);
-		
-		// print out the results to the opencv trace file.
-		//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-		//fprintf(opencvDebugFile,"Prediction = %d\n node 1 Face Recognition Accuracy = %.5f%%\n",prediction, node1accuracy);
-		//fclose(opencvDebugFile);
+	switch (src_addr)
+	{
+		case 1: 
+		case 2: predictionCheck = 0;
+				break;
+		case 3:
+		case 4: predictionCheck = 1;
+				break;
+		case 5:
+		case 6: predictionCheck = 2;
+				break;
+		case 7: predictionCheck = 3;
+				break;
+		case 8:
+		case 9:
+		case 10: predictionCheck = 4;
+				 break;
+		default: predictionCheck = -1;
+				 break;
+	}
+	
+	printf("prediction check = %d\n", predictionCheck);
+	
+	if(prediction == predictionCheck)
+	{
+		vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
+		vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
+		printf("node %d correct recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
+	}
+	else
+	{
+		vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
+		printf("node %d incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
+	}
+	vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
+	// print out accuracy to the simulation console.
+	sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
+	op_prg_odb_print_major(myString,OPC_NIL);
+	
+	// print out the results to the opencv trace file.
+	//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
+	//fprintf(opencvDebugFile,"Prediction = %d\n node 1 Face Recognition Accuracy = %.5f%%\n",prediction, node1accuracy);
+	//fclose(opencvDebugFile);
 	/*
 	}
 	
