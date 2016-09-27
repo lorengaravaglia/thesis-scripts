@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E48BEE 57E48BEE 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E9E0CD 57E9E0CD 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14514,7 +14514,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		int faceRecogFlag = 1;
 		
 		
-		AVPacket			 recv_ffmpeg_packet;
+		//AVPacket			 recv_ffmpeg_packet;
 		
 		int ID = (int)src_addr - 1;
 		
@@ -14652,11 +14652,14 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			//if((int)src_addr == 1)
 			//{
 				//printf("Initializing packet.\n");
-				av_init_packet(&recv_ffmpeg_packet);
-				recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
-				recv_ffmpeg_packet.size = 0;
+				
+				
+				
+				//av_init_packet(&recv_ffmpeg_packet);
+				//recv_ffmpeg_packet.data = NULL; // packet data will be allocated by the encoder
+				//recv_ffmpeg_packet.size = 0;
 				//printf("Getting rtp data\n");
-				op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
+				//op_pk_nfd_get (seg_pkptr, "data", &recv_ffmpeg_packet);
 				//printf("done getting rtp data\n");
 			
 				if(vidData[ID].startH264 == 1)

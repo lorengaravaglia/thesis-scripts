@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E1E551 57E1E551 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E9E0C2 57E9E0C2 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -153,7 +153,7 @@ int					 createPipeFlag = 0;
 
 FILE * appRateOutputFile;
 char myAppRateTraceName[100];
-int frameCount = 0;
+//int frameCount = 0;
 FILE * frameTime;
 
 /*
@@ -1375,6 +1375,13 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 						if(frameSize != 0)
 						{
+						
+							AVPacket          packt;
+							AVFrame           *pFrame = NULL;
+							AVFrame           *pFrameRGB = NULL;
+							uint8_t           *buffer = NULL;
+							int 			  retrn, got_output, numBytes, frameFinished;
+							struct SwsContext *sws_ctx = NULL;
 					
 							if(strcmp(curveInApp,"accu_quality_GT50_withNI")==0 || strcmp(curveInApp,"accu_quality_GT50_withoutNI")==0)
 							{
@@ -1422,7 +1429,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								op_sim_end ("could not create image data structure in the application module", "", "", "");
 							}
 					
-							lastPacketSize = decodeHuffman_PKT(ids,0);//packetize the image and return the last packet size in bits
+							//lastPacketSize = decodeHuffman_PKT(ids,0);//packetize the image and return the last packet size in bits
 					
 							if(appOpencvDebugFlag)
 							{
@@ -1431,13 +1438,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 							
 							// lorenModified to limit to 1 packet
-						    FrameSizeInPackets = 1;
+						    //FrameSizeInPackets = 1;
+							
 							//FrameSizeInPackets = ids->rtpPacketsNeeded;
 						
-							if(appOpencvDebugFlag)
-							{
-								printf("FrameSizeInPackets is %d\n",FrameSizeInPackets);
-							}
+							
 						
 							//while(ids->components[0][x].packetID <= FrameSizeInPackets)
 							//{
@@ -1459,6 +1464,194 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							}
 					
 							
+							if(Node_LorenDebugFlag)
+							{
+								printf("filepath = %s\n", vidData[ID].filepath);
+								//Output Info-----------------------------
+								printf("--------------- File Information ----------------\n");
+								av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
+								printf("-------------------------------------------------\n");
+							}
+									
+						
+							//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
+				
+							printf("Encode video file %s\n", vidData[ID].filepath);
+				
+							frame = av_frame_alloc();
+							if (!frame) 
+							{
+								fprintf(stderr, "Could not allocate video frame\n");
+								//exit(1);
+							}
+							frame->format = vidData[ID].c->pix_fmt;
+							frame->width = vidData[ID].c->width;
+							frame->height = vidData[ID].c->height;
+									
+							retrn = av_image_alloc(frame->data, frame->linesize, vidData[ID].c->width, vidData[ID].c->height,
+										vidData[ID].c->pix_fmt, 32);
+							if (retrn < 0) 
+							{
+								fprintf(stderr, "Could not allocate raw picture buffer\n");
+								//exit(1);
+							}
+									
+							//printf("Passed av_image_alloc\n");
+				
+							// Allocate an AVFrame structure
+							pFrame = av_frame_alloc();
+							pFrameRGB = av_frame_alloc();
+									
+							if (pFrameRGB == NULL)
+								return;
+									
+				
+									
+							//printf("Passed frame allocation\n");
+				
+							// Determine required buffer size and allocate buffer
+							numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
+									vidData[ID].pCodecCtx->height);
+							buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+									
+							//printf("Passed numbytes and buffer initialization\n");
+				
+							// Assign appropriate parts of buffer to image planes in pFrameRGB
+							// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+							// of AVPicture
+							avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
+									vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+									
+							//printf("Passed avpicture_fill\n");
+				
+							// initialize SWS context for software scaling
+							sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
+									vidData[ID].pCodecCtx->height,
+									vidData[ID].pCodecCtx->pix_fmt,
+									vidData[ID].pCodecCtx->width,
+									vidData[ID].pCodecCtx->height,
+									AV_PIX_FMT_YUV420P,
+									SWS_BILINEAR,
+									NULL,
+									NULL,
+									NULL
+									);
+									
+							//printf("Passed sws_getContext\n");
+									
+							av_init_packet(&packt);
+							packt.data = NULL;    // packet data will be allocated by the encoder
+							packt.size = 0;
+									
+				
+							av_init_packet(&vidData[ID].pkt);
+									
+							//printf("Passed packet init\n");
+									
+							vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
+							vidData[ID].pkt.size = 0;
+									
+							//printf("Passed packet value set\n");
+				
+							fflush(stdout);
+									
+							//printf("Passed flush\n");
+				
+							if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
+							{
+								if (avformat_seek_file(vidData[ID].pFormatCtx, vidData[ID].videoindex, INT64_MIN, 0, INT64_MAX, 0) < 0)
+								{
+									printf("error moving to beginning of file.\n");
+								}
+								else
+								{
+									printf("succeeded seeking to beginning of file.\n");
+									vidData[ID].last_dts += vidData[ID].dts;
+									vidData[ID].last_pts += vidData[ID].pts;
+									// Need to flush codec buffer before starting encoding over.
+									avcodec_flush_buffers(vidData[ID].pCodecCtx);
+								}
+							}
+									
+							packt.flags |= AV_PKT_FLAG_KEY;
+									
+							vidData[ID].pts = packt.pts;
+									
+							packt.pts += vidData[ID].last_pts;
+									
+							vidData[ID].dts = packt.dts;
+									
+							packt.dts += vidData[ID].last_dts;
+							//printf("Passed read frame\n");
+									
+							// Is this a packet from the video stream?
+							if (packt.stream_index == vidData[ID].videoindex) 
+							{
+									
+								//printf("about to decode frame\n");
+								// Decode video frame
+								avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
+										
+								//printf("Passed decode\n");
+								// Did we get a video frame?
+								if (frameFinished) 
+								{
+									//printf("frame finished.\n");
+									// Convert the image from its native format to RGB
+									sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+										pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
+										frame->data, frame->linesize);
+								}
+							}
+									
+							//printf("about to set frame pts\n");
+				
+							frame->pts = pFrame->pkt_pts;
+							
+							//printf("set frame pts, about to encode\n");
+				
+							/* encode the image */
+							retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
+							//printf("Passed encode\n");
+									
+							if (retrn < 0) 
+							{
+								printf("Error encoding frame\n");
+								//exit(1);
+							}
+										
+									
+							//vidData[ID].frameCount++;
+									
+							av_packet_unref(&packt);
+									
+							sws_freeContext(sws_ctx);
+							
+							av_free(buffer);
+									
+							printf("attempting to free frame at source node\n");
+							av_frame_free(&frame);
+							av_frame_free(&pFrameRGB);
+				
+							// Free the YUV frame
+							av_frame_free(&pFrame);
+							
+							int packetSize = inputPacketSize * 8;
+							
+							printf("packet size = %d\n", packetSize);
+							
+							
+							FrameSizeInPackets = ceil((double)packetSize/(double)vidData[ID].pkt.size);
+							
+							lastPacketSize = vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
+							
+							printf("last packet size %d, framesizeinpackets = %d\n", lastPacketSize, FrameSizeInPackets);
+							
+							if(appOpencvDebugFlag)
+							{
+								printf("FrameSizeInPackets is %d\n",FrameSizeInPackets);
+							}
+				
 							if(appOpencvDebugFlag)
 							{
 								printf("sending image %s packets, number of packets is %d, lastPacketSize = %d  \n",line, FrameSizeInPackets,lastPacketSize);
@@ -1480,7 +1673,10 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								pksize = floor ((double) oms_dist_positive_outcome_with_error_msg (packet_size_dist_handle, 
 									"This occurs for packet size distribution in bursty_source process model."));
 								
+								printf("initial packet size = %f\n", (double)pksize);
+								
 								pksize *= 8;//get packet size in bits.
+								
 								//Loren comment this if out if switching back to image
 								if(PacketCounter == FrameSizeInPackets -1)//last packet
 								{
@@ -1510,10 +1706,10 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								//printf("total bits sent = %f\n", (double)total_bits_sent);
 						
-								//pkptr  = op_pk_create ((pksize>(7*32)?pksize-7*32:1)); //(pksize>7*32?pksize-7*32:1)
-								pkptr  = op_pk_create_fmt("my_rtp_pkt");
+								pkptr  = op_pk_create ((pksize>(7*32)?pksize-7*32:1)); //(pksize>7*32?pksize-7*32:1)
+								//pkptr  = op_pk_create_fmt("my_rtp_pkt");
 								
-								op_pk_format (pkptr, fmt_name);
+								//op_pk_format (pkptr, fmt_name);
 								
 								//printf("packet format at ma_bursty_source = %s\n", fmt_name);
 								
@@ -1541,7 +1737,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								//printf("size of Image structure = %d\n", size);
 								
-								/*
+								
 								op_pk_fd_set (pkptr, 1, OPC_FIELD_TYPE_INTEGER, FrameCounter, 32);
 								printf("pksize after filling in frame counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								op_pk_fd_set (pkptr, 2, OPC_FIELD_TYPE_INTEGER, PacketCounter, 32);
@@ -1557,14 +1753,14 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								printf("pksize after filling in quality info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								op_pk_fd_set (pkptr, 7, OPC_FIELD_TYPE_INTEGER, tPS, 32);
 								printf("pksize after filling in tps info  = %lf \n",(double) op_pk_total_size_get(pkptr));
-								op_pk_fd_set (pkptr, 8, OPC_FIELD_TYPE_INTEGER, myArray, pksize);
-								printf("pksize after filling in image data info  = %lf \n",(double) op_pk_total_size_get(pkptr));
+								//op_pk_fd_set (pkptr, 8, OPC_FIELD_TYPE_INTEGER, myArray, pksize);
+								//printf("pksize after filling in image data info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								//op_pk_fd_set (pkptr, 8, OPC_FIELD_TYPE_INTEGER, testValue, 32);
 								//op_pk_fd_set_ptr (pkptr, 7, originalids, frameSize, op_prg_mem_copy_create, op_prg_mem_free, sizeof(myImageStructure));
 								printf("about to add image to packet.\n");
 								//op_pk_fd_set (pkptr, 7, OPC_FIELD_TYPE_STRUCT, originalids, 512);//, op_prg_mem_copy_create, op_prg_mem_free);
 								
-								*/
+								/*
 								op_pk_nfd_set (pkptr, "frame_counter", FrameCounter);
 								//printf("pksize after filling in frame counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								
@@ -1586,203 +1782,26 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								op_pk_nfd_set (pkptr, "total_packet_size", tPS);
 								//printf("pksize after filling in tps info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								
+								printf("got_output = %d\n", got_output);
+								if (got_output)
+								{
+								
+									printf("Setting packet data, packet size = %d\n",(int)vidData[ID].pkt.size);
+									op_pk_nfd_set (pkptr, "data", vidData[ID].pkt, op_prg_mem_copy_create, op_prg_mem_free, vidData[ID].pkt.size);
+								
+									//printf("Finished Setting packet data\n");
+								
+									//fwrite(vidData[ID].pkt.data, 1, vidData[ID].pkt.size, f);
+									//op_pk_nfd_set (pkptr, "data", pkt.data, op_prg_mem_copy_create, op_prg_mem_free, pkt.size);
+									//fwrite(pkt.data, 1, pkt.size, f);
+									//av_packet_unref(&pkt);
+								}
+								*/
 								
 								//if(compare == 0)
 								//{
 								
-									if(Node_LorenDebugFlag)
-									{
-										printf("filepath = %s\n", vidData[ID].filepath);
-										//Output Info-----------------------------
-										printf("--------------- File Information ----------------\n");
-										av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
-										printf("-------------------------------------------------\n");
-									}
 									
-									AVPacket          packt;
-									AVFrame           *pFrame = NULL;
-									AVFrame           *pFrameRGB = NULL;
-									uint8_t           *buffer = NULL;
-									int retrn, got_output, numBytes, frameFinished;
-									struct SwsContext *sws_ctx = NULL;
-						
-									//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-				
-									printf("Encode video file %s\n", vidData[ID].filepath);
-				
-									frame = av_frame_alloc();
-									if (!frame) 
-									{
-										fprintf(stderr, "Could not allocate video frame\n");
-										//exit(1);
-									}
-									frame->format = vidData[ID].c->pix_fmt;
-									frame->width = vidData[ID].c->width;
-									frame->height = vidData[ID].c->height;
-									
-									retrn = av_image_alloc(frame->data, frame->linesize, vidData[ID].c->width, vidData[ID].c->height,
-												vidData[ID].c->pix_fmt, 32);
-									if (retrn < 0) 
-									{
-										fprintf(stderr, "Could not allocate raw picture buffer\n");
-										//exit(1);
-									}
-									
-									//printf("Passed av_image_alloc\n");
-				
-									// Allocate an AVFrame structure
-									pFrame = av_frame_alloc();
-									pFrameRGB = av_frame_alloc();
-									
-									if (pFrameRGB == NULL)
-										return;
-									
-				
-									
-									//printf("Passed frame allocation\n");
-				
-									// Determine required buffer size and allocate buffer
-									numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
-											vidData[ID].pCodecCtx->height);
-									buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-									
-									//printf("Passed numbytes and buffer initialization\n");
-				
-									// Assign appropriate parts of buffer to image planes in pFrameRGB
-									// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-									// of AVPicture
-									avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
-											vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
-									
-									//printf("Passed avpicture_fill\n");
-				
-									// initialize SWS context for software scaling
-									sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
-											vidData[ID].pCodecCtx->height,
-											vidData[ID].pCodecCtx->pix_fmt,
-											vidData[ID].pCodecCtx->width,
-											vidData[ID].pCodecCtx->height,
-											AV_PIX_FMT_YUV420P,
-											SWS_BILINEAR,
-											NULL,
-											NULL,
-											NULL
-											);
-									
-									//printf("Passed sws_getContext\n");
-									
-									av_init_packet(&packt);
-									packt.data = NULL;    // packet data will be allocated by the encoder
-									packt.size = 0;
-									
-				
-									av_init_packet(&vidData[ID].pkt);
-									
-									//printf("Passed packet init\n");
-									
-									vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
-									vidData[ID].pkt.size = 0;
-									
-									//printf("Passed packet value set\n");
-				
-									fflush(stdout);
-									
-									//printf("Passed flush\n");
-				
-									if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
-									{
-										if (avformat_seek_file(vidData[ID].pFormatCtx, vidData[ID].videoindex, INT64_MIN, 0, INT64_MAX, 0) < 0)
-										{
-											printf("error moving to beginning of file.\n");
-										}
-										else
-										{
-											printf("succeeded seeking to beginning of file.\n");
-											vidData[ID].last_dts += vidData[ID].dts;
-											vidData[ID].last_pts += vidData[ID].pts;
-				
-											// Need to flush codec buffer before starting encoding over.
-											avcodec_flush_buffers(vidData[ID].pCodecCtx);
-										}
-									}
-									
-									packt.flags |= AV_PKT_FLAG_KEY;
-									
-									vidData[ID].pts = packt.pts;
-									
-									packt.pts += vidData[ID].last_pts;
-									
-									vidData[ID].dts = packt.dts;
-									
-									packt.dts += vidData[ID].last_dts;
-									//printf("Passed read frame\n");
-									
-									// Is this a packet from the video stream?
-									if (packt.stream_index == vidData[ID].videoindex) 
-									{
-									
-										//printf("about to decode frame\n");
-										// Decode video frame
-										avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
-										
-										//printf("Passed decode\n");
-										// Did we get a video frame?
-										if (frameFinished) 
-										{
-											//printf("frame finished.\n");
-											// Convert the image from its native format to RGB
-											sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
-												pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
-												frame->data, frame->linesize);
-										}
-									}
-									
-									//printf("about to set frame pts\n");
-				
-									frame->pts = pFrame->pkt_pts;
-									
-									//printf("set frame pts, about to encode\n");
-				
-									/* encode the image */
-									retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
-									//printf("Passed encode\n");
-									
-									if (retrn < 0) 
-									{
-										printf("Error encoding frame\n");
-										//exit(1);
-									}
-									
-									
-									printf("got_output = %d\n", got_output);
-									if (got_output)
-									{
-				
-										//printf("Setting packet data\n");
-										op_pk_nfd_set (pkptr, "data", vidData[ID].pkt, op_prg_mem_copy_create, op_prg_mem_free, vidData[ID].pkt.size);
-										
-										//printf("Finished Setting packet data\n");
-										
-										//fwrite(vidData[ID].pkt.data, 1, vidData[ID].pkt.size, f);
-										//op_pk_nfd_set (pkptr, "data", pkt.data, op_prg_mem_copy_create, op_prg_mem_free, pkt.size);
-										//fwrite(pkt.data, 1, pkt.size, f);
-										//av_packet_unref(&pkt);
-									}
-									
-									vidData[ID].frameCount++;
-									
-									av_packet_unref(&packt);
-									
-									sws_freeContext(sws_ctx);
-									
-									av_free(buffer);
-									
-									printf("attempting to free frame at source node\n");
-									av_frame_free(&frame);
-									av_frame_free(&pFrameRGB);
-				
-									// Free the YUV frame
-									av_frame_free(&pFrame);
 									//printf("\n");
 									//op_pk_nfd_set (pkptr, "data", vidData[ID].ffmpeg_packet, op_prg_mem_copy_create, op_prg_mem_free, sizeof(AVPacket));
 								
