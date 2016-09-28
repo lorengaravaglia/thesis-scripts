@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E9E0C2 57E9E0C2 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EB1164 57EB1164 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1475,7 +1475,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 						
 							//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-				
+							do
+							{
 							printf("Encode video file %s\n", vidData[ID].filepath);
 				
 							frame = av_frame_alloc();
@@ -1612,7 +1613,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 							/* encode the image */
 							retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
-							//printf("Passed encode\n");
+							printf("got output = %d\n", got_output);
 									
 							if (retrn < 0) 
 							{
@@ -1635,15 +1636,23 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 							// Free the YUV frame
 							av_frame_free(&pFrame);
+							}while(got_output == 0);
+							
+							if(got_output == 1)
+							{
+							
+							vidData[ID].encoded = 1;
 							
 							int packetSize = inputPacketSize * 8;
 							
 							printf("packet size = %d\n", packetSize);
 							
+							printf("ffmpeg packet size = %d\n", vidData[ID].pkt.size);
 							
-							FrameSizeInPackets = ceil((double)packetSize/(double)vidData[ID].pkt.size);
 							
-							lastPacketSize = vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
+							FrameSizeInPackets = ceil((double)vidData[ID].pkt.size/(double)packetSize);
+							
+							lastPacketSize = (vidData[ID].pkt.size % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
 							printf("last packet size %d, framesizeinpackets = %d\n", lastPacketSize, FrameSizeInPackets);
 							
@@ -1673,14 +1682,17 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								pksize = floor ((double) oms_dist_positive_outcome_with_error_msg (packet_size_dist_handle, 
 									"This occurs for packet size distribution in bursty_source process model."));
 								
-								printf("initial packet size = %f\n", (double)pksize);
+								printf("initial packet size = %d\n", (int)pksize);
 								
 								pksize *= 8;//get packet size in bits.
+								
+								printf("Packet size in bits = %d\n", (int)pksize);
 								
 								//Loren comment this if out if switching back to image
 								if(PacketCounter == FrameSizeInPackets -1)//last packet
 								{
 									pksize = lastPacketSize;
+									printf("Packet size last packet = %d\n", pksize);
 									packetStatus = -1;
 								}
 								
@@ -1717,12 +1729,12 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								pk_size = op_pk_total_size_get (pkptr);
 								byte_load = (pk_size / 8.0);
 								
-								//printf("total initial packet size: %d. In bytes: %d\n", (int)pk_size, (int)byte_load);
+								printf("total initial packet size: %d. In bytes: %d\n", (int)pk_size, (int)byte_load);
 								
 								//marking the packets
 								tPS = (PacketCounter==0 ? pksize -  (64+23)*8 : pksize -  23*8);
 								
-								//printf("tPS = %d\n", (int)tPS);
+								printf("tPS = %d\n", (int)tPS);
 								
 								
 								//Load ffmpeg stream
@@ -1889,9 +1901,13 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							op_stat_write(my_packet_data_size_stat,frameDataPacketsSizeSum/FrameSizeInPackets);
 						}
 						
-						printf("\n exiting function\n");
+						
+						
 						FrameCounter++;
 						PacketCounter = 0;
+						}
+						
+						printf("\n exiting function\n");
 						
 						/*	Check if the next packet arrival time is within the	*/
 						/*	time in which the process remains in "ON" (active)	*/

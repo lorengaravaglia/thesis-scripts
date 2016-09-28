@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57E9E0CD 57E9E0CD 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EB11A3 57EB11A3 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14540,6 +14540,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		send_to_higher = OPC_TRUE;
 		
 		op_pk_format(seg_pkptr, fmt_name);
+		
+		printf("got format name\n");
 		//Loren
 		//printf("I am  %d: seg_pkptr is of type %s\n",(int)my_address, fmt_name);
 		
@@ -14552,6 +14554,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 		//op_pk_print(seg_pkptr);
 		
+		
+		/*
 		if(strcmp(fmt_name, "my_rtp_pkt") == 0)
 		{
 			if(LorenDebugFlag)
@@ -14584,6 +14588,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		}
 		else
 		{
+		*/
 		//op_pk_fd_get (seg_pkptr, 0, &sendingTime);
 			if(LorenDebugFlag)
 			{
@@ -14593,45 +14598,50 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_pk_fd_get (seg_pkptr, 2, &packetN);
 			op_pk_fd_get (seg_pkptr, 3, &packetStatus);
 			op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
-		}	
+		//}	
 		
 		//Loren, commenting out to speed up simulation
 		//printf("I am %d: got packet from node %d. Frame Number = %d  Packet Number = %d  Frame Size in Packets = %d\n", (int)my_address, (int)src_addr, (int)frameN, (int)packetN, (int)FrameSizeInPackets);
 		
 		
-		if(current_time > EAestimationTime)// time sensitive
+		if(current_time > EAestimationTime + 1)// time sensitive
 		{
 		
-			if(strcmp(fmt_name, "my_rtp_pkt") == 0)
-			{
+			//if(strcmp(fmt_name, "my_rtp_pkt") == 0)
+			//{
 				//loren debugging
-				if(LorenDebugFlag)
-				{
+				//if(LorenDebugFlag)
+				//{
 					op_pk_print(seg_pkptr);
-				}
+				//}
 			
-				op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
-			
+				//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
+					
+				op_pk_fd_get (seg_pkptr, 5, &imageLineNumber);
 				//loren, debugging
-				if(LorenDebugFlag)
+				//if(LorenDebugFlag)
 				{
 					printf("after getting image line number\n");
 				}
 			
-				op_pk_nfd_get (seg_pkptr, "quality", & q);
+				//op_pk_nfd_get (seg_pkptr, "quality", & q);
+					
+				op_pk_fd_get (seg_pkptr, 6, & q);
 			
 				//loren, debugging
-				if(LorenDebugFlag)
+				//if(LorenDebugFlag)
 				{
 					printf("I am %d: got quality, about to load image pointer.\n", (int)my_address);
 				}
 			
 			
 				//Loren commment this out if switching to actual image
-				op_pk_nfd_get (seg_pkptr, "total_packet_size", &myDatasize);
+				//op_pk_nfd_get (seg_pkptr, "total_packet_size", &myDatasize);
+				
+				op_pk_fd_get (seg_pkptr, 7, &myDatasize);
 			
 				//loren, debugging
-				if(LorenDebugFlag)
+				//if(LorenDebugFlag)
 				{
 					printf("after getting data size.\n");
 				}
@@ -14639,7 +14649,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//unsigned char *getArray = new unsigned char [myDatasize];
 			
 				//Loren, debugging
-				if(LorenDebugFlag)
+				//if(LorenDebugFlag)
 				{
 					printf("after getting creating array.\n");
 				}
@@ -14668,25 +14678,25 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					vidData[ID].startH264 = 0;
 				}
 			
-				//printf("about to allocate frame.\n");
+				printf("about to allocate frame.\n");
 				vidData[ID].pFrame=av_frame_alloc();
 				vidData[ID].dst = av_frame_alloc();
 				
-				//printf("allocated frame, about to allocate out buffer.\n");
+				printf("allocated frame, about to allocate out buffer.\n");
 				
 				vidData[ID].out_buffer=(uint8_t *)av_malloc(avpicture_get_size(dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height) * sizeof(uint8_t));
 				
-				//printf("allocated out buffer, about to fill picture.\n");
+				printf("allocated out buffer, about to fill picture.\n");
 				
 				avpicture_fill((AVPicture *)vidData[ID].dst, vidData[ID].out_buffer, dst_pixfmt, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
 				
-				//printf("filled picture, setting convert context.\n");
+				printf("filled picture, setting convert context.\n");
 				
 				vidData[ID].convert_ctx = sws_getContext(vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height, vidData[ID].pCodecCtx->pix_fmt, vidData[ID].pCodecCtx->width, 
 					                         vidData[ID].pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 				/*vidData[ID].pCodecCtx->pix_fmt*/
 				
-				//printf("finished setting convert context.\n");
+				printf("finished setting convert context.\n");
 				
 				if(LorenDebugFlag)
 				{
@@ -14838,7 +14848,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg6.jpg", test);
 			//}
 
-			}
+			//} if my_rtp_pkt
 			
 		}
 		
