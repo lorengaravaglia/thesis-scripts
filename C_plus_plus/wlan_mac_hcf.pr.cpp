@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EB11A3 57EB11A3 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EC3E51 57EC3E51 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14058,9 +14058,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				FOUT;
 			}
 		
-			sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg%d.jpg", (int)src_addr);
-				
-			imwrite(path, testImg);
+			
 		
 			//Loren
 			if(LorenDebugFlag)
@@ -14157,9 +14155,9 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
-		haar_cascade.detectMultiScale(gray, faces);
+		//haar_cascade.detectMultiScale(gray, faces);
 		
-		//haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+		haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		// At this point you have the position of the faces in
 		// faces. Now we'll get the faces, make a prediction and
@@ -14198,6 +14196,10 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		
 				cv::Mat face_resized;
 				cv::resize(face, face_resized, cv::Size(im_width, im_height), 1.0, 1.0, cv::INTER_CUBIC);
+				
+				sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg%d.jpg", (int)src_addr);
+				
+				imwrite(path, face_resized);
 		
 				// Now perform the prediction, see how easy that is:
 		
@@ -14539,9 +14541,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 		send_to_higher = OPC_TRUE;
 		
-		op_pk_format(seg_pkptr, fmt_name);
+		//op_pk_format(seg_pkptr, fmt_name);
 		
-		printf("got format name\n");
+		//printf("got format name\n");
 		//Loren
 		//printf("I am  %d: seg_pkptr is of type %s\n",(int)my_address, fmt_name);
 		
@@ -14590,14 +14592,14 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		{
 		*/
 		//op_pk_fd_get (seg_pkptr, 0, &sendingTime);
-			if(LorenDebugFlag)
-			{
-				printf("entered unformatted packet statement\n\n");
-			}
-			op_pk_fd_get (seg_pkptr, 1, &frameN);
-			op_pk_fd_get (seg_pkptr, 2, &packetN);
-			op_pk_fd_get (seg_pkptr, 3, &packetStatus);
-			op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
+		if(LorenDebugFlag)
+		{
+			printf("entered unformatted packet statement\n\n");
+		}
+		op_pk_fd_get (seg_pkptr, 1, &frameN);
+		op_pk_fd_get (seg_pkptr, 2, &packetN);
+		op_pk_fd_get (seg_pkptr, 3, &packetStatus);
+		op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
 		//}	
 		
 		//Loren, commenting out to speed up simulation
@@ -14610,16 +14612,16 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			//if(strcmp(fmt_name, "my_rtp_pkt") == 0)
 			//{
 				//loren debugging
-				//if(LorenDebugFlag)
-				//{
+				if(LorenDebugFlag)
+				{
 					op_pk_print(seg_pkptr);
-				//}
+				}
 			
 				//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
 					
 				op_pk_fd_get (seg_pkptr, 5, &imageLineNumber);
 				//loren, debugging
-				//if(LorenDebugFlag)
+				if(LorenDebugFlag)
 				{
 					printf("after getting image line number\n");
 				}
@@ -14629,7 +14631,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				op_pk_fd_get (seg_pkptr, 6, & q);
 			
 				//loren, debugging
-				//if(LorenDebugFlag)
+				if(LorenDebugFlag)
 				{
 					printf("I am %d: got quality, about to load image pointer.\n", (int)my_address);
 				}
@@ -14641,7 +14643,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				op_pk_fd_get (seg_pkptr, 7, &myDatasize);
 			
 				//loren, debugging
-				//if(LorenDebugFlag)
+				if(LorenDebugFlag)
 				{
 					printf("after getting data size.\n");
 				}
@@ -14649,7 +14651,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//unsigned char *getArray = new unsigned char [myDatasize];
 			
 				//Loren, debugging
-				//if(LorenDebugFlag)
+				if(LorenDebugFlag)
 				{
 					printf("after getting creating array.\n");
 				}
@@ -14714,8 +14716,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					uint8_t end[] = { 0, 0, 1, 0xb7 };
 					
 										
-					//printf("about to decode packet.\n");
-
 					printf("decoding packet\n");
 					ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
 
@@ -14738,7 +14738,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 					
 					//printf("checking got picture.\n");
-					printf("got_picture = %d\n", got_picture);
+					//printf("got_picture = %d\n", got_picture);
 					faceRecogFlag = got_picture;
 					if(got_picture)
 					{

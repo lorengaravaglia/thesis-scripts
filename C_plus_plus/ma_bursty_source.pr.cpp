@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EB1164 57EB1164 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EC3DA9 57EC3DA9 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1477,169 +1477,167 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 							do
 							{
-							printf("Encode video file %s\n", vidData[ID].filepath);
+								printf("Encode video file %s\n", vidData[ID].filepath);
 				
-							frame = av_frame_alloc();
-							if (!frame) 
-							{
-								fprintf(stderr, "Could not allocate video frame\n");
-								//exit(1);
-							}
-							frame->format = vidData[ID].c->pix_fmt;
-							frame->width = vidData[ID].c->width;
-							frame->height = vidData[ID].c->height;
-									
-							retrn = av_image_alloc(frame->data, frame->linesize, vidData[ID].c->width, vidData[ID].c->height,
-										vidData[ID].c->pix_fmt, 32);
-							if (retrn < 0) 
-							{
-								fprintf(stderr, "Could not allocate raw picture buffer\n");
-								//exit(1);
-							}
-									
-							//printf("Passed av_image_alloc\n");
-				
-							// Allocate an AVFrame structure
-							pFrame = av_frame_alloc();
-							pFrameRGB = av_frame_alloc();
-									
-							if (pFrameRGB == NULL)
-								return;
-									
-				
-									
-							//printf("Passed frame allocation\n");
-				
-							// Determine required buffer size and allocate buffer
-							numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
-									vidData[ID].pCodecCtx->height);
-							buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-									
-							//printf("Passed numbytes and buffer initialization\n");
-				
-							// Assign appropriate parts of buffer to image planes in pFrameRGB
-							// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-							// of AVPicture
-							avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
-									vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
-									
-							//printf("Passed avpicture_fill\n");
-				
-							// initialize SWS context for software scaling
-							sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
-									vidData[ID].pCodecCtx->height,
-									vidData[ID].pCodecCtx->pix_fmt,
-									vidData[ID].pCodecCtx->width,
-									vidData[ID].pCodecCtx->height,
-									AV_PIX_FMT_YUV420P,
-									SWS_BILINEAR,
-									NULL,
-									NULL,
-									NULL
-									);
-									
-							//printf("Passed sws_getContext\n");
-									
-							av_init_packet(&packt);
-							packt.data = NULL;    // packet data will be allocated by the encoder
-							packt.size = 0;
-									
-				
-							av_init_packet(&vidData[ID].pkt);
-									
-							//printf("Passed packet init\n");
-									
-							vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
-							vidData[ID].pkt.size = 0;
-									
-							//printf("Passed packet value set\n");
-				
-							fflush(stdout);
-									
-							//printf("Passed flush\n");
-				
-							if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
-							{
-								if (avformat_seek_file(vidData[ID].pFormatCtx, vidData[ID].videoindex, INT64_MIN, 0, INT64_MAX, 0) < 0)
+								frame = av_frame_alloc();
+								if (!frame) 
 								{
-									printf("error moving to beginning of file.\n");
+									fprintf(stderr, "Could not allocate video frame\n");
+									//exit(1);
 								}
-								else
+								frame->format = vidData[ID].c->pix_fmt;
+								frame->width = vidData[ID].c->width;
+								frame->height = vidData[ID].c->height;
+									
+								retrn = av_image_alloc(frame->data, frame->linesize, vidData[ID].c->width, vidData[ID].c->height,
+											vidData[ID].c->pix_fmt, 32);
+								if (retrn < 0) 
 								{
-									printf("succeeded seeking to beginning of file.\n");
-									vidData[ID].last_dts += vidData[ID].dts;
-									vidData[ID].last_pts += vidData[ID].pts;
-									// Need to flush codec buffer before starting encoding over.
-									avcodec_flush_buffers(vidData[ID].pCodecCtx);
+									fprintf(stderr, "Could not allocate raw picture buffer\n");
+									//exit(1);
+									}
+									
+								//printf("Passed av_image_alloc\n");
+				
+								// Allocate an AVFrame structure
+								pFrame = av_frame_alloc();
+								pFrameRGB = av_frame_alloc();
+									
+								if (pFrameRGB == NULL)
+									return;
+													
+								//printf("Passed frame allocation\n");
+				
+								// Determine required buffer size and allocate buffer
+								numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
+										vidData[ID].pCodecCtx->height);
+								
+								buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+									
+								//printf("Passed numbytes and buffer initialization\n");
+				
+								// Assign appropriate parts of buffer to image planes in pFrameRGB
+								// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+								// of AVPicture
+								avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
+										vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+									
+								//printf("Passed avpicture_fill\n");
+				
+								// initialize SWS context for software scaling
+								sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
+										vidData[ID].pCodecCtx->height,
+										vidData[ID].pCodecCtx->pix_fmt,
+										vidData[ID].pCodecCtx->width,
+										vidData[ID].pCodecCtx->height,
+										AV_PIX_FMT_YUV420P,
+										SWS_BILINEAR,
+										NULL,
+										NULL,
+										NULL
+										);
+									
+								//printf("Passed sws_getContext\n");
+									
+								av_init_packet(&packt);
+								packt.data = NULL;    // packet data will be allocated by the encoder
+								packt.size = 0;
+									
+				
+								av_init_packet(&vidData[ID].pkt);
+									
+								//printf("Passed packet init\n");
+									
+								vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
+								vidData[ID].pkt.size = 0;
+									
+								//printf("Passed packet value set\n");
+				
+								fflush(stdout);
+									
+								//printf("Passed flush\n");
+				
+								if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
+								{
+									if (avformat_seek_file(vidData[ID].pFormatCtx, vidData[ID].videoindex, INT64_MIN, 0, INT64_MAX, 0) < 0)
+									{
+										printf("error moving to beginning of file.\n");
+									}
+									else
+									{
+										printf("succeeded seeking to beginning of file.\n");
+										vidData[ID].last_dts += vidData[ID].dts;
+										vidData[ID].last_pts += vidData[ID].pts;
+										// Need to flush codec buffer before starting encoding over.
+										avcodec_flush_buffers(vidData[ID].pCodecCtx);
+									}
 								}
-							}
 									
-							packt.flags |= AV_PKT_FLAG_KEY;
+								packt.flags |= AV_PKT_FLAG_KEY;
 									
-							vidData[ID].pts = packt.pts;
+								vidData[ID].pts = packt.pts;
 									
-							packt.pts += vidData[ID].last_pts;
+								packt.pts += vidData[ID].last_pts;
 									
-							vidData[ID].dts = packt.dts;
+								vidData[ID].dts = packt.dts;
 									
-							packt.dts += vidData[ID].last_dts;
-							//printf("Passed read frame\n");
+								packt.dts += vidData[ID].last_dts;
+								//printf("Passed read frame\n");
 									
-							// Is this a packet from the video stream?
-							if (packt.stream_index == vidData[ID].videoindex) 
-							{
+								// Is this a packet from the video stream?
+								if (packt.stream_index == vidData[ID].videoindex) 
+								{
 									
-								//printf("about to decode frame\n");
-								// Decode video frame
-								avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
+									//printf("about to decode frame\n");
+									// Decode video frame
+									avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
 										
-								//printf("Passed decode\n");
-								// Did we get a video frame?
-								if (frameFinished) 
-								{
-									//printf("frame finished.\n");
-									// Convert the image from its native format to RGB
-									sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
-										pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
-										frame->data, frame->linesize);
+									//printf("Passed decode\n");
+									// Did we get a video frame?
+									if (frameFinished) 
+									{
+										//printf("frame finished.\n");
+										// Convert the image from its native format to RGB
+										sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+											pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
+											frame->data, frame->linesize);
+									}
 								}
-							}
 									
-							//printf("about to set frame pts\n");
+								//printf("about to set frame pts\n");
 				
-							frame->pts = pFrame->pkt_pts;
+								frame->pts = pFrame->pkt_pts;
 							
-							//printf("set frame pts, about to encode\n");
+								//printf("set frame pts, about to encode\n");
 				
-							/* encode the image */
-							retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
-							printf("got output = %d\n", got_output);
+								/* encode the image */
+								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
+								printf("got output = %d\n", got_output);
 									
-							if (retrn < 0) 
-							{
-								printf("Error encoding frame\n");
-								//exit(1);
-							}
+								if (retrn < 0) 
+								{
+									printf("Error encoding frame\n");
+									//exit(1);
+								}
 										
 									
-							//vidData[ID].frameCount++;
+								//vidData[ID].frameCount++;
 									
-							av_packet_unref(&packt);
+								av_packet_unref(&packt);
 									
-							sws_freeContext(sws_ctx);
+								sws_freeContext(sws_ctx);
 							
-							av_free(buffer);
+								av_free(buffer);
 									
-							printf("attempting to free frame at source node\n");
-							av_frame_free(&frame);
-							av_frame_free(&pFrameRGB);
+								printf("attempting to free frame at source node\n");
+								av_frame_free(&frame);
+								av_frame_free(&pFrameRGB);
 				
-							// Free the YUV frame
-							av_frame_free(&pFrame);
+								// Free the YUV frame
+								av_frame_free(&pFrame);
+								
 							}while(got_output == 0);
 							
-							if(got_output == 1)
-							{
 							
 							vidData[ID].encoded = 1;
 							
@@ -1741,7 +1739,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								//printf("Calling ffmpeg code outside of init.\n");
 					
 								//printf("about to check parent name for node number.\n");
-								compare = strcmp(parentName, "node_1");
+								//compare = strcmp(parentName, "node_1");
 								//printf("compare = %d\n", compare);
 					
 								
@@ -1905,7 +1903,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						FrameCounter++;
 						PacketCounter = 0;
-						}
 						
 						printf("\n exiting function\n");
 						
