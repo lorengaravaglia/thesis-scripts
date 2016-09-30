@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EC3E51 57EC3E51 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EDD435 57EDD435 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -13955,10 +13955,10 @@ static void trainFaces()
 
 
 // Loren start face recognition
-void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
+void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 {
 	using namespace cv;
-	cv::Mat gray;
+	//cv::Mat gray;
 	char pred[5] = "s00";
 	int prediction = 0;
 	char path[200] = "";
@@ -13975,7 +13975,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
     im_width =	75;	//images[0].cols;
     im_height =	75;	//images[0].rows;
 
-	FIN (faceRecognition (img, testImg, d, src_addr));
+	FIN (faceRecognition (testImg, d, src_addr));
 	
 	//Loren
 	//if(LorenDebugFlag)
@@ -13989,14 +13989,6 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	//for(int j = 0; j<4; j++)
 	//{
 		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
-		if(img == NULL)
-		{
-			opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-			fprintf(opencvDebugFile,"Image pointer is null, this is bad.\n");
-			fclose(opencvDebugFile);
-			printf("Image pointer is null, this is bad.\n");
-			FOUT;
-		}
 		
 		// create the container for the face cascade classifiers.
 		cv::CascadeClassifier haar_cascade;
@@ -14029,7 +14021,8 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 	
 		//sprintf(myString,"Loaded the xml file into the haar_cascade");
 		//op_prg_odb_print_major(myString,OPC_NIL);
-		haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
+		//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
+		haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");
 		
 		//Loren
 		if(LorenDebugFlag)
@@ -14067,7 +14060,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				op_prg_odb_print_major(myString,OPC_NIL);
 			}
 			
-			gray = testImg.clone();
+			//gray = testImg.clone();
 			
 			if(LorenDebugFlag)
 			{
@@ -14075,10 +14068,10 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				op_prg_odb_print_major(myString,OPC_NIL);
 			}
 				
-			if(gray.empty())
-			{
-				FOUT;
-			}
+			//if(gray.empty())
+			//{
+			//	FOUT;
+			//}
 			
 			//if(imwriteFlag == 0)
 			//{
@@ -14093,7 +14086,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				op_prg_odb_print_major(myString,OPC_NIL);
 			}
 			
-			int type = gray.type();
+			int type = testImg.type();
 			
 			if(LorenDebugFlag)
 			{
@@ -14103,7 +14096,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 			if(type)
 			{
 				//printf("about to call cvtcolor\n");
-				cvtColor(gray, gray, CV_BGR2GRAY);
+				cvtColor(testImg, testImg, CV_BGR2GRAY);
 				//printf("just called cvtcolor\n");
 			}
 
@@ -14157,7 +14150,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 		}
 		//haar_cascade.detectMultiScale(gray, faces);
 		
-		haar_cascade.detectMultiScale(gray, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+		haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		// At this point you have the position of the faces in
 		// faces. Now we'll get the faces, make a prediction and
@@ -14181,7 +14174,7 @@ void faceRecognition( IplImage* img, cv::Mat& testImg,char * d, int src_addr)
 				cv::Rect face_i = faces[i];
 				
 				// Crop the face from the image. So simple with OpenCV C++:
-				cv::Mat face = gray(face_i);
+				cv::Mat face = testImg(face_i);
 				
 				// Resizing the face is necessary for Eigenfaces and Fisherfaces. You can easily
 				// verify this, by reading through the face recognition tutorial coming with OpenCV.
@@ -14809,6 +14802,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//Don't do this one.
 				test = m.clone();
 				
+				printf("releasing mat m\n");
+				m.release();
+				
 				//printf("before testImg10\n");
 				//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg10.jpg", test);
 				
@@ -15244,7 +15240,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
 							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-							faceRecognition(cvImage, m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
+							faceRecognition(m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 						}
 						
 						//sprintf(myString,"End Face Recognition");
@@ -15579,7 +15575,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
 					    //imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg3.jpg", test);
-						faceRecognition(cvImage, test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
+						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 					}
 					
 					//sprintf(myString,"End FaceRecognition 1");
