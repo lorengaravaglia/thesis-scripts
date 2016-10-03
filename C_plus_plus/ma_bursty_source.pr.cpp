@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57EDC862 57EDC862 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57F1CAC6 57F1CAC6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1377,9 +1377,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						{
 						
 							AVPacket          packt;
-							AVFrame           *pFrame = NULL;
-							AVFrame           *pFrameRGB = NULL;
-							uint8_t           *buffer = NULL;
+							//uint8_t           *buffer = NULL;
+							AVFrame           *pFrame;
 							int 			  retrn, got_output, numBytes, frameFinished;
 							struct SwsContext *sws_ctx = NULL;
 					
@@ -1495,33 +1494,36 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								{
 									fprintf(stderr, "Could not allocate raw picture buffer\n");
 									//exit(1);
-									}
+								}
+								
+								pFrame = av_frame_alloc();
+								if (!pFrame) 
+								{
+									fprintf(stderr, "Could not allocate video frame\n");
+									//exit(1);
+								}
+								
+								retrn = av_image_alloc(pFrame->data, pFrame->linesize, vidData[ID].c->width, vidData[ID].c->height,
+											vidData[ID].c->pix_fmt, 32);
+								if (retrn < 0) 
+								{
+									fprintf(stderr, "Could not allocate raw picture buffer\n");
+									//exit(1);
+								}
 									
 								//printf("Passed av_image_alloc\n");
-				
-								// Allocate an AVFrame structure
-								pFrame = av_frame_alloc();
-								pFrameRGB = av_frame_alloc();
-									
-								if (pFrameRGB == NULL)
-									return;
 													
 								//printf("Passed frame allocation\n");
 				
 								// Determine required buffer size and allocate buffer
-								numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
-										vidData[ID].pCodecCtx->height);
+								//numBytes = avpicture_get_size(AV_PIX_FMT_YUV420P, vidData[ID].pCodecCtx->width,
+								//		vidData[ID].pCodecCtx->height);
 								
-								buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+								//buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
 									
 								//printf("Passed numbytes and buffer initialization\n");
 				
-								// Assign appropriate parts of buffer to image planes in pFrameRGB
-								// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-								// of AVPicture
-								avpicture_fill((AVPicture *)pFrameRGB, buffer, AV_PIX_FMT_YUV420P,
-										vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
-									
+				
 								//printf("Passed avpicture_fill\n");
 				
 								// initialize SWS context for software scaling
@@ -1623,23 +1625,27 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 								//vidData[ID].frameCount++;
 									
-								av_packet_unref(&packt);
+								av_free_packet(&packt);
 									
 								sws_freeContext(sws_ctx);
+								
+								//printf("trying to free buffer\n");
 							
-								av_free(buffer);
-									
-								printf("attempting to free frame at source node\n");
-								av_frame_free(&frame);
-								av_frame_free(&pFrameRGB);
+								//av_free(buffer);
+								
 				
-								// Free the YUV frame
+								//av_freep(&pFrame->data[0]);
+								
 								av_frame_free(&pFrame);
 								
+				
+								
+								av_freep(&frame->data[0]);
+								
+								av_frame_free(&frame);
+									
+								
 							}while(got_output == 0);
-							
-							
-							vidData[ID].encoded = 1;
 							
 							int packetSize = inputPacketSize * 8;
 							
@@ -1887,6 +1893,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									// Send the packet to the lower layer.	
 									op_pk_send (pkptr, 0);
 								}
+				
 								
 							}
 							
