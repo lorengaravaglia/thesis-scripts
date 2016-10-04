@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57F1CAC6 57F1CAC6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57F2F46A 57F2F46A 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1471,7 +1471,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
 								printf("-------------------------------------------------\n");
 							}
-									
+							
+							
 						
 							//uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 							do
@@ -1612,7 +1613,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 								//printf("set frame pts, about to encode\n");
 				
-								/* encode the image */
+								// encode the image 
 								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
 								printf("got output = %d\n", got_output);
 									
@@ -1646,17 +1647,24 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 								
 							}while(got_output == 0);
+						
+								
+						
 							
 							int packetSize = inputPacketSize * 8;
 							
-							printf("packet size = %d\n", packetSize);
+							//printf("packet size = %d\n", packetSize);
 							
-							printf("ffmpeg packet size = %d\n", vidData[ID].pkt.size);
+							//printf("ffmpeg packet size = %d\n", vidData[ID].pkt.size);
 							
 							
-							FrameSizeInPackets = ceil((double)vidData[ID].pkt.size/(double)packetSize);
+							//FrameSizeInPackets = ceil((double)vidData[ID].pkt.size/(double)packetSize);
 							
-							lastPacketSize = (vidData[ID].pkt.size % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
+							//lastPacketSize = (vidData[ID].pkt.size % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
+							
+							FrameSizeInPackets = ceil((double)4000/(double)packetSize);
+							
+							lastPacketSize = (4000 % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
 							printf("last packet size %d, framesizeinpackets = %d\n", lastPacketSize, FrameSizeInPackets);
 							
@@ -1677,6 +1685,10 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							PacketCounter = 0;
 					
 							frameDataPacketsSizeSum = 0;
+							
+							
+							//printf("Freeing packet\n");
+							//av_free_packet(&vidData[ID].pkt);
 							
 							
 							while(PacketCounter < FrameSizeInPackets)
