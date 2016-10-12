@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57F31B89 57F31B89 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57FDA2CE 57FDA2CE 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -3923,7 +3923,7 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			
 			/* Insert the structure into the packet.					*/
 			//Loren Debug
-			printf("Here1\n");
+			//printf("Here1\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, addba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_ADDBA_Fields));
 			frame_size = WLANC_ACT_MGMT_ADDBA_SIZE;
@@ -3959,7 +3959,7 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			
 			/* Insert the structure into the packet.					*/
 			//Loren Debug
-			printf("Here2\n");
+			//printf("Here2\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, delba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_DELBA_Fields));
 			frame_size = WLANC_ACT_MGMT_DELBA_SIZE;
@@ -5425,7 +5425,7 @@ wlan_hcf_control_frame_send (WlanT_Mac_Frame_Type frame_type, OpT_Int64 dest_add
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
 			//Loren Debug
-			printf("Here3\n");
+			//printf("Here3\n");
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_BA_FD, peer_tid_ba_info_ptr->block_ack_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -5661,7 +5661,7 @@ wlan_hcf_data_frame_send (WlanT_HCF_Hld_Info* hld_ptr)
 			qos_fields_ptr->tid        = hld_ptr->up;
 			qos_fields_ptr->ack_policy = hld_ptr->ack_policy;
 			//Loren Debug
-			printf("Here4\n");
+			//printf("Here4\n");
 			op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_DATA_QOS_FD, qos_fields_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_QoS_Control_Fields));
 		
@@ -7233,7 +7233,7 @@ wlan_hcf_beacon_send (void)
 	if (bss_edca_params_arr != OPC_NIL)
 		{
 		//Loren Debug
-			printf("Here5\n");
+		//printf("Here5\n");
 		pk_bbstruct_ptr->edca_param_set_arr = (WlanT_AC_EDCA_Param_Rec *)
 			op_prg_mem_copy_create (bss_edca_params_arr, sizeof (WlanT_AC_EDCA_Param_Rec) * WLANC_HCF_AC_COUNT);
 		
@@ -7979,7 +7979,7 @@ wlan_hcf_ba_control_frame_send (WlanT_HCF_Hld_Info* ba_cntl_info_ptr)
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
 		//Loren Debug
-			printf("Here6\n");
+		//printf("Here6\n");
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_BA_FD, ba_cntl_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -13977,13 +13977,14 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 
 	FIN (faceRecognition (testImg, d, src_addr));
 	
+	printf("test\n");
 	//Loren
-	//if(LorenDebugFlag)
-	//{
+	if(LorenDebugFlag)
+	{
 		sprintf(myString,"Entering face recognition function with image from node %d", (int)src_addr);
 		op_prg_odb_print_major(myString,OPC_NIL);
-	//}
-			
+	}
+	
 
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
 	for(int j = 0; j<5; j++)
@@ -13999,17 +14000,17 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 		{
 			case 0:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 1:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 2:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
+					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
 					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 3:
@@ -14149,9 +14150,9 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
-		//haar_cascade.detectMultiScale(gray, faces);
+		haar_cascade.detectMultiScale(testImg, faces);
 		
-		haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		// At this point you have the position of the faces in
 		// faces. Now we'll get the faces, make a prediction and
@@ -14279,9 +14280,9 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 				vidData[ID].noFaceCount++;
 				printf("Node %d no face count: %d\n",(int)src_addr, vidData[ID].noFaceCount);
 				
-				sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg\\testImg-node%xd-%d.jpg", (int)src_addr, (int)vidData[ID].noFaceCount);
+				//sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg\\testImg-node%d-%d.jpg", (int)src_addr, (int)vidData[ID].noFaceCount);
 				
-				imwrite(path, testImg);
+				//imwrite(path, testImg);
 			}
 		}
 	}
@@ -14299,7 +14300,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 	
 
 	
-	printf("prediction check = %d\n", predictionCheck);
+	//printf("prediction check = %d\n", predictionCheck);
 	
 	if(prediction == predictionCheck)
 	{
@@ -14545,7 +14546,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 		
-		printf("I am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
+		printf("\nI am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
 		
 		send_to_higher = OPC_TRUE;
 		
@@ -14599,15 +14600,25 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		else
 		{
 		*/
+		
+		//loren debugging
+		//if(LorenDebugFlag)
+		{
+			op_pk_print(seg_pkptr);
+		}
 		//op_pk_fd_get (seg_pkptr, 0, &sendingTime);
 		if(LorenDebugFlag)
 		{
 			printf("entered unformatted packet statement\n\n");
 		}
 		op_pk_fd_get (seg_pkptr, 1, &frameN);
+		printf("From Node %d: Frame number = %d\n", (int)src_addr, (int)frameN);
+		
 		op_pk_fd_get (seg_pkptr, 2, &packetN);
+		packetCounter[(int)src_addr] = packetN;
 		op_pk_fd_get (seg_pkptr, 3, &packetStatus);
 		op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
+		lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets - 1;
 		//}	
 		
 		//Loren, commenting out to speed up simulation
@@ -14617,12 +14628,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		if(current_time > EAestimationTime + 1)// time sensitive
 		{
 		
-			//loren debugging
-			if(LorenDebugFlag)
-			{
-				op_pk_print(seg_pkptr);
-			}
-		
+				
 			//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
 				
 			op_pk_fd_get (seg_pkptr, 5, &imageLineNumber);
@@ -14661,7 +14667,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 				printf("after getting creating array.\n");
 			}
-			 			
+			
+ 			
+						
+			if(packetN == (FrameSizeInPackets - 1))
+			{
 			
 			if(vidData[ID].startH264 == 1)
 			{
@@ -14671,8 +14681,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 			
 			
-			printf("about to allocate frame.\n");
+			printf("From Node %d: about to allocate frame.\n", (int)src_addr);
 			vidData[ID].pFrame=av_frame_alloc();
+			
 			//vidData[ID].dst = av_frame_alloc();
 				
 			//printf("allocated frame, about to allocate out buffer.\n");
@@ -14689,10 +14700,10 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			//	                         vidData[ID].pCodecCtx->height, dst_pixfmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 			//idData[ID].pCodecCtx->pix_fmt
 				
-			printf("finished setting convert context.\n");
+			//printf("finished setting convert context.\n");
+
 				
-				
-			//printf("about to check stream index.\n");
+			printf("From Node %d: about to check stream index.\n", (int)src_addr);
 				
 			if(vidData[ID].pkt.stream_index == vidData[ID].videoindex)
 			{
@@ -14701,11 +14712,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				uint8_t end[] = { 0, 0, 1, 0xb7 };
 					
 										
-				printf("decoding packet\n");
+				//printf("decoding packet\n");
 				ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
 
 						
-				//printf("finished decode.\n");
+				printf("From Node %d: finished decode.\n", (int)src_addr);
 				//printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
 				if(ret < 0)
 				{
@@ -14714,22 +14725,22 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					//return -1;
 				}
 					
-				//printf(" adjusting the packet\n");
+				printf("From Node %d: adjusting the packet\n", (int)src_addr);
 				if(vidData[ID].pkt.data)
 				{
-					printf("packet stuff\n");
+					//printf("packet stuff\n");
 					vidData[ID].pkt.size -= ret;
 					vidData[ID].pkt.data += ret;
 				}
 					
-				//printf("checking got picture.\n");
-				//printf("got_picture = %d\n", got_picture);
+				printf("From Node %d: checking got picture.\n", (int)src_addr);
+				printf("got_picture = %d\n", got_picture);
 				faceRecogFlag = got_picture;
 				if(got_picture)
 				{
 					
 						
-					printf("got picture.\n");
+					//printf("got picture.\n");
 					if(vidData[ID].convert_ctx == NULL)
 					{
 						printf("Cannot initialize the conversion context!\n");
@@ -14739,7 +14750,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					else
 					{
 						
-						printf("about to set scale.\n");
+						//printf("about to set scale.\n");
 						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
 						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
 						//sws_scale(vidData[ID].convert_ctx, (const uint8_t* const*)vidData[ID].pFrame->data, vidData[ID].pFrame->linesize, 0, vidData[ID].pFrame->height,
@@ -14766,7 +14777,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						
 						//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 								
-						printf("populating mat data.\n");			
+						printf("From Node %d: populating mat data.\n", (int)src_addr);			
 						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
 						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
 						//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
@@ -14775,11 +14786,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 				}
 			}
-			//printf("I am %d: freeing packet.\n", (int)my_address);
+			printf("I am %d: freeing packet.\n", (int)my_address);
 			
 			test = m.clone();
 				
-			printf("releasing mat m\n");
+			printf("I am %d: releasing mat m\n", (int)my_address);
 			m.release();
 				
 			//printf("Freeing buffer\n");
@@ -14789,19 +14800,20 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				
 			
 				
-			printf("trying to unref pkt\n");
+			printf("I am %d: trying to unref pkt\n", (int)my_address);
 			av_free_packet(&vidData[ID].pkt);
 				
 			//printf("freeing sws context.\n");
 			//sws_freeContext(vidData[ID].convert_ctx);
 				
-			printf("freeing frame.\n");
+			printf("I am %d: freeing frame.\n", (int)my_address);
 			//av_freep(&vidData[ID].pFrame->data[0]);
 			av_frame_free(&vidData[ID].pFrame);
 				
 			//printf("trying to free dst\n");
 			//av_freep(&vidData[ID].dst->data[0]);
 			//av_frame_free(&vidData[ID].dst);
+			}
 			
 		}
 		
@@ -14895,8 +14907,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 		
 		//Loren
-		//sprintf(myString, "About to compare, frameN = %d, lastframeN = %d", (int)frameN, lastFrameN[(int)src_addr]);
-		//op_prg_odb_print_major(myString,OPC_NIL);
+		sprintf(myString, "About to compare, frameN = %d, lastframeN = %d", (int)frameN, lastFrameN[(int)src_addr]);
+		op_prg_odb_print_major(myString,OPC_NIL);
 		
 		if(lastFrameN[(int)src_addr] != -1 && frameN != lastFrameN[(int)src_addr] )
 		{
@@ -14917,7 +14929,12 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 					}
 			}
-				
+			
+			//if(LorenDebugFlag)
+			{
+			
+				printf("node %d packet counter = %d, last frame size in packets = %d\n", (int)src_addr, (int)packetCounter[(int)src_addr], (int)lastFrameSizeInPackets[(int)src_addr]);
+			}	
 				
 			if(packetCounter[(int)src_addr] < lastFrameSizeInPackets[(int)src_addr])    //incomplete packet received
 			{
@@ -15185,17 +15202,20 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						
 						//sprintf(myString,"End FaceDetect");
 						//op_prg_odb_print_major(myString,OPC_NIL);
+						
+						
 						sprintf(myString,"Start Face Recognition");
 						op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
 						{
+							printf("training faces\n");
 							trainFaces();
 							trainingCompleteFlag = 1;
 						}
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
-							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
+							imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
 							faceRecognition(m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 						}
 						
@@ -15491,7 +15511,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 					
 				
-			if(calculationMethod == FRAMESTAT && completeFrameRecievedFlag)//complete frame recived
+			if(calculationMethod == FRAMESTAT && completeFrameRecievedFlag)//complete frame received
 			{
 				completeFrames[(int)src_addr]++;
 				totalFrames[(int)src_addr]++;
@@ -15522,15 +15542,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
 					op_prg_odb_print_major(myString,OPC_NIL);
 					
+					printf("training faces flag = %d face recog flag = %d\n", trainingCompleteFlag, faceRecogFlag);
+					
 					//Loren Call Face Recognition 2
 					if(trainingCompleteFlag == 0)
 					{
+						printf("training faces\n");
 						trainFaces();
 						trainingCompleteFlag = 1;
 					}
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
-					    //imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg3.jpg", test);
+					    imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg20.jpg", test);
 						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
 					}
 					
@@ -19628,10 +19651,10 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							for(q = 1 ; q < 101;q++)
 								fscanf(sizeInfo,"%d",&sizes[lineNo][q]);
 							
-							if(LorenDebugFlag)
-							{
-								printf("%s%s\n",imageName[lineNo], directoryName[lineNo]);
-							}
+							//if(LorenDebugFlag)
+							//{
+							//	printf("%s%s\n",imageName[lineNo], directoryName[lineNo]);
+							//}
 							
 						}
 							
