@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 57FDA2CE 57FDA2CE 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58003F4D 58003F4D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -717,7 +717,7 @@ double calculationPeriod = 7.5;
 int myDebugFlag = 0;
 int myDataFileGenerationFlag = 0;
 int myStringDebug = 0;
-int fee_lambda_trace_flag = 0;
+int fee_lambda_trace_flag = 1;
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
 int LorenDebugFlag = 0;
@@ -7075,8 +7075,7 @@ wlan_hcf_beacon_send (void)
 				|| strcmp(tempBnadwidth_allocation_method,"accu_withoutAnyEnhancement")==0|| strcmp(tempBnadwidth_allocation_method,"dist_withoutAnyEnhancement")==0|| strcmp(tempBnadwidth_allocation_method,"wdis_withoutAnyEnhancement")==0
 				|| strcmp(tempBnadwidth_allocation_method,"accu_D2_withoutAnyEnhancement")==0|| strcmp(tempBnadwidth_allocation_method,"accu_D2")==0
 				)
-				{
-			
+				{			
 				LAMBDA = pow((double)EA/sum,(b - 1.0));
 				}
 			else if(strcmp(tempBnadwidth_allocation_method,"accu_H")==0 || strcmp(tempBnadwidth_allocation_method,"accu_link_H")==0 
@@ -10823,6 +10822,9 @@ wlan_hcf_physical_layer_data_arrival (void)
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
 						appRateBits = (double) tempFrameSize*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8*1024*1024;
+						
+						//Loren
+						printf("appRateBits = %f with pruning flag\n", (double)appRateBits);
 							
 						//appRateBits = (double) f * last_sent_physicalRate - (double) f * last_sent_physicalRate *pruning_percent/100.0;//-last_sent_droppedBRate;
 						
@@ -10835,22 +10837,33 @@ wlan_hcf_physical_layer_data_arrival (void)
 						
 							appRateBits = (double) f * last_sent_physicalRate;//-last_sent_droppedBRate;
 							
-							
+							//Loren
+							printf("appRateBits = %f without pruning flag\n", (double)appRateBits);
 			
 						}
 									
 					}
 				else if(strcmp(bnadwidth_allocation_method,"EDCA")==0)
-					{
+				{
 					appRateBits = (double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
-					}
+					//Loren
+					printf("appRateBits = %f with EDCA\n", (double)appRateBits);
+				}
 				else if(strcmp(bnadwidth_allocation_method,"EDCA_estimation")==0 || strcmp(bnadwidth_allocation_method,"EDCA_estimation_txop")==0)
-					{
+				{
 					if(!EAcalculatedFlag)
+					{
 						appRateBits = (double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
-					else
-						appRateBits = (double)max_operational_speed*current_lambda/nodes_no;//-last_sent_droppedBRate;
+						//Loren
+						printf("appRateBits = %f with EDCA estimation not ea calculated.\n", (double)appRateBits);
 					}
+					else
+					{
+						appRateBits = (double)max_operational_speed*current_lambda/nodes_no;//-last_sent_droppedBRate;
+						//Loren
+						printf("appRateBits = %f with EDCA estimation, ea calculated.\n", (double)appRateBits);
+						}
+				}
 					
 				
 				if(current_time > EAestimationTime && (appRateBits <=0 || appRateBits >=200000000) )
@@ -13977,7 +13990,6 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 
 	FIN (faceRecognition (testImg, d, src_addr));
 	
-	printf("test\n");
 	//Loren
 	if(LorenDebugFlag)
 	{
