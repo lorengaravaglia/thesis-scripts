@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 580571B5 580571B5 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5806CB71 5806CB71 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -13977,7 +13977,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 	int prediction = -1;
 	char path[200] = "";
 	int ID = (int)src_addr - 1;
-	int predictionCheck = -1;
+	int predictionCheck = -2;
 	
 	// Min and max face sizes used to speed up face detection.
     int min_face_size = 150;
@@ -14024,18 +14024,18 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 			case 2:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");// cascade_name was in here.
 					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 3:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_profileface.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 4:
 			default:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
+					//op_prg_odb_print_major(myString,OPC_NIL);
 		}		
 	
 		//sprintf(myString,"Loaded the xml file into the haar_cascade");
@@ -14115,40 +14115,6 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 			//printf("just called cvtcolor\n");
 		}
 
-		/*
-		}
-		else
-		{
-			// convert input image into Mat format
-			cv::Mat frame(img);
-
-			// find the type of the image so that we can check if it is already grayscale.
-			int type = frame.type();
-			// begin by populating gray with the contents of frame.
-			gray = frame.clone();
-			if(type)
-			{
-				//printf("about to call cvtcolor\n");
-				cvtColor(frame, gray, CV_BGR2GRAY);
-				//printf("just called cvtcolor\n");
-			}
-		}
-		*/
-		
-		/*
-		// if the image is grayscale already there is no need to convert it again.
-		if(type)
-		{
-			printf("about to call cvtcolor\n");
-			cvtColor(frame, gray, CV_BGR2GRAY);
-			printf("just called cvtcolor\n");
-		}
-		*/
-		
-		//deallocate frame data since it is no longer needed.
-		//frame.deallocate();
-	
-		
 		if(LorenDebugFlag)
 		{
 			sprintf(myString,"finished initializing gray image.");
@@ -14205,9 +14171,6 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 				cv::Mat face_resized;
 				cv::resize(face, face_resized, cv::Size(im_width, im_height), 1.0, 1.0, cv::INTER_CUBIC);
 				
-				//sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg%d.jpg", (int)src_addr);
-				
-				//imwrite(path, face_resized);
 		
 				// Now perform the prediction, see how easy that is:
 		

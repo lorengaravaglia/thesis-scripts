@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 580571C0 580571C0 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5806CB68 5806CB68 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1240,6 +1240,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					int ID = atoi(temp) - 1;
 					printf("ID = %d\n", ID);
 					
+					/*
 					if(Node_LorenDebugFlag)
 					{
 						//Added to determine how often the apprate changes.
@@ -1248,6 +1249,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						fprintf(appRateOutputFile, "%f: %s apprate = %f\n", op_sim_time(), parentName, (float)appRate);
 						fclose(appRateOutputFile);
 					}
+					*/
 					
 					
 					// Determine whether we need to notify the control program that the bitrate has changed.
@@ -1509,7 +1511,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								printf("image data structure deleted\n");
 							}
 					
-							
+							/*
 							if(Node_LorenDebugFlag)
 							{
 								printf("%s: filepath = %s\n",parentName, vidData[ID].filepath);
@@ -1518,7 +1520,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								av_dump_format(vidData[ID].pFormatCtx,0,vidData[ID].filepath,0);
 								printf("-------------------------------------------------\n");
 							}
-				
+							*/
+							
 							do
 							{
 								printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
@@ -1549,7 +1552,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								}
 								
 				
-								printf("%s: Passed avpicture_fill\n", parentName);
+								//printf("%s: Passed avpicture_fill\n", parentName);
 				
 								// initialize SWS context for software scaling
 								sws_ctx = sws_getContext(vidData[ID].pCodecCtx->width,
@@ -1564,7 +1567,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										NULL
 										);
 									
-								printf("%s: Passed sws_getContext\n", parentName);
+								//printf("%s: Passed sws_getContext\n", parentName);
 									
 								av_init_packet(&packt);
 								packt.data = NULL;    // packet data will be allocated by the encoder
@@ -1573,16 +1576,16 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 								av_init_packet(&vidData[ID].pkt);
 									
-								printf("%s: Passed packet init\n", parentName);
+								//printf("%s: Passed packet init\n", parentName);
 									
 								vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
 								vidData[ID].pkt.size = 0;
 									
-								printf("%s: Passed packet value set\n", parentName);
+								//printf("%s: Passed packet value set\n", parentName);
 				
 								fflush(stdout);
 									
-								printf("%s: Passed flush\n", parentName);
+								//printf("%s: Passed flush\n", parentName);
 				
 								if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
 								{
@@ -1609,21 +1612,21 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								vidData[ID].dts = packt.dts;
 									
 								packt.dts += vidData[ID].last_dts;
-								printf("%s: Passed read frame\n", parentName);
+								//printf("%s: Passed read frame\n", parentName);
 									
 								// Is this a packet from the video stream?
 								if (packt.stream_index == vidData[ID].videoindex) 
 								{
 									
-									printf("%s: about to decode frame\n", parentName);
+									//printf("%s: about to decode frame\n", parentName);
 									// Decode video frame
 									avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
 										
-									printf("%s: Passed decode\n", parentName);
+									//printf("%s: Passed decode\n", parentName);
 									// Did we get a video frame?
 									if (frameFinished) 
 									{
-										printf("%s: frame finished.\n", parentName);
+										//printf("%s: frame finished.\n", parentName);
 										// Convert the image from its native format to RGB
 										sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
 											pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
@@ -1631,11 +1634,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									}
 								}
 									
-								printf("%s: about to set frame pts\n", parentName);
+								//printf("%s: about to set frame pts\n", parentName);
 				
 								frame->pts = pFrame->pkt_pts;
 							
-								printf("%s: set frame pts, about to encode\n", parentName);
+								//printf("%s: set frame pts, about to encode\n", parentName);
 				
 								// encode the image 
 								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
@@ -1667,7 +1670,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 							//printf("packet size = %d\n", packetSize);
 							
-							//printf("ffmpeg packet size = %d\n", vidData[ID].pkt.size);
+							printf("%s: ffmpeg packet size = %d\n", parentName, vidData[ID].pkt.size);
 							
 							
 							FrameSizeInPackets = ceil((double)vidData[ID].pkt.size/(double)packetSize);
@@ -1711,7 +1714,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								if(PacketCounter == FrameSizeInPackets -1)//last packet
 								{
 									pksize = lastPacketSize;
-									printf("%s: Packet size last packet = %d\n", parentName, pksize);
+									printf("%s: Packet size last packet = %lf\n", parentName, pksize);
 									packetStatus = -1;
 								}
 								
@@ -1752,7 +1755,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								
 								//Load ffmpeg stream
-								printf("%s: Calling ffmpeg code outside of init.\n", parentName);
+								//printf("%s: Calling ffmpeg code outside of init.\n", parentName);
 					
 								//size = sizeof(originalids);
 								
@@ -1761,7 +1764,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								op_pk_fd_set (pkptr, 1, OPC_FIELD_TYPE_INTEGER, FrameCounter, 32);
 								
-								printf("%s frame counter = %d\n", parentName, FrameCounter);
+								printf("%s: frame counter = %d\n", parentName, FrameCounter);
 								//printf("pksize after filling in frame counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								op_pk_fd_set (pkptr, 2, OPC_FIELD_TYPE_INTEGER, PacketCounter, 32);
 								//printf("pksize after filling in packet counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
@@ -1864,12 +1867,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									// Send the packet to the lower layer.	
 									op_pk_send (pkptr, 0);
 								}	
-							}
-							
-				
-							if(appOpencvDebugFlag)
-							{
-								printf("%s: image data structure deleted\n", parentName);
 							}
 							
 							op_stat_write(my_packet_data_size_stat,frameDataPacketsSizeSum/FrameSizeInPackets);
