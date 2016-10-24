@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5806CB71 5806CB71 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 580D66F8 580D66F8 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -745,7 +745,7 @@ int nodes_no = 1;
 double 							EA;
 
 double simulationTime = 600;
-int transitionTime = 20;  // used to be 20
+int transitionTime = 460;  // used to be 20
 int EAestimationTime = 20;
 int EACalculationPeriod = 5;
 double EACalulationFraction = 0.5;
@@ -765,7 +765,7 @@ double sumsumD=0;
 
 
 //PID stuff
-float error;
+float error = 0;
 float  Kprop  = 0.5;
 float  Kinteg = 0.25;
 float  Kderv  = 0.25;
@@ -790,26 +790,16 @@ CvMemStorage* storage = 0;
 char cascade_name[100];// =  "C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt2.xml";
 //Create a new Haar classifier
 CvHaarClassifierCascade* cascade = 0;
-//cv::CascadeClassifier cascade;
 
 int framesCounter = 0;
 
 enum PixelFormat	 dst_pixfmt = AV_PIX_FMT_BGR24;//AV_PIX_FMT_YUV420P; //AV_PIX_FMT_GRAY8; //PIX_FMT_BGR24;
 
-/*
-extern AVCodecContext		 *pCodecCtx;
-extern char 				 filepath[];
-extern int					 videoindex;
-*/
+FILE * appRateOutputFile;
+char myAppRateTraceName[100];
 
-//extern std::vector<FFMPEGData> vidData;
 extern FFMPEGData* vidData;
 
-/*
-cv::Size s;
-int rows = 0, cols = 0;
-cv::VideoCapture cap;
-*/
 
 int imwriteFlag = 0;
 int imgCount = 1;
@@ -6598,8 +6588,14 @@ wlan_hcf_beacon_send (void)
 				b = peer_info_ptr -> peer_b;
 				
 				if(EAcalculatedFlag != 1)
+				{
 					EAestimation += totalPeerStreamData[i]/(current_time-start_times[i])/peer_info_ptr -> peer_physicalRate;//for estimation
-			
+					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
+					appRateOutputFile = fopen(myAppRateTraceName, "a");
+					fprintf(appRateOutputFile,"At position EAestimation: EAestimation = %40.40f, total peer stream data = %40.40f, current time = %40.40f, start times = %40.40f, peer_physical rate = %40.40f\n", EAestimation, totalPeerStreamData[i], current_time, start_times[i],peer_info_ptr -> peer_physicalRate);
+					fclose(appRateOutputFile);
+				}	
+					
 				sumH+=peer_info_ptr -> peer_averageProtocolOverhead/peer_info_ptr -> peer_physicalRate;
 				
 				
@@ -6634,12 +6630,18 @@ wlan_hcf_beacon_send (void)
 				}
 			
 				
-		
-		
+			printf("current time = %f, EAestimationTime = %d, EAcalculatedFlag = %d, EAestimationFlag = %d\n", current_time, EAestimationTime, EAcalculatedFlag, EAestimationFlag);
+			
 			if (current_time > EAestimationTime && EAcalculatedFlag != 1 && EAestimationFlag == 1)
 				{
 				EAcalculatedFlag = 1;
 				EA = EAestimation;// * 1.1;
+				//Loren
+				printf("At position 1: EA = %%40.40f\n", EA);
+				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
+				appRateOutputFile = fopen(myAppRateTraceName, "a");
+				fprintf(appRateOutputFile,"At position 1: EA = %40.40f\n", EA);
+				fclose(appRateOutputFile);
 				//EA = 0.32;
 				//printf("before change bnadwidth_allocation_method = %s and tempBnadwidth_allocation_method = %s\n",bnadwidth_allocation_method,tempBnadwidth_allocation_method);
 				sprintf(bnadwidth_allocation_method,"%s",tempBnadwidth_allocation_method);
@@ -6650,7 +6652,12 @@ wlan_hcf_beacon_send (void)
 			else if (current_time <= EAestimationTime)
 				{
 				//EA = 1.0/(2.0/(cwmin_arr [WlanC_AC_VI]+2)/sumTXOP/stations_no +	( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI]+ 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and TXOP
-				EA = 1.0/(( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI]+ 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and without TXOP
+				EA = 1.0/(( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI] + 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and without TXOP
+				printf("At position 2: EA = %%40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
+				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
+				appRateOutputFile = fopen(myAppRateTraceName, "a");
+				fprintf(appRateOutputFile,"At position 2: EA = %40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
+				fclose(appRateOutputFile);
 				//EA = 0.3*EA;
 				//EA = 1.0/	( 1 + (2.0*stations_no/(double)(phy_cw_min+ 2.0))*pow(/phy_cw_min/(phy_cw_min+2.0),stations_no-1));//EA using phy CWmin
 				}
@@ -6817,6 +6824,12 @@ wlan_hcf_beacon_send (void)
 				else
 					EA = 0;
 				
+				
+				printf("At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
+				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
+				appRateOutputFile = fopen(myAppRateTraceName, "a");
+				fprintf(appRateOutputFile,"At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
+				fclose(appRateOutputFile);
 				//Loren
 				//sprintf(myString,"I am  %d:EA is calculated as %f, during PID.",(int)my_address,(double)EA);
 				//op_prg_odb_print_major(myString,OPC_NIL);
@@ -6837,9 +6850,9 @@ wlan_hcf_beacon_send (void)
 				
 				
 					//Loren
-					sprintf(myString,"I am  %d:EA is calculated as %f",(int)my_address,(double)EA);
+					sprintf(myString,"I am  %d:EA is calculated as %40.40f",(int)my_address,(double)EA);
 					op_prg_odb_print_major(myString,OPC_NIL);
-					sprintf(myString,"I am  %d:EAestimation is calculated as %f",(int)my_address,(double)EAestimation);
+					sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
 					op_prg_odb_print_major(myString,OPC_NIL);
 					//op_sim_end ("EA estimation is done", "", "", "");
 				}
@@ -7114,13 +7127,13 @@ wlan_hcf_beacon_send (void)
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
 				//Loren: chaged the print for the next two from %e to %f
-				sprintf(myString,"I am  %d:EA is calculated as %f",(int)my_address,(double)EA);
+				sprintf(myString,"I am  %d:EA is calculated as %40.40f",(int)my_address,(double)EA);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
-				sprintf(myString,"I am  %d:LAMBDA is calculated as %f",(int)my_address,(double)LAMBDA);
+				sprintf(myString,"I am  %d:LAMBDA is calculated as %40.40f",(int)my_address,(double)LAMBDA);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
-				sprintf(myString,"I am  %d:EAestimation is calculated as %f",(int)my_address,(double)EAestimation);
+				sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
 				}
@@ -13811,7 +13824,7 @@ void faceDetection( IplImage* img, char * in,char * d,double *accu, double *erro
 			//get the instantaneous accuracy and error.
 			*accu = (double) detectedFaces/fc;
 			*error = (double) fulseError/fc;
-			printf("Face Detection Accuracy = %.5f%%\nCurrent Accuracy = %.5f\n", totalDetectionAccuracy, *accu);
+			printf("Face Detection Accuracy = %.5f%%\nCurrent Accuracy = %.5f\nCurrent Error = %.5f\n", totalDetectionAccuracy, *accu, *error);
 			}
 		else
 			{
@@ -13842,22 +13855,16 @@ static void read_csv(const string& filename, std::vector<cv::Mat>& images, std::
         CV_Error(CV_StsBadArg, error_message);
     }
     std::string line, path, classlabel;
-    while (getline(file, line)) {
+    while (getline(file, line)) 
+	{
         stringstream liness(line);
         getline(liness, path, separator);
         getline(liness, classlabel);
-        if(!path.empty() && !classlabel.empty()) {
-			//sprintf(myString, "%s", path.c_str());
-			//op_prg_odb_print_major(myString,OPC_NIL);
+		
+        if(!path.empty() && !classlabel.empty()) 
+		{
             images.push_back(cv::imread(path, 0));
             labels.push_back(atoi(classlabel.c_str()));
-			/*
-			cv::Mat m = cv::imread(path, 1);
-			imshow("gathered Image", m);
-			cv::Mat m2;
-			cv::cvtColor(m,m2,CV_BGR2GRAY);
-			images.push_back(m2);
-			*/
         }
     }
 	FOUT;
@@ -13873,6 +13880,7 @@ static void trainFaces()
 	FIN (trainFaces ());
 	
 	// Get the path to your CSV.
+	/*
 	if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0 || 
 	   strcmp(curve,"accu_quality_GT_withoutNI")==0 || strcmp(curve,"accu_quality_GT_withoutNI")==0)
 		{
@@ -13901,8 +13909,8 @@ static void trainFaces()
 			return;
 		}
 			
-
-	fn_csv = "G:\\Masters_Thesis_Files\\Honda1.csv"; 
+	*/
+	fn_csv = "G:\\Masters_Thesis_Files\\Honda.csv"; 
     //string fn_haar = cascade);		// we don't need to load the xml because it is a global assigned elsewhere.
     
     if(LorenDebugFlag)
@@ -13969,7 +13977,7 @@ static void trainFaces()
 
 
 // Loren start face recognition
-void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
+void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, double *error)
 {
 	using namespace cv;
 	//cv::Mat gray;
@@ -13989,7 +13997,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
     im_width =	75;	//images[0].cols;
     im_height =	75;	//images[0].rows;
 
-	FIN (faceRecognition (testImg, d, src_addr));
+	FIN (faceRecognition (testImg, d, src_addr, accu, error));
 	
 	//Loren
 	if(LorenDebugFlag)
@@ -14012,12 +14020,12 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 		switch(j)
 		{
 			case 0:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
+					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");// cascade_name was in here.
 					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
 					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 1:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");// cascade_name was in here.
+					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
 					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
 					//op_prg_odb_print_major(myString,OPC_NIL);
 					break;
@@ -14036,6 +14044,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");// cascade_name was in here.
 					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
 					//op_prg_odb_print_major(myString,OPC_NIL);
+					break;
 		}		
 	
 		//sprintf(myString,"Loaded the xml file into the haar_cascade");
@@ -14066,38 +14075,10 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 			FOUT;
 		}
 		
-			
-		
-		//Loren
+						
 		if(LorenDebugFlag)
 		{
-			sprintf(myString,"About to clone testImg into gray");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-			
-		//gray = testImg.clone();
-			
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"About to print images");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-				
-		//if(gray.empty())
-		//{
-		//	FOUT;
-		//}
-			
-		//if(imwriteFlag == 0)
-		//{
-				
-			//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\gray_image.jpg", gray);
-			//imwriteFlag = 1;
-		//}
-			
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"passed print image instructions, about to get gray image type.");
+			sprintf(myString,"about to get gray image type.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 			
@@ -14231,38 +14212,51 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 					case 8:
 					case 9:
 					case 10: predictionCheck = 4;
-							break;
+							 break;
 					case 11: predictionCheck = 5;
-							break; 
+							 break; 
 					case 12: predictionCheck = 6;
-							break;
+							 break;
 					case 13:
 					case 14: predictionCheck = 7;
-							break;
+							 break;
 					case 15:
 					case 16: 
 					case 17: predictionCheck = 8;
-							break;
+							 break;
 					case 18:
 					case 19: predictionCheck = 9;
-							break;
+							 break;
 					case 20: 
 					case 21: 
 					case 22: predictionCheck = 10;
-							break;
+							 break;
 					case 23:
 					case 24: predictionCheck = 11;
-							break;
+							 break;
 					case 25:
 					case 26: predictionCheck = 12;
-							break;
+							 break;
 					case 27:
 					case 28:
 					case 29:
 					case 30: predictionCheck = 13;
-							break;
+							 break;
+					case 31: 
+					case 32: predictionCheck = 14;
+							 break;
+					case 33:
+					case 34: predictionCheck = 15;
+							 break;
+					case 35: predictionCheck = 16;
+							 break;
+					case 36: 
+					case 37: predictionCheck = 17;
+							 break;
+					case 38: predictionCheck = 18;
+							 break;
 					default: predictionCheck = -1;
-							break;
+							 break;
 				}
 				
 				if(prediction == predictionCheck)
@@ -14319,6 +14313,10 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr)
 		printf("node %d incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 	}
 	vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
+	
+	*accu = (double)vidData[ID].nodeAccuracy/(double)100;
+	*error = (double)1.0 - (double)vidData[ID].nodeAccuracy/(double)100;
+	
 	// print out accuracy to the simulation console.
 	sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
 	op_prg_odb_print_major(myString,OPC_NIL);
@@ -14592,7 +14590,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		*/
 		
 		//loren debugging
-		//if(LorenDebugFlag)
+		if(LorenDebugFlag)
 		{
 			op_pk_print(seg_pkptr);
 		}
@@ -15137,7 +15135,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
 						//Loren: for testing i am not running.
-						faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
+						//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 						
 						sprintf(myString,"End FaceDetect accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
 						op_prg_odb_print_major(myString,OPC_NIL);
@@ -15155,7 +15153,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
 							imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-							faceRecognition(m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
+							faceRecognition(m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
 						}
 						
 						//sprintf(myString,"End Face Recognition");
@@ -15163,7 +15161,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						if(opencvDebugFlag)
 						{
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n",accuracy, accuracyError);
+							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n", accuracy, accuracyError);
 							fclose(opencvDebugFile);
 						}
 						
@@ -15196,7 +15194,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				}
 					
 				lostPacketsCounter[(int)src_addr] = 0;//reset counter for the next frame
-				op_stat_write (CVAccuracyI, accuracy);
+				op_stat_write (CVAccuracyI, accuracyError);
 				op_stat_write (CVAccuracyA, accuracy);
 									
 						
@@ -15474,7 +15472,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					op_prg_odb_print_major(myString,OPC_NIL);
 					
 					//Loren: For testing i am not calling this
-					faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
+					//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 					
 					sprintf(myString,"End FaceDetect 1 accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
 					op_prg_odb_print_major(myString,OPC_NIL);
@@ -15493,7 +15491,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
 					    imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg20.jpg", test);
-						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr);
+						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
 					}
 					
 					//sprintf(myString,"End FaceRecognition 1");
@@ -15515,7 +15513,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					op_sim_end("Could not create cvImage using cvLoadImage","","","");
 				}
 						
-				op_stat_write (CVAccuracyC, accuracy);
+				op_stat_write (CVAccuracyC, accuracyError);
 				op_stat_write (CVAccuracyA, accuracy);
 												
 				completeFrameRecievedFlag = 0;

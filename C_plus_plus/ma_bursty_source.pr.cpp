@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5806CB68 5806CB68 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 580D66F3 580D66F3 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
 #include <string.h>
 
 
@@ -115,8 +115,8 @@ OmsT_Distribution *           packet_size_dist_handle;*/
 char 				 myString[200];
 double				 newValue;
 int					 flag = 0;
-int 				 appOpencvDebugFlag = 1;
-int 				 Node_LorenDebugFlag = 1;
+int 				 appOpencvDebugFlag = 0;
+int 				 Node_LorenDebugFlag = 0;
 int 				 EAestimationTimeApp = 20;	//should match EAestimationTime in mac
 int 				 transitionTimeApp = 20; 	// used to be 460
 int 				 frameSizeAverageCalculationPeriod = 0.5;
@@ -146,22 +146,14 @@ char 				 parentName[60];
 int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
-//double				 prevAppRate = 0;
-int					 createPipeFlag = 0;
 
 
 
-FILE * appRateOutputFile;
-char myAppRateTraceName[100];
+
+//FILE * appRateOutputFile;
+//char myAppRateTraceName[100];
 //int frameCount = 0;
-FILE * frameTime;
-
-/*
-HANDLE hPipe;
-DWORD dwWritten = 0;
-char message[20];
-int start = 0;
-*/
+//FILE * frameTime;
 
 
 /* End of Header Block */
@@ -769,9 +761,41 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming3.avi");
 	}
-	else
+	else if(ID == 30)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming4.avi");
+	}
+	else if(ID == 31)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake1.avi");
+	}
+	else if(ID == 32)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake2.avi");
+	}
+	else if(ID == 33)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh1.avi");
+	}
+	else if(ID == 34)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rahesh\\rakesh2.avi");
+	}
+	else if(ID == 35)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\saito\\saito1.avi");
+	}
+	else if(ID == 36)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor1.avi");
+	}
+	else if(ID == 37)
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi");
+	}
+	else
+	{
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\yokoyama\\yokoyama1.avi");
 	}
 	
 	//Load ffmpeg stream
@@ -848,7 +872,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	vidData.c->height = 480;
 	/* frames per second */
 	AVRational test;
-	test.den = 14;
+	test.den = 15;
 	test.num = 1;
 	vidData.c->time_base = test;
 	/* emit one intra frame every ten frames
