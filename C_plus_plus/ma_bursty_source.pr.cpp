@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 580D66F3 580D66F3 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581941B6 581941B6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -883,9 +883,9 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	*/
 	vidData.c->gop_size = 10;
 	vidData.c->max_b_frames = 1;
-	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;
+	vidData.c->pix_fmt = AV_PIX_FMT_YUVJ422P;//AV_PIX_FMT_YUV420P;
 
-	av_opt_set(vidData.c->priv_data, "preset", "slow", 0);
+	//av_opt_set(vidData.c->priv_data, "preset", "fast", 0);
 
 	/* open it */
 	if (avcodec_open2(vidData.c, vidData.codec, NULL) < 0) 
@@ -1278,7 +1278,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 					// Determine whether we need to notify the control program that the bitrate has changed.
 					// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
-					
 					if((appRate >= (vidData[ID].prevAppRate + 100)) || (appRate <= (vidData[ID].prevAppRate - 100)))
 					{
 					
@@ -1300,7 +1299,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						vidData[ID].prevAppRate = (int)appRate;
 					}
 					
-					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
+					if (op_sim_time () >= EAestimationTimeApp + transitionTimeApp)//if EA estimation time is done
 					{
 				
 						int q;
@@ -1515,7 +1514,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//FrameSizeInPackets = ids->rtpPacketsNeeded;
 						
 							
-						
+							//printf("frame size in packets = %d\n", FrameSizeInPackets);
 							//while(ids->components[0][x].packetID <= FrameSizeInPackets)
 							//{
 							if(appOpencvDebugFlag)
@@ -1696,12 +1695,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 							printf("%s: ffmpeg packet size = %d\n", parentName, vidData[ID].pkt.size);
 							
-							
+							//Loren removed to test something
 							FrameSizeInPackets = ceil((double)vidData[ID].pkt.size/(double)packetSize);
 							
 							lastPacketSize = (vidData[ID].pkt.size % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
-							//FrameSizeInPackets = ceil((double)4000/(double)packetSize);
 							
 							//lastPacketSize = (4000 % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
@@ -1712,18 +1710,24 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								printf("%s: sending image %s packets, number of packets is %d, lastPacketSize = %d  \n",parentName, line, FrameSizeInPackets,(int)lastPacketSize);
 							}
 							
-							RTPoverhead += (64+23)*8 + (FrameSizeInPackets-1)*23*8;
+							RTPoverhead += (64+23)*8 + ((int)FrameSizeInPackets-1)*23*8;
 						
+							//printf("writing rtp overhead stat\n");
 							op_stat_write (RTPoverheadStat, (double) RTPoverhead/(op_sim_time () - 20));
 					
+							
+							//printf(" packet counter \n");
 							PacketCounter = 0;
 					
+							//printf ("framedatapacketsizesum\n");
 							frameDataPacketsSizeSum = 0;
 							
-				
-							while(PacketCounter < FrameSizeInPackets)
+							//printf("while loop start %d\n", FrameSizeInPackets);
+							while(PacketCounter < (int)FrameSizeInPackets)
 							{
 								int packetStatus = 0,tPS;
+								
+								//printf("about to initialize pksize\n");
 						
 								pksize = floor ((double) oms_dist_positive_outcome_with_error_msg (packet_size_dist_handle, 
 									"This occurs for packet size distribution in bursty_source process model."));
@@ -1788,7 +1792,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								op_pk_fd_set (pkptr, 1, OPC_FIELD_TYPE_INTEGER, FrameCounter, 32);
 								
-								printf("%s: frame counter = %d\n", parentName, FrameCounter);
+								//printf("%s: frame counter = %d\n", parentName, FrameCounter);
 								//printf("pksize after filling in frame counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
 								op_pk_fd_set (pkptr, 2, OPC_FIELD_TYPE_INTEGER, PacketCounter, 32);
 								//printf("pksize after filling in packet counter info  = %lf \n",(double) op_pk_total_size_get(pkptr));
@@ -1893,7 +1897,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								}	
 							}
 							
-							op_stat_write(my_packet_data_size_stat,frameDataPacketsSizeSum/FrameSizeInPackets);
+							if(FrameSizeInPackets != 0)
+								op_stat_write(my_packet_data_size_stat,frameDataPacketsSizeSum/FrameSizeInPackets);
 						}
 						
 						
@@ -1948,7 +1953,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						averageFrameSize = frameSize; //initialization
 											
-						printf("%s: appRate = %f, pksize = %f, frameSize = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize);
+						//printf("%s: appRate = %f, pksize = %f, frameSize = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize);
 						FrameSizeInPackets = ceil(frameSize*8.0/pksize);
 									
 						RTPoverhead += (64+23)*8 + (FrameSizeInPackets-1)*23*8;
@@ -2082,7 +2087,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							op_prg_odb_print_major(myString,OPC_NIL);
 						}
 					}
-					printf("end of ma_bursty_source.\n");
+					//printf("end of ma_bursty_source.\n");
 				}
 				}
 				FSM_PROFILE_SECTION_OUT (state2_enter_exec)

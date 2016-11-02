@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 580D66F8 580D66F8 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5819416F 5819416F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -745,7 +745,7 @@ int nodes_no = 1;
 double 							EA;
 
 double simulationTime = 600;
-int transitionTime = 460;  // used to be 20
+int transitionTime = 20;  // used to be 20
 int EAestimationTime = 20;
 int EACalculationPeriod = 5;
 double EACalulationFraction = 0.5;
@@ -3490,7 +3490,7 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	/* same message is written before.							*/
 	
 	//Loren: Debugging
-	if(LorenDebugFlag)
+	//if(LorenDebugFlag)
 	{
 		printf("entered higher layer packet drop function.\n");
 	}
@@ -3499,7 +3499,7 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 		{
 		
 		//Loren: Debugging
-		if(LorenDebugFlag)
+		//if(LorenDebugFlag)
 		{
 			printf("entered higher layer packet drop first if statement.\n");
 		}
@@ -3508,7 +3508,7 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 			{
 			
 			//Loren: Debugging
-			if(LorenDebugFlag)
+			//if(LorenDebugFlag)
 			{
 				printf("entered higher layer packet drop second if statement.\n");
 			}	
@@ -3534,7 +3534,7 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 			{
 			
 			//Loren: Debugging
-			if(LorenDebugFlag)
+			//if(LorenDebugFlag)
 			{
 				printf("entered higher layer packet drop else if statement.\n");
 			}
@@ -3569,21 +3569,13 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	}
 		
 	/* Destroy the dropped packet.								*/
-	op_pk_format(hld_pkptr, fmt_name);
-	if(LorenDebugFlag)
+	//if(LorenDebugFlag)
 	{
 		printf("I am  %d: hld_pkptr is of type %s\n",(int)my_address, fmt_name);
 	}
 	
-	if(strcmp(fmt_name, "my_rtp_pkt") != 0)
-	{
-		op_pk_destroy (hld_pkptr);
-	}
-	
-	else
-	{	
-		op_prg_mem_free(hld_pkptr); 
-	}
+
+	op_prg_mem_free(hld_pkptr); 
 	
 	//Loren: Debugging
 	if(LorenDebugFlag)
@@ -3614,7 +3606,7 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	op_stat_write (ac_gb_dropped_buffer_shndl_arr [ac],   0.0);
 	
 	//Loren: Debugging
-	if(LorenDebugFlag)
+	//if(LorenDebugFlag)
 	{
 		printf("exiting higher layer packet drop function.\n");
 	}
@@ -7557,6 +7549,8 @@ wlan_hcf_stateReport_send (void)
 	
 	pk_srstruct_ptr->pk_droppedBRate = my_droppedB_sum/(op_sim_time()-last_my_droppedB_calculated_time);
 	last_sent_droppedBRate = pk_srstruct_ptr->pk_droppedBRate;
+	//Loren
+	printf("pk_droppedBRate = %f, my_droppedB_sum = %40.40f, op_sim_time = %f, last_my_droppedB_calculated_time = %f\n", (double)pk_srstruct_ptr->pk_droppedBRate, my_droppedB_sum, op_sim_time(), last_my_droppedB_calculated_time);
 	
 	
 	
@@ -14008,7 +14002,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 	
 
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
-	for(int j = 0; j<5; j++)
+	for(int j = 0; j<1; j++)
 	{
 		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
 		
@@ -14380,7 +14374,7 @@ void startFFMPEGH264(FFMPEGData &vidData, int node)
 	FIN (startFFMPEGH264(vidData,node));
 	
 	/* find the mpeg1 video decoder */
-    vidData.pCodec1 = avcodec_find_decoder(AV_CODEC_ID_H264);
+    vidData.pCodec1 = avcodec_find_decoder(vidData.codec_id);
     if (!vidData.pCodec1) {
         fprintf(stderr, "Codec not found\n");
         //exit(1);
@@ -14603,17 +14597,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		printf("From Node %d: Frame number = %d\n", (int)src_addr, (int)frameN);
 		
 		op_pk_fd_get (seg_pkptr, 2, &packetN);
-		packetCounter[(int)src_addr] = packetN;
+		//packetCounter[(int)src_addr] = packetN;
 		op_pk_fd_get (seg_pkptr, 3, &packetStatus);
 		op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
-		lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets - 1;
+		lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets;
 		//}	
 		
 		//Loren, commenting out to speed up simulation
 		//printf("I am %d: got packet from node %d. Frame Number = %d  Packet Number = %d  Frame Size in Packets = %d\n", (int)my_address, (int)src_addr, (int)frameN, (int)packetN, (int)FrameSizeInPackets);
 		
 		
-		if(current_time > EAestimationTime + 1)// time sensitive
+		if(current_time > EAestimationTime + transitionTime)// time sensitive
 		{
 		
 				
@@ -14886,8 +14880,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		    }
 					
 			//Loren
-			//sprintf(myString, "Just determined, frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
-			//op_prg_odb_print_major(myString,OPC_NIL);		
+			sprintf(myString, "Just determined, frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
+			op_prg_odb_print_major(myString,OPC_NIL);		
 			
 			packetCounter[(int)src_addr]=0;
 			//peerStreamData[(int)src_addr] = 0;
@@ -14904,7 +14898,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		peerStreamDataForRate2[(int)src_addr] += op_pk_total_size_get(seg_pkptr);//-(packetN==0?(64+23)*8:23*8);
 		
 		
-		if(current_time <= EAestimationTime + transitionTime)    // time sensitive
+		if(current_time <= EAestimationTime + transitionTime +1)    // time sensitive
 			if(frameRecievedFlag || completeFrameRecievedFlag)
 				lostPacketsCounter[(int)src_addr] = 0;
 			
@@ -14916,11 +14910,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_prg_odb_print_major(myString,OPC_NIL);	
 		}
 		
-    	if(current_time > EAestimationTime+transitionTime)       // time sensitive
+    	if(current_time > EAestimationTime+transitionTime + 1)       // time sensitive
 		{
 						
 			//Loren
-			if(LorenDebugFlag)
+			//if(LorenDebugFlag)
 			{
 				sprintf(myString,"I am %d, frame forward function current time (%f) > EA estimation time + transition time.", (int)my_address, (float)current_time);
 				op_prg_odb_print_major(myString,OPC_NIL);
@@ -15078,7 +15072,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				totalFrames[(int)src_addr]++;
 				
 				//Loren
-				if(LorenDebugFlag)
+				//if(LorenDebugFlag)
 				{
 					sprintf(myString,"I am %d, incomplete frame received.", (int)my_address);
 					op_prg_odb_print_major(myString,OPC_NIL);
@@ -15144,7 +15138,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						sprintf(myString,"Start Face Recognition");
 						op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
-						if(trainingCompleteFlag == 0)
+						/*if(trainingCompleteFlag == 0)
 						{
 							printf("training faces\n");
 							trainFaces();
@@ -15163,7 +15157,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n", accuracy, accuracyError);
 							fclose(opencvDebugFile);
-						}
+						}*/
 						
 						//m.release();
 								
@@ -15482,7 +15476,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					printf("training faces flag = %d face recog flag = %d\n", trainingCompleteFlag, faceRecogFlag);
 					
 					//Loren Call Face Recognition 2
-					if(trainingCompleteFlag == 0)
+					/*if(trainingCompleteFlag == 0)
 					{
 						printf("training faces\n");
 						trainFaces();
@@ -15500,7 +15494,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					if(opencvDebugFlag)
 					{
 						printf("from accuracy = %lf, accuracyError = %lf\n",accuracy, accuracyError);
-					}
+					}*/
 					
 					//printf("releasing images.\n");
 					//m.release();

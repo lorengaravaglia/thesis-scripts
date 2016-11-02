@@ -43,6 +43,7 @@ uint8_t			     *out_buffer;
 struct SwsContext    *convert_ctx;
 int64_t pts, dts, last_pts, last_dts;
 double prevAppRate;
+int noFaceCount;
 double nodeCorrect, nodeTotal, nodeAccuracy;
 
 int					 videoindex, restart,frameCount, startH264;
@@ -67,6 +68,7 @@ AVPacket* pack;// = new AVPacket[5000];
 		nodeCorrect = 0;
 		nodeTotal = 0;
 		nodeAccuracy = 0;
+		noFaceCount = 0;
 		sprintf_s(filepath, "None");
 		codec_id = AV_CODEC_ID_H264;
 		c = NULL;
