@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5819416F 5819416F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581FF1EA 581FF1EA 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -10497,6 +10497,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 					double tempF = pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
 						/(importance * accuracyConstant_a * accuracyConstant_b * last_sent_physicalRate * pow(last_sent_physicalRate/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT),accuracyConstant_b-1)),1/(accuracyConstant_b-1)); 
 					
+					//printf(" f Calculated here: current lambda = %f, importance = %f, last_sent_PhysicalRate = %f", (double)current_lambda, (double)importance, (double)last_sent_physicalRate);
 					f = tempF;
 					
 					//double tempF = ((double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
@@ -19323,9 +19324,11 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 								fclose(opencvDebugFile);
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");	
-								accuracyConstant_a = 8.597e-013;
-								accuracyConstant_b =-3.654;
+								
+								accuracyConstant_a = 8.597e-020;
+								accuracyConstant_b = -2.1;//-3.654;
 								accuracyConstant_c = 0.08355;
+								
 								}
 							
 							else if(strcmp(curve,"accu_quality_GT_withoutNI")==0)//in Mbytes

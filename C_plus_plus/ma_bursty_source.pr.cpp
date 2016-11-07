@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581941B6 581941B6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581FD318 581FD318 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -866,7 +866,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	printf("Initializing c\n");
 	/* put sample parameters */
-	vidData.c->bit_rate = bitrate;	//(int)appRate;
+	vidData.c->bit_rate = (bitrate * 8);	//(int)appRate;
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -881,7 +881,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	vidData.c->gop_size = 10;
+	vidData.c->gop_size = 10; //10
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUVJ422P;//AV_PIX_FMT_YUV420P;
 
@@ -1237,7 +1237,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 					appRate = newValue;
 					frameSize = appRate/frameRate;//frame size in byte
-					//printf("New appRate = %f, framesize = %f, framerate = %f\n", (float)appRate, (float)frameSize, (float)frameRate);
+					printf("New appRate = %f, framesize = %f, framerate = %f\n", (float)appRate, (float)frameSize, (float)frameRate);
 					flag = 1;
 					
 					sprintf(intarrvl_rate_string,"exponential(%f)",(double)frameSize/(appRate));//it is used
@@ -1342,7 +1342,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						originalFrameSize = frameSize;
 						alreadySent = 0;
 						
-						printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
+						//printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
 						
 						op_stat_write (app_appRate_stat, (double) appRate*8);
 						
@@ -1742,7 +1742,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								if(PacketCounter == FrameSizeInPackets -1)//last packet
 								{
 									pksize = lastPacketSize;
-									printf("%s: Packet size last packet = %lf\n", parentName, pksize);
+									printf("%s: Packet size last packet = %d\n", parentName, (int)pksize);
 									packetStatus = -1;
 								}
 								
@@ -1761,7 +1761,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 								if(appOpencvDebugFlag)
 								{
-									printf("%s: sending image %s packets, sending packet number %d, pksize = %lf \n", parentName, line, PacketCounter,pksize);
+									printf("%s: sending image %s packets, sending packet number %d, pksize = %d \n", parentName, line, PacketCounter, (int)pksize);
 								}
 								
 								total_bits_sent +=pksize;
@@ -1953,7 +1953,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						averageFrameSize = frameSize; //initialization
 											
-						//printf("%s: appRate = %f, pksize = %f, frameSize = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize);
+						printf("%s: appRate = %f, pksize = %f, frameSize = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize);
 						FrameSizeInPackets = ceil(frameSize*8.0/pksize);
 									
 						RTPoverhead += (64+23)*8 + (FrameSizeInPackets-1)*23*8;
