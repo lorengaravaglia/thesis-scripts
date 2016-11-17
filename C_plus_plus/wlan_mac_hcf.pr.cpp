@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581FF1EA 581FF1EA 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5828870D 5828870D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -1960,6 +1960,7 @@ wlan_hcf_sv_init (void)
 		
 	
 	//initialize app rate
+
 	appRateBits = data_tx_rate / nodes_no;
 	op_stat_write (mac_appRate_stat, appRateBits);
 					
@@ -7082,6 +7083,8 @@ wlan_hcf_beacon_send (void)
 				)
 				{			
 				LAMBDA = pow((double)EA/sum,(b - 1.0));
+				//Loren
+				printf("Lambda calculated here: LAMBDA = %40.40f, EA = %40.40f, sum = %40.40f, b = %f\n", (double)LAMBDA, (double)EA, (double)sum, (double)b);
 				}
 			else if(strcmp(tempBnadwidth_allocation_method,"accu_H")==0 || strcmp(tempBnadwidth_allocation_method,"accu_link_H")==0 
 				|| strcmp(tempBnadwidth_allocation_method,"wdis_H")==0 ||strcmp(tempBnadwidth_allocation_method,"wdis_link_H")==0
@@ -10497,7 +10500,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 					double tempF = pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
 						/(importance * accuracyConstant_a * accuracyConstant_b * last_sent_physicalRate * pow(last_sent_physicalRate/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT),accuracyConstant_b-1)),1/(accuracyConstant_b-1)); 
 					
-					//printf(" f Calculated here: current lambda = %f, importance = %f, last_sent_PhysicalRate = %f", (double)current_lambda, (double)importance, (double)last_sent_physicalRate);
+					printf(" f Calculated here: tempF = %40.40f, current lambda = %40.40f, importance = %f, last_sent_PhysicalRate = %f",(double)tempF, (double)current_lambda, (double)importance, (double)last_sent_physicalRate);
 					f = tempF;
 					
 					//double tempF = ((double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
@@ -10844,7 +10847,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						//op_prg_odb_print_major(myString,OPC_NIL);
 						
-							appRateBits = (double) f * last_sent_physicalRate;//-last_sent_droppedBRate;
+							appRateBits = ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate;
 							
 							//Loren
 							printf("appRateBits = %f without pruning flag\n", (double)appRateBits);
@@ -19325,9 +19328,9 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");	
 								
-								accuracyConstant_a = 8.597e-020;
-								accuracyConstant_b = -2.1;//-3.654;
-								accuracyConstant_c = 0.08355;
+								accuracyConstant_a = 8.555; //8.597e-13;
+								accuracyConstant_b = -1.121; //-3.654;
+								accuracyConstant_c = 0.5711; //0.08355;
 								
 								}
 							

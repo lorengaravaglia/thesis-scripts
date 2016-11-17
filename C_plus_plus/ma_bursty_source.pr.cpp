@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 581FD318 581FD318 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 582D0DEB 582D0DEB 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -866,7 +866,8 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	printf("Initializing c\n");
 	/* put sample parameters */
-	vidData.c->bit_rate = (bitrate * 8);	//(int)appRate;
+	vidData.c->bit_rate = (bitrate * 8) + 3250000;	//(int)appRate;
+	printf("Bitrate = %f\n", (double)(bitrate * 8) + 5250000);
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -883,7 +884,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	*/
 	vidData.c->gop_size = 10; //10
 	vidData.c->max_b_frames = 1;
-	vidData.c->pix_fmt = AV_PIX_FMT_YUVJ422P;//AV_PIX_FMT_YUV420P;
+	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUVJ422P;//
 
 	//av_opt_set(vidData.c->priv_data, "preset", "fast", 0);
 
@@ -1276,28 +1277,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					*/
 					
 					
-					// Determine whether we need to notify the control program that the bitrate has changed.
-					// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
-					if((appRate >= (vidData[ID].prevAppRate + 100)) || (appRate <= (vidData[ID].prevAppRate - 100)))
-					{
-					
-						printf("Node: %s, ID: %d\n", parentName, ID);
-						
 				
-						
-						// Prepare for restart
-						printf("%s: preparing for restart\n", parentName);
-						//printf("apprate = %d, previous apprate = %d\n", (int)appRate, vidData[ID].prevAppRate);
-				
-						stopFFMPEG(vidData[ID]);
-						
-						
-						// Restart the stream.
-						startFFMPEG(vidData[ID], (int)appRate, ID);
-						
-						//printf("done with startFFMPEG.\n");
-						vidData[ID].prevAppRate = (int)appRate;
-					}
 					
 					if (op_sim_time () >= EAestimationTimeApp + transitionTimeApp)//if EA estimation time is done
 					{
@@ -1326,6 +1306,29 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						//printf("I am: %s\n", myName);
 						printf("Parent is %s\n", parentName);
+						
+						// Determine whether we need to notify the control program that the bitrate has changed.
+						// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
+						if((appRate >= (vidData[ID].prevAppRate + 100)) || (appRate <= (vidData[ID].prevAppRate - 100)))
+						{
+					
+							printf("Node: %s, ID: %d\n", parentName, ID);
+						
+				
+						
+							// Prepare for restart
+							printf("%s: preparing for restart\n", parentName);
+							//printf("apprate = %d, previous apprate = %d\n", (int)appRate, vidData[ID].prevAppRate);
+				
+							stopFFMPEG(vidData[ID]);
+						
+						
+							// Restart the stream.
+							startFFMPEG(vidData[ID], (int)appRate, ID);
+						
+							//printf("done with startFFMPEG.\n");
+							vidData[ID].prevAppRate = (int)appRate;
+						}
 						
 						if(RTPoverheadResetFlag == 0)
 						{
