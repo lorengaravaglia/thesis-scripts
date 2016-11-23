@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5828870D 5828870D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 583221F6 583221F6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -6583,10 +6583,14 @@ wlan_hcf_beacon_send (void)
 				if(EAcalculatedFlag != 1)
 				{
 					EAestimation += totalPeerStreamData[i]/(current_time-start_times[i])/peer_info_ptr -> peer_physicalRate;//for estimation
+					
+					//Loren added for debugging
+					/*
 					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
 					appRateOutputFile = fopen(myAppRateTraceName, "a");
 					fprintf(appRateOutputFile,"At position EAestimation: EAestimation = %40.40f, total peer stream data = %40.40f, current time = %40.40f, start times = %40.40f, peer_physical rate = %40.40f\n", EAestimation, totalPeerStreamData[i], current_time, start_times[i],peer_info_ptr -> peer_physicalRate);
 					fclose(appRateOutputFile);
+					*/
 				}	
 					
 				sumH+=peer_info_ptr -> peer_averageProtocolOverhead/peer_info_ptr -> peer_physicalRate;
@@ -6629,12 +6633,14 @@ wlan_hcf_beacon_send (void)
 				{
 				EAcalculatedFlag = 1;
 				EA = EAestimation;// * 1.1;
-				//Loren
+				//Loren added for debugging
+				/*
 				printf("At position 1: EA = %%40.40f\n", EA);
 				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
 				appRateOutputFile = fopen(myAppRateTraceName, "a");
 				fprintf(appRateOutputFile,"At position 1: EA = %40.40f\n", EA);
 				fclose(appRateOutputFile);
+				*/
 				//EA = 0.32;
 				//printf("before change bnadwidth_allocation_method = %s and tempBnadwidth_allocation_method = %s\n",bnadwidth_allocation_method,tempBnadwidth_allocation_method);
 				sprintf(bnadwidth_allocation_method,"%s",tempBnadwidth_allocation_method);
@@ -6646,11 +6652,15 @@ wlan_hcf_beacon_send (void)
 				{
 				//EA = 1.0/(2.0/(cwmin_arr [WlanC_AC_VI]+2)/sumTXOP/stations_no +	( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI]+ 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and TXOP
 				EA = 1.0/(( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI] + 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and without TXOP
+				
+				//Loren added for debugging
+				/*
 				printf("At position 2: EA = %%40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
 				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
 				appRateOutputFile = fopen(myAppRateTraceName, "a");
 				fprintf(appRateOutputFile,"At position 2: EA = %40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
 				fclose(appRateOutputFile);
+				*/
 				//EA = 0.3*EA;
 				//EA = 1.0/	( 1 + (2.0*stations_no/(double)(phy_cw_min+ 2.0))*pow(/phy_cw_min/(phy_cw_min+2.0),stations_no-1));//EA using phy CWmin
 				}
@@ -6818,11 +6828,15 @@ wlan_hcf_beacon_send (void)
 					EA = 0;
 				
 				
-				printf("At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
+				//printf("At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
+				
+				//Loren added for debugging
+				/*
 				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
 				appRateOutputFile = fopen(myAppRateTraceName, "a");
 				fprintf(appRateOutputFile,"At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
 				fclose(appRateOutputFile);
+				*/
 				//Loren
 				//sprintf(myString,"I am  %d:EA is calculated as %f, during PID.",(int)my_address,(double)EA);
 				//op_prg_odb_print_major(myString,OPC_NIL);
@@ -14586,7 +14600,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 
 		*/
-		
+		op_pk_print(seg_pkptr);
 		//loren debugging
 		if(LorenDebugFlag)
 		{
@@ -14604,17 +14618,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		//packetCounter[(int)src_addr] = packetN;
 		op_pk_fd_get (seg_pkptr, 3, &packetStatus);
 		op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
-		lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets;
+		//lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets;
 		//}	
 		
 		//Loren, commenting out to speed up simulation
 		//printf("I am %d: got packet from node %d. Frame Number = %d  Packet Number = %d  Frame Size in Packets = %d\n", (int)my_address, (int)src_addr, (int)frameN, (int)packetN, (int)FrameSizeInPackets);
 		
 		
-		if(current_time > EAestimationTime + transitionTime)// time sensitive
+		if(current_time > EAestimationTime +1)//+ transitionTime)// time sensitive
 		{
 		
 				
+			
 			//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
 				
 			op_pk_fd_get (seg_pkptr, 5, &imageLineNumber);
@@ -14902,7 +14917,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		peerStreamDataForRate2[(int)src_addr] += op_pk_total_size_get(seg_pkptr);//-(packetN==0?(64+23)*8:23*8);
 		
 		
-		if(current_time <= EAestimationTime + transitionTime +1)    // time sensitive
+		if(current_time <= EAestimationTime + transitionTime)    // time sensitive
 			if(frameRecievedFlag || completeFrameRecievedFlag)
 				lostPacketsCounter[(int)src_addr] = 0;
 			
@@ -14914,7 +14929,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_prg_odb_print_major(myString,OPC_NIL);	
 		}
 		
-    	if(current_time > EAestimationTime+transitionTime + 1)       // time sensitive
+    	if(current_time > EAestimationTime+transitionTime)       // time sensitive
 		{
 						
 			//Loren
@@ -15164,9 +15179,13 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}*/
 						
 						//m.release();
-								
+						printf("temp file name = %s\n", tempFileName);
+						printf("original file name = %s\n", originalFileName);
+						printf("releasing cvImage\n");
 						cvReleaseImage( &cvImage );
+						printf("releasing originalImage\n");
 						cvReleaseImage( &originalImage );
+						printf("done releasing images\n");
 					}
 							
 					else
@@ -15190,15 +15209,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 									
 				}
-					
+				
+				printf("updating lost packet counter\n");
 				lostPacketsCounter[(int)src_addr] = 0;//reset counter for the next frame
 				op_stat_write (CVAccuracyI, accuracyError);
 				op_stat_write (CVAccuracyA, accuracy);
 									
-						
-				deleteImageDataStructure(ids);
-				deleteImageDataStructure(idsOriginal);
 				
+				printf("deleting ids\n");
+				deleteImageDataStructure(ids);
+				printf("deleting idsOriginal\n");
+				deleteImageDataStructure(idsOriginal);
+				printf("done deleting image data Structure\n");
 				if(opencvDebugFlag)
 				{
 					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -15450,6 +15472,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 				completeFrames[(int)src_addr]++;
 				totalFrames[(int)src_addr]++;
+				printf("temp file name = %s\n", tempFileName);
 				cvImage=cvLoadImage( tempFileName, 0 );
 				
 				//Loren
@@ -19135,10 +19158,13 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 					
 						if(strcmp(tempBnadwidth_allocation_method,"wdis2")==0||strcmp(tempBnadwidth_allocation_method,"dist2")==0)//power of two distortion curve
 							{
-							//loren
+							//loren for debugging
+							/*
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 1.\n",(int)my_address,tempBnadwidth_allocation_method);
 							fclose(opencvDebugFile);
+							*/
+							
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0)//in Mbytes
 								{
 								
@@ -19223,16 +19249,21 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							|| strcmp(tempBnadwidth_allocation_method,"dist_withoutAnyEnhancement")==0|| strcmp(tempBnadwidth_allocation_method,"wdis_withoutAnyEnhancement")==0
 							)
 							{
-							//loren
+							//loren for debugging
+							/*
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 2.\n",(int)my_address,tempBnadwidth_allocation_method);
 							fclose(opencvDebugFile);
+							*/
+							
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0)//in Mbytes
 								{
-								//loren
+								//loren for debugging
+								/*
 								opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 								fprintf(opencvDebugFile,"I am  %d:Curve is %s, took 2.\n",(int)my_address,curve);
 								fclose(opencvDebugFile);
+								*/
 								
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");				
@@ -19313,18 +19344,23 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							)
 							{
 							
-							//loren
+							//loren for debugging
+							/*
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 3.\n",(int)my_address,tempBnadwidth_allocation_method);
 							fclose(opencvDebugFile);
+							*/
 							
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0)//in Mbytes
 								{
 								
-								//Loren
+								//Loren for debugging
+								/*
 								opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 								fprintf(opencvDebugFile,"I am  %d:Curve is %s, took 3.\n",(int)my_address,curve);
 								fclose(opencvDebugFile);
+								*/
+								
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");	
 								

@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 582D0DEB 582D0DEB 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5833B719 5833B719 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -779,7 +779,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	}
 	else if(ID == 34)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rahesh\\rakesh2.avi");
+		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh2.avi");
 	}
 	else if(ID == 35)
 	{
@@ -866,7 +866,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	printf("Initializing c\n");
 	/* put sample parameters */
-	vidData.c->bit_rate = (bitrate * 8) + 3250000;	//(int)appRate;
+	vidData.c->bit_rate = (bitrate * 8) + 1000000;	//(int)appRate;
 	printf("Bitrate = %f\n", (double)(bitrate * 8) + 5250000);
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
@@ -1279,7 +1279,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 				
 					
-					if (op_sim_time () >= EAestimationTimeApp + transitionTimeApp)//if EA estimation time is done
+					if (op_sim_time () >= EAestimationTimeApp)//if EA estimation time is done
 					{
 				
 						int q;
