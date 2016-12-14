@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5833B719 5833B719 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 584F69EA 584F69EA 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -118,7 +118,7 @@ int					 flag = 0;
 int 				 appOpencvDebugFlag = 0;
 int 				 Node_LorenDebugFlag = 0;
 int 				 EAestimationTimeApp = 20;	//should match EAestimationTime in mac
-int 				 transitionTimeApp = 20; 	// used to be 460
+int 				 transitionTimeApp = 460;//20; 	// used to be 460
 int 				 frameSizeAverageCalculationPeriod = 0.5;
 
 char 			 	 curveInApp[100]="";
@@ -618,10 +618,11 @@ bursty_source_sv_init ()
 	// Get Node identifier.
 	snprintf(temp, 5, &parentName[numOff]);
 	int ID = atoi(temp) - 1;
-
+			
 	startFFMPEG(vidData[ID], (int)appRate, ID);
 	//printf("filepath = %s\n", vidData[ID].filepath);
 	vidData[ID].restart = 0;
+
 	
 	FOUT;
 }
@@ -630,6 +631,7 @@ bursty_source_sv_init ()
 void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 {
 	//char sdp[100];
+	int tempID = 0;
 	FIN (startFFMPEG(vidData, bitrate, ID));
 	
 	//printf("Bitrate = %d\n", bitrate);
@@ -640,156 +642,169 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	
 	printf("Calling ffmpeg code.\n");
 	
+	if(ID < 39)
+	{
+		tempID = ID;
+	}
+	else if(ID >= 39 && ID < 78)
+	{
+		tempID = ID - 39;
+	}
+	else
+	{
+		tempID = ID - (2*39);
+	}
+	
 	//translate the node number into the proper sdp file name.
-	if(ID == 0)
+	if(tempID == 0)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad1.avi");
 	}
-	else if(ID == 1)
+	else if(tempID == 1)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad2.avi");
 	}
-	else if(ID == 2)
+	else if(tempID == 2)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia1.avi");
 	}
-	else if(ID == 3)
+	else if(tempID == 3)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia2.avi");
 	}
-	else if(ID == 4)
+	else if(tempID == 4)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny1.avi");
 	}
-	else if(ID == 5)
+	else if(tempID == 5)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny2.avi");
 	}
-	else if(ID == 6)
+	else if(tempID == 6)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\fuji\\fuji1.avi");
 	}
-	else if(ID == 7)
+	else if(tempID == 7)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh1.avi");
 	}
-	else if(ID == 8)
+	else if(tempID == 8)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh2.avi");
 	}
-	else if(ID == 9)
+	else if(tempID == 9)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh3.avi");
 	}
-	else if(ID == 10)
+	else if(tempID == 10)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh4.avi");
 	}
-	else if(ID == 11)
+	else if(tempID == 11)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hector\\hector1.avi");
 	}
-	else if(ID == 12)
+	else if(tempID == 12)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hide\\hide1.avi");
 	}
-	else if(ID == 13)
+	else if(tempID == 13)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james1.avi");
 	}
-	else if(ID == 14)
+	else if(tempID == 14)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james2.avi");
 	}
-	else if(ID == 15)
+	else if(tempID == 15)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff1.avi");
 	}
-	else if(ID == 16)
+	else if(tempID == 16)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff2.avi");
 	}
-	else if(ID == 17)
+	else if(tempID == 17)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff3.avi");
 	}
-	else if(ID == 18)
+	else if(tempID == 18)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey1.avi");
 	}
-	else if(ID == 19)
+	else if(tempID == 19)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey2.avi");
 	}
-	else if(ID == 20)
+	else if(tempID == 20)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc1.avi");
 	}
-	else if(ID == 21)
+	else if(tempID == 21)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc2.avi");
 	}
-	else if(ID == 22)
+	else if(tempID == 22)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc3.avi");
 	}
-	else if(ID == 23)
+	else if(tempID == 23)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis1.avi");
 	}
-	else if(ID == 24)
+	else if(tempID == 24)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis2.avi");
 	}
-	else if(ID == 25)
+	else if(tempID == 25)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho1.avi");
 	}
-	else if(ID == 26)
+	else if(tempID == 26)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho2.avi");
 	}
-	else if(ID == 27)
+	else if(tempID == 27)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming1.avi");
 	}
-	else if(ID == 28)
+	else if(tempID == 28)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming2.avi");
 	}
-	else if(ID == 29)
+	else if(tempID == 29)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming3.avi");
 	}
-	else if(ID == 30)
+	else if(tempID == 30)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming4.avi");
 	}
-	else if(ID == 31)
+	else if(tempID == 31)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake1.avi");
 	}
-	else if(ID == 32)
+	else if(tempID == 32)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake2.avi");
 	}
-	else if(ID == 33)
+	else if(tempID == 33)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh1.avi");
 	}
-	else if(ID == 34)
+	else if(tempID == 34)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh2.avi");
 	}
-	else if(ID == 35)
+	else if(tempID == 35)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\saito\\saito1.avi");
 	}
-	else if(ID == 36)
+	else if(tempID == 36)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor1.avi");
 	}
-	else if(ID == 37)
+	else if(tempID == 37)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi");
 	}
@@ -804,7 +819,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	//printf("ffmpeg_flag = %d\n", ffmpeg_flag);
 
 	//Open the input stream using the filepath. In this case it is the external stream from my FFMPEG streaming program.
-	//printf("%s\n", vidData.filepath);
+	printf("%s\n", vidData.filepath);
 	if(avformat_open_input(&vidData.pFormatCtx, vidData.filepath,NULL,NULL)!=0)
 	{
 		printf("Couldn't open input stream.\n");
@@ -866,8 +881,16 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	printf("Initializing c\n");
 	/* put sample parameters */
-	vidData.c->bit_rate = (bitrate * 8) + 1000000;	//(int)appRate;
-	printf("Bitrate = %f\n", (double)(bitrate * 8) + 5250000);
+	
+	if(((bitrate * 8) + 8500000) <= 17000000)
+	{
+		vidData.c->bit_rate = (bitrate * 8) +  8500000;//+ 1000000;	//(int)appRate;
+	}
+	else
+	{
+		vidData.c->bit_rate = 500000;//+ 1000000;	//(int)appRate;
+	}
+	printf("Bitrate = %f\n", (double)vidData.c->bit_rate);
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -909,6 +932,8 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 		// Need to flush codec buffer before starting encoding over.
 		avcodec_flush_buffers(vidData.pCodecCtx);
 	}
+	
+	vidData.restart = 1;
 	FOUT;
 }
 
@@ -1309,7 +1334,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						// Determine whether we need to notify the control program that the bitrate has changed.
 						// Include some hystersis so that the control program doesn't constantly have to change the bitrate.
-						if((appRate >= (vidData[ID].prevAppRate + 100)) || (appRate <= (vidData[ID].prevAppRate - 100)))
+						if((appRate >= (vidData[ID].prevAppRate + 100)) || (appRate <= (vidData[ID].prevAppRate - 100))) //|| vidData[ID].restart == 0)
 						{
 					
 							printf("Node: %s, ID: %d\n", parentName, ID);
@@ -1319,9 +1344,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							// Prepare for restart
 							printf("%s: preparing for restart\n", parentName);
 							//printf("apprate = %d, previous apprate = %d\n", (int)appRate, vidData[ID].prevAppRate);
-				
+							
+							//if(vidData[ID].restart == 1)
+							//{
 							stopFFMPEG(vidData[ID]);
-						
+							//}
 						
 							// Restart the stream.
 							startFFMPEG(vidData[ID], (int)appRate, ID);

@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 583221F6 583221F6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5850ADEF 5850ADEF 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -733,6 +733,7 @@ int correctRecognitions = 0;
 double totalDetectedFaces = 0, totalActualFaces = 0, totalDetectionAccuracy = 0;
 double node1correct = 0, node1total = 0;
 double node1accuracy = 0;
+int last_got_picture = 0, lastID = -1;
 
 char tempBnadwidth_allocation_method[101] =  "" ;
 char bnadwidth_allocation_method[101] =  "" ;
@@ -803,6 +804,9 @@ extern FFMPEGData* vidData;
 
 int imwriteFlag = 0;
 int imgCount = 1;
+
+int totalFacesForRecogniton = 0;
+int totalCorrectFaceRecognitions = 0;
 
 /* Callback functions		*/
 #if defined (__cplusplus)
@@ -14309,12 +14313,13 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 		FOUT;
 	}
 	
-
+	totalFacesForRecogniton++;
 	
 	//printf("prediction check = %d\n", predictionCheck);
 	
 	if(prediction == predictionCheck)
 	{
+		totalCorrectFaceRecognitions++;
 		vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
 		vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
 		printf("node %d correct recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
@@ -14332,6 +14337,8 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 	// print out accuracy to the simulation console.
 	sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
 	op_prg_odb_print_major(myString,OPC_NIL);
+	
+	printf("Total Faces = %d, Total Correct Recognitions = %d\n", totalFacesForRecogniton, totalCorrectFaceRecognitions);
 	
 	// print out the results to the opencv trace file.
 	//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -14600,7 +14607,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 
 		*/
-		op_pk_print(seg_pkptr);
 		//loren debugging
 		if(LorenDebugFlag)
 		{
@@ -14670,105 +14676,108 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 			
  			
-						
-			if(packetN == (FrameSizeInPackets - 1))
+			if(last_got_picture != 1 || ID != lastID)			
+			//if(packetN == (FrameSizeInPackets - 1))//
 			{
 			
-			if(vidData[ID].startH264 == 1)
-			{
-				startFFMPEGH264(vidData[ID], ID);
-				vidData[ID].startH264 = 0;
-			}
+				if(vidData[ID].startH264 == 1)
+				{
+					startFFMPEGH264(vidData[ID], ID);
+					vidData[ID].startH264 = 0;
+				}
 			
 			
 			
-			printf("From Node %d: about to allocate frame.\n", (int)src_addr);
-			vidData[ID].pFrame=av_frame_alloc();
+				printf("From Node %d: about to allocate frame.\n", (int)src_addr);
+				vidData[ID].pFrame=av_frame_alloc();
 								
-			printf("From Node %d: about to check stream index.\n", (int)src_addr);
+				printf("From Node %d: about to check stream index.\n", (int)src_addr);
 				
-			if(vidData[ID].pkt.stream_index == vidData[ID].videoindex)
-			{
+				if(vidData[ID].pkt.stream_index == vidData[ID].videoindex)
+				{
 					
-				//char* filename = "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\FFMPEG testing\\FFMPEG testing\\test1.h264";
+					//char* filename = "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\FFMPEG testing\\FFMPEG testing\\test1.h264";
 										
-				//printf("decoding packet\n");
-				ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
+					//printf("decoding packet\n");
+					ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
 
 						
-				printf("From Node %d: finished decode.\n", (int)src_addr);
-				//printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
-				if(ret < 0)
-				{
-					printf("Decode Error.\n");
-					//break;
-					//return -1;
-				}
+					printf("From Node %d: finished decode.\n", (int)src_addr);
+					//printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
+					if(ret < 0)
+					{
+						printf("Decode Error.\n");
+						//break;
+						//return -1;
+					}
 					
-				printf("From Node %d: adjusting the packet\n", (int)src_addr);
-				if(vidData[ID].pkt.data)
-				{
-					//printf("packet stuff\n");
-					vidData[ID].pkt.size -= ret;
-					vidData[ID].pkt.data += ret;
-				}
+					printf("From Node %d: adjusting the packet\n", (int)src_addr);
+					if(vidData[ID].pkt.data)
+					{
+						//printf("packet stuff\n");
+						vidData[ID].pkt.size -= ret;
+						vidData[ID].pkt.data += ret;
+					}
 					
-				printf("From Node %d: got_picture = %d\n", (int)src_addr, got_picture);
-				faceRecogFlag = got_picture;
-				if(got_picture)
-				{
+					printf("From Node %d: got_picture = %d\n", (int)src_addr, got_picture);
+					last_got_picture = got_picture;
+					faceRecogFlag = got_picture;
+					if(got_picture)
+					{
 					
 						
-					//printf("about to set scale.\n");
-					//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
-					//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
+						//printf("about to set scale.\n");
+						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
+						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
 											
-					/*
-					printf("about to print image.\n");
-					FILE *e;
-					int i;
-					char buf[1024];
+						/*
+						printf("about to print image.\n");
+						FILE *e;
+						int i;
+						char buf[1024];
 				
-					snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
-					e=fopen(buf,"w");
-					fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
-					for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
-						fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
-					fclose(e);
+						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
+						e=fopen(buf,"w");
+						fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
+						for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
+							fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
+						fclose(e);
 				
-					imgCount++;
-					*/
+						imgCount++;
+						*/
 				
 											
 						
-					//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
+						//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
 							
-					printf("From Node %d: populating mat data.\n", (int)src_addr);			
-					m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
-					//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
-					//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
+						printf("From Node %d: populating mat data.\n", (int)src_addr);			
+						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
+						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
+						//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
 						
-					//break;
+						//break;
+					}
 				}
-			}
-			printf("I am %d: freeing packet.\n", (int)my_address);
+				printf("I am %d: freeing packet.\n", (int)my_address);
 			
-			test = m.clone();
+				test = m.clone();
 				
-			printf("I am %d: releasing mat m\n", (int)my_address);
-			m.release();
+				printf("I am %d: releasing mat m\n", (int)my_address);
+				m.release();
 				
-			//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
+				//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
 			
-			printf("I am %d: trying to unref pkt\n", (int)my_address);
-			av_free_packet(&vidData[ID].pkt);
+				printf("I am %d: trying to unref pkt\n", (int)my_address);
+				av_free_packet(&vidData[ID].pkt);
 
 				
-			printf("I am %d: freeing frame.\n", (int)my_address);
+				printf("I am %d: freeing frame.\n", (int)my_address);
 
-			av_frame_free(&vidData[ID].pFrame);
+				av_frame_free(&vidData[ID].pFrame);
+			
+				lastID = ID;
 				
-			}
+			}//
 			
 		}
 		
@@ -15157,7 +15166,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						sprintf(myString,"Start Face Recognition");
 						op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
-						/*if(trainingCompleteFlag == 0)
+						if(trainingCompleteFlag == 0)
 						{
 							printf("training faces\n");
 							trainFaces();
@@ -15166,8 +15175,10 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
 							imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-							faceRecognition(m, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
+							faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
 						}
+						
+						
 						
 						//sprintf(myString,"End Face Recognition");
 						//op_prg_odb_print_major(myString,OPC_NIL);
@@ -15176,7 +15187,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n", accuracy, accuracyError);
 							fclose(opencvDebugFile);
-						}*/
+						}
 						
 						//m.release();
 						printf("temp file name = %s\n", tempFileName);
@@ -15468,17 +15479,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 					
 				
-			if(calculationMethod == FRAMESTAT && completeFrameRecievedFlag)//complete frame received
+			if((calculationMethod == FRAMESTAT && completeFrameRecievedFlag) || faceRecogFlag)//complete frame received
 			{
 				completeFrames[(int)src_addr]++;
 				totalFrames[(int)src_addr]++;
-				printf("temp file name = %s\n", tempFileName);
-				cvImage=cvLoadImage( tempFileName, 0 );
+				//printf("temp file name = %s\n", tempFileName);
+				//cvImage=cvLoadImage( tempFileName, 0 );
 				
 				//Loren
-				//sprintf(myString,"I am %d, complete frame received.", (int)my_address);
-				//op_prg_odb_print_major(myString,OPC_NIL);		
+				sprintf(myString,"I am %d, complete frame received.", (int)my_address);
+				op_prg_odb_print_major(myString,OPC_NIL);		
 				
+				/*
 				if(cvImage)
 				{
 					originalImage = cvLoadImage(originalFileName, 0);
@@ -15487,7 +15499,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						getPSNR(originalImage,cvImage,&mse,&psnr);
 					else
 						op_sim_end("Could not create cvImage for the original image","","","");
-					
+				*/	
 					// Loren: face detect always gets called from here
 					sprintf(myString,"Start FaceDetect 1");
 					op_prg_odb_print_major(myString,OPC_NIL);
@@ -15497,13 +15509,14 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					
 					sprintf(myString,"End FaceDetect 1 accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
 					op_prg_odb_print_major(myString,OPC_NIL);
-					sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					
 					printf("training faces flag = %d face recog flag = %d\n", trainingCompleteFlag, faceRecogFlag);
 					
+					
 					//Loren Call Face Recognition 2
-					/*if(trainingCompleteFlag == 0)
+					if(trainingCompleteFlag == 0)
 					{
 						printf("training faces\n");
 						trainFaces();
@@ -15511,9 +15524,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
-					    imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg20.jpg", test);
+					    //imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg20.jpg", test);
 						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
 					}
+					
+					
 					
 					//sprintf(myString,"End FaceRecognition 1");
 					//op_prg_odb_print_major(myString,OPC_NIL);
@@ -15521,18 +15536,19 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					if(opencvDebugFlag)
 					{
 						printf("from accuracy = %lf, accuracyError = %lf\n",accuracy, accuracyError);
-					}*/
+					}
 					
 					//printf("releasing images.\n");
 					//m.release();
 					
-					cvReleaseImage( &cvImage );
-					cvReleaseImage( &originalImage );
-				}
+					//cvReleaseImage( &cvImage );
+					//cvReleaseImage( &originalImage );
+				/*}
 				else
 				{
 					op_sim_end("Could not create cvImage using cvLoadImage","","","");
 				}
+				*/
 						
 				op_stat_write (CVAccuracyC, accuracyError);
 				op_stat_write (CVAccuracyA, accuracy);
