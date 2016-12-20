@@ -9,6 +9,13 @@ extern "C"
 
 #include <vector>
 
+//Loren OpenCV includes
+#include "opencv2\core\core.hpp"
+#include "opencv2\contrib\contrib.hpp"
+#include "opencv2\highgui\highgui.hpp"
+#include "opencv2\imgproc\imgproc.hpp"
+#include "opencv2\objdetect\objdetect.hpp"
+
 #pragma comment(lib, "avcodec.lib")
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "swscale.lib")
@@ -37,13 +44,14 @@ AVCodec *codec;
 AVCodecID codec_id;
 AVCodecContext *c;
 AVFrame *frame;
+cv::Mat test;
 
 uint8_t			     *out_buffer;
 
 struct SwsContext    *convert_ctx;
 int64_t pts, dts, last_pts, last_dts;
 double prevAppRate;
-int noFaceCount;
+int noFaceCount, got_picture;
 double nodeCorrect, nodeTotal, nodeAccuracy;
 
 int					 videoindex, restart,frameCount, startH264;
@@ -72,6 +80,8 @@ AVPacket* pack;// = new AVPacket[5000];
 		sprintf_s(filepath, "None");
 		codec_id = AV_CODEC_ID_H264;
 		c = NULL;
+		test = cv::Mat(480,640,CV_8U, double(0));
+		got_picture = 0;
 	}
 
 };

@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5850ADEF 5850ADEF 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5858A98F 5858A98F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -13993,27 +13993,29 @@ static void trainFaces()
 
 
 // Loren start face recognition
-void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, double *error)
+void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error)
 {
 	using namespace cv;
 	//cv::Mat gray;
-	char pred[5] = "s00";
-	int prediction = -1;
-	char path[200] = "";
+	//char path[200] = "";
 	int ID = (int)src_addr - 1;
+	
+	int prediction = -1;
 	int predictionCheck = -2;
 	
 	// Min and max face sizes used to speed up face detection.
-    int min_face_size = 150;
-    int max_face_size = 250;
+    int min_face_size = 100;
+    int max_face_size = 300;
 
     // Image height and width for the resized image used in prediction.
     // These values match the dimensions of the training images to improve
     // recognition accuracy.
     im_width =	75;	//images[0].cols;
     im_height =	75;	//images[0].rows;
+	
+	LorenDebugFlag = 1;
 
-	FIN (faceRecognition (testImg, d, src_addr, accu, error));
+	FIN (faceRecognition (testImg, src_addr, accu, error));
 	
 	//Loren
 	if(LorenDebugFlag)
@@ -14022,44 +14024,45 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 		op_prg_odb_print_major(myString,OPC_NIL);
 	}
 	
-
+	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg21.jpg", testImg);
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
 	for(int j = 0; j<1; j++)
 	{
+		printf("starting for loop\n");
 		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
 		
 		// create the container for the face cascade classifiers.
 		cv::CascadeClassifier haar_cascade;
 		
-		
+		printf("after cascade classifier\n");
 		//load the xml global assigned elsewhere
 		switch(j)
 		{
 			case 0:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");// cascade_name was in here.
-					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
+					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 1:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
-					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
+					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 2:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");// cascade_name was in here.
-					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
+					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 3:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_profileface.xml");// cascade_name was in here.
-					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
+					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 			case 4:
 			default:
 					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");// cascade_name was in here.
-					//sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+					sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
+					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
 		}		
 	
@@ -14082,8 +14085,8 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 				
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg2.jpg", testImg);
-			
+		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
+		
 		if(testImg.empty())
 		{
 			//exit the function
@@ -14099,6 +14102,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 		}
 			
 		int type = testImg.type();
+		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
 			
 		if(LorenDebugFlag)
 		{
@@ -14107,9 +14111,9 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 		}
 		if(type)
 		{
-			//printf("about to call cvtcolor\n");
+			printf("about to call cvtcolor\n");
 			cvtColor(testImg, testImg, CV_BGR2GRAY);
-			//printf("just called cvtcolor\n");
+			printf("just called cvtcolor\n");
 		}
 
 		if(LorenDebugFlag)
@@ -14118,15 +14122,30 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 		// Find the faces in the frame:
-		std::vector< cv::Rect_<int> > faces;
-		
+		//std::vector< cv::Rect_<int> > faces;
+		std::vector<cv::Rect> faces;
+		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", testImg);
 		
 		if(LorenDebugFlag)
 		{
 			sprintf(myString,"About to detect faces.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
-		haar_cascade.detectMultiScale(testImg, faces);
+		
+		try
+		{
+			//haar_cascade.detectMultiScale(testImg, faces);
+			haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+		}
+		catch(int e)
+		{
+			printf("exception occured: %d\n", e);
+			break;
+		}
+		
+		
+		printf("after detect faces\n");
+		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg25.jpg", testImg);
 		
 		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
@@ -14179,39 +14198,19 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 				
 				// adjust prediciton to be the same as it's corresponding directory name.
 				// prediction = prediction + 1;
-		
-				// size of character array "pred"
-				int n = sizeof(pred) / sizeof(pred[0]);
-				
-				// populate pred, hopefully it won't overflow by using snprintf rather than sprintf.
-				snprintf(pred,n,"s%02d", prediction);
-				
+					
 				//if(LorenDebugFlag)
 				//{	
 					sprintf(myString,"Prediction = %d", prediction);
 					op_prg_odb_print_major(myString,OPC_NIL);
 				//}
-				pred[4] = '\0';
-				
-				//printf("prediction string = %s\n", pred);
-				//printf("directory string = %s\n", d);
-				
-				// check if d is a NULL pointer before using it.
-				if(d == NULL)
-				{
-					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-					fprintf(opencvDebugFile,"This is not good #2.\n");
-					fclose(opencvDebugFile);
-					printf("This is not good #2.\n");
-					break;
-				}
-		
+					
 				if(LorenDebugFlag)
 				{
 					sprintf(myString,"compare prediction");
 					op_prg_odb_print_major(myString,OPC_NIL);
 				}
-				
+				printf("switch statement\n");
 				switch (src_addr)
 				{
 					case 1: 
@@ -14274,17 +14273,15 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 					default: predictionCheck = -1;
 							 break;
 				}
+				printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
+				printf("prediction comparison\n");
 				
 				if(prediction == predictionCheck)
 					break;
-				//only want the prediction of the first face recognized correctly.
-				//if(strncmp(d, pred, 4) == 0)
-				//{
-					//sprintf(myString,"prediction correct, break from loop");
-					//op_prg_odb_print_major(myString,OPC_NIL);
-				//	break;
-				//}
 			}
+			
+			printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
+			printf("prediction comparison 2\n");
 			if(prediction == predictionCheck)
 					break;
 		}
@@ -14301,21 +14298,10 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 			}
 		}
 	}
-	
-		
-	// check if d is a NULL pointer before using it.
-	if(d == NULL)
-	{
-		opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-		fprintf(opencvDebugFile,"This is not good #3.\n");
-		fclose(opencvDebugFile);
-		printf("This is not good #3\n");
-		FOUT;
-	}
-	
+	printf("incrementing total faces\n");	
 	totalFacesForRecogniton++;
 	
-	//printf("prediction check = %d\n", predictionCheck);
+	printf("prediction check = %d\n", predictionCheck);
 	
 	if(prediction == predictionCheck)
 	{
@@ -14344,40 +14330,7 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 	//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
 	//fprintf(opencvDebugFile,"Prediction = %d\n node 1 Face Recognition Accuracy = %.5f%%\n",prediction, node1accuracy);
 	//fclose(opencvDebugFile);
-	/*
-	}
-	
-	else
-	{
-		// check if the recognition was correct.
-		if(strncmp(d, pred, 4) == 0)
-		{
-			// there was a correct recognition, increment the number, always increment total recogntion count.
-			totalRecognitions = totalRecognitions + 1.0;
-			correctRecognitions = correctRecognitions + 1.0;
-			printf("correct recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
-		}
-	
-		else
-		{
-			// increment the total number of recognitions
-			totalRecognitions = totalRecognitions + 1.0;
-			printf("incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", totalRecognitions, correctRecognitions);
-		}
-	
-		// find current total recogntion accuracy for the simulation so far.  Also protect for divide by zero condition.
-		//recognitionAccuracy = (((double)correctRecognitions/(double)totalRecognitions)*(double)100);
-		
-		// print out accuracy to the simulation console.
-		//sprintf(myString,"Face Recognition Accuracy = %.5f%%", recognitionAccuracy);
-		//op_prg_odb_print_major(myString,OPC_NIL);
-		
-		// print out the results to the opencv trace file.
-		//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-		//fprintf(opencvDebugFile,"Prediction = %d\nFace Recognition Accuracy = %.5f%%\n",prediction, recognitionAccuracy);
-		//fclose(opencvDebugFile);
-	//}
-	*/
+
 	//Loren
 	if(LorenDebugFlag)
 	{
@@ -14385,11 +14338,12 @@ void faceRecognition(cv::Mat& testImg, char * d, int src_addr, double *accu, dou
 		op_prg_odb_print_major(myString,OPC_NIL);
 	}
 	
-	testImg.release();
+	//testImg.release();
+
+	LorenDebugFlag = 0;
 	
 	FOUT;
 }
-
 
 
 
@@ -14438,8 +14392,9 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	WlanT_HCF_Access_Category		tx_ac = WLANC_UP_TO_AC_MAPPING_ARRAY [tid];
 	OpT_Packet_Size					pkt_size;
 	char							msg_string [128];
-	cv::Mat	m;
-	cv::Mat test;
+	int ID = (int)src_addr - 1;
+	//cv::Mat	m;
+	//cv::Mat test;
 	
 	
 	//Loren: Added for running ffmpeg process.
@@ -14546,12 +14501,12 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 		double startTime = 0;
 		//int rows = 0, cols = 0;
-		int ret, got_picture;
+		//int ret, got_picture;
 		//cv::Size s_source;
-		int faceRecogFlag = 1;
+		int faceRecogFlag = 0;
 		
 		
-		int ID = (int)src_addr - 1;
+		
 		
 		//printf("ID = %d\n", ID);
 		
@@ -14633,8 +14588,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 		if(current_time > EAestimationTime +1)//+ transitionTime)// time sensitive
 		{
-		
-				
 			
 			//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
 				
@@ -14675,13 +14628,30 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				printf("From Node %d: after getting creating array.\n", (int)src_addr);
 			}
 			
- 			
-			if(last_got_picture != 1 || ID != lastID)			
+			
+			faceRecogFlag = vidData[ID].got_picture;
+			if(faceRecogFlag)
+			{
+				// Initialize the test image.
+				//test = cv::Mat(480,640,CV_8U, double(0));
+				printf("printing image 18\n");
+				cv::imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg18.jpg", vidData[ID].test);	
+				printf("after printing image 18\n");
+			}
+			/*
+ 			printf("last_got_picture = %d, ID = %d, lastID = %d\n", last_got_picture, ID, lastID);
+			if((last_got_picture != 1 && ID == lastID) || ID != lastID)			
 			//if(packetN == (FrameSizeInPackets - 1))//
 			{
 			
+			
+				last_got_picture = vidData[ID].got_picture;
+				
+				
+				
 				if(vidData[ID].startH264 == 1)
 				{
+					printf("starting ffmpeg h264\n");
 					startFFMPEGH264(vidData[ID], ID);
 					vidData[ID].startH264 = 0;
 				}
@@ -14699,7 +14669,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					//char* filename = "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\FFMPEG testing\\FFMPEG testing\\test1.h264";
 										
 					//printf("decoding packet\n");
-					ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
+					//ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
 
 						
 					printf("From Node %d: finished decode.\n", (int)src_addr);
@@ -14712,7 +14682,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 					
 					printf("From Node %d: adjusting the packet\n", (int)src_addr);
-					if(vidData[ID].pkt.data)
+					/*if(vidData[ID].pkt.data)
 					{
 						//printf("packet stuff\n");
 						vidData[ID].pkt.size -= ret;
@@ -14730,21 +14700,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
 						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
 											
-						/*
-						printf("about to print image.\n");
 						FILE *e;
 						int i;
 						char buf[1024];
-				
-						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\test%d.ppm", imgCount);
+						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\test%d.ppm", imgCount);
 						e=fopen(buf,"w");
 						fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
 						for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
-							fwrite(vidData[ID].dst->data[0] + i * vidData[ID].dst->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
+							fwrite(vidData[ID].pFrame->data[0] + i * vidData[ID].pFrame->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
 						fclose(e);
-				
+
 						imgCount++;
-						*/
+						
 				
 											
 						
@@ -14753,32 +14720,35 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						printf("From Node %d: populating mat data.\n", (int)src_addr);			
 						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
 						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
-						//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg.jpg", m);
+						printf("writing image now\n");
+						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg.jpg", m);
+						printf("cloning mat\n");
+			
+						test = m.clone();
+				
+						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg19.jpg", test);
+				
+						printf("I am %d: releasing mat m\n", (int)my_address);
+						m.release();
 						
 						//break;
 					}
-				}
-				printf("I am %d: freeing packet.\n", (int)my_address);
-			
-				test = m.clone();
-				
-				printf("I am %d: releasing mat m\n", (int)my_address);
-				m.release();
-				
+				//}
+
 				//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
+				
+				}
 			
 				printf("I am %d: trying to unref pkt\n", (int)my_address);
 				av_free_packet(&vidData[ID].pkt);
-
 				
 				printf("I am %d: freeing frame.\n", (int)my_address);
 
 				av_frame_free(&vidData[ID].pFrame);
-			
-				lastID = ID;
 				
 			}//
-			
+			lastID = ID;
+			*/
 		}
 		
 		if(current_time < EAestimationTime - 5)// time sensitive
@@ -14946,7 +14916,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 				sprintf(myString,"I am %d, frame forward function current time (%f) > EA estimation time + transition time.", (int)my_address, (float)current_time);
 				op_prg_odb_print_major(myString,OPC_NIL);
-				sprintf(myString, "frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
+				sprintf(myString, "frameRecievedFlag = %d, completeFrameRecievedFlag = %d, faceRecogFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag, (int)faceRecogFlag);
 				op_prg_odb_print_major(myString,OPC_NIL);
 			}
 			
@@ -15174,8 +15144,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
-							imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-							faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
+							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
+							faceRecognition(vidData[ID].test, (int)src_addr, &accuracy, &accuracyError);
+							
+							//Loren, reset faceRecogFlag
+							faceRecogFlag = 0;
 						}
 						
 						
@@ -15524,8 +15497,13 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
-					    //imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg20.jpg", test);
-						faceRecognition(test, directoryName[lastImageLineNumber[(int)src_addr]], (int)src_addr, &accuracy, &accuracyError);
+						if(vidData[ID].test.data == NULL)
+							printf("test data is null\n");
+					    imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg20.jpg", vidData[ID].test);
+						faceRecognition(vidData[ID].test, (int)src_addr, &accuracy, &accuracyError);
+						
+						//Loren, reset faceRecogFlag
+						faceRecogFlag = 0;
 					}
 					
 					
@@ -15920,7 +15898,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		}
 	}
 	else
-		{
+	{
 		/* If the station is a gateway and not an access point then do	*/
 		/* not send	data to higher layer for address resolution. This	*/
 		/* is for not allowing data to go out of the ad-hoc BSS.		*/
@@ -15929,18 +15907,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		/* bridge/switch node and not AP enabled, then drop the packet.	*/
 		if ((wlan_flags->gateway_flag == OPC_TRUE  && dest_addr != my_address && dest_addr >= 0) || 
 			wlan_flags->bridge_flag == OPC_TRUE)
-			{				
+		{				
 			/* Printing out information to ODB.							*/
 			if (wlan_trace_active == OPC_TRUE)
-				{
+			{
 				strcpy (msg_string, "Gateway is not an access point so all received fragments are discarded.");
 				op_prg_odb_print_major (msg_string, OPC_NIL);
-				}
+			}
 			printf("destroying packet\n");
 			op_pk_destroy (seg_pkptr);
-			}
+		}
 		else
-			{
+		{
 			/* Update the local/global throughput and end-to-end delay	*/
 			/* statistics based on the packet that will be forwarded to	*/
 			/* the higher layer.										*/
@@ -15951,24 +15929,28 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			/* surrounding node is a bridge/switch since WLAN ports		*/
 			/* can't be used for bridge-to-bridge connections.			*/
 			if (dest_addr == BRIDGE_BROADCAST_ADDR || dest_addr == PVST_BPE_MCAST_ADDR)
-				{
+			{
 				printf("destroying packet1\n");
 				op_pk_destroy (seg_pkptr);
-				}
+			}
 			else
-				{
+			{
 				/* Printing out information to ODB.						*/
 				if (wlan_trace_active == OPC_TRUE)
-					{
+				{
 					sprintf (msg_string, "All fragments of Data packet " OPC_PACKET_ID_FMT " is received and sent to the higher layer.", pkt_id);
 					op_prg_odb_print_major (msg_string, OPC_NIL);
-					}
+				}
 				
 				/* Sending data to the higher layer.					*/
 				wlan_rcvd_pkt_higher_layer_forward (seg_pkptr, wlan_flags->bridge_flag, mac_client_reassembly_buffer, outstrm_to_mac_if);
-				}
 			}
 		}
+	}
+	
+	
+	printf("releasing test image\n");
+	vidData[ID].test.release();
 
 	FOUT;
 	}

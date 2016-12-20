@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 584F69EA 584F69EA 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5858ACFC 5858ACFC 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -147,7 +147,7 @@ int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
 
-
+int encodedFileCount = 0;
 
 
 //FILE * appRateOutputFile;
@@ -882,9 +882,9 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	printf("Initializing c\n");
 	/* put sample parameters */
 	
-	if(((bitrate * 8) + 8500000) <= 17000000)
+	if(((bitrate * 8) + 8700000) <= 17000000)
 	{
-		vidData.c->bit_rate = (bitrate * 8) +  8500000;//+ 1000000;	//(int)appRate;
+		vidData.c->bit_rate = (bitrate * 8) +  8700000;//+ 1000000;	//(int)appRate;
 	}
 	else
 	{
@@ -909,8 +909,11 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUVJ422P;//
 
-	//av_opt_set(vidData.c->priv_data, "preset", "fast", 0);
-
+	if (vidData.codec_id == AV_CODEC_ID_H264)
+	{
+		av_opt_set(vidData.c->priv_data, "preset", "slower", 0);
+	}
+	
 	/* open it */
 	if (avcodec_open2(vidData.c, vidData.codec, NULL) < 0) 
 	{
@@ -1372,11 +1375,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						originalFrameSize = frameSize;
 						alreadySent = 0;
 						
-						//printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
+						printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
 						
 						op_stat_write (app_appRate_stat, (double) appRate*8);
 						
-						//printf("methodInApp is %s\n",methodInApp);
+						printf("methodInApp is %s\n",methodInApp);
 						//printf("transitionTimeApp=%d\n"	,	transitionTimeApp);
 				
 						imageLineNo = rand() % imageNo + 1; // the image line number randomly this is the line number that we want to read from the size info file
@@ -1420,7 +1423,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							q = 100;
 						}
 						
-						//printf("Frame Size recalculated = %d\n",(int)frameSize);
+						printf("Frame Size recalculated = %d\n",(int)frameSize);
 						
 						frameCounter++;
 						frameSizeSum += frameSize;
@@ -1536,7 +1539,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 							//lastPacketSize = decodeHuffman_PKT(ids,0);//packetize the image and return the last packet size in bits
 					
-							if(appOpencvDebugFlag)
+							//if(appOpencvDebugFlag)
 							{
 								printf("%s: image data structure packetized\n", parentName);
 							}
@@ -1559,7 +1562,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//printf("ids size = %d, image data structure size = %d\n\n", sizeof(ids), sizeof(myImageStructure));
 							deleteImageDataStructure(ids);
 							
-							if(appOpencvDebugFlag)
+							//if(appOpencvDebugFlag)
 							{
 								printf("image data structure deleted\n");
 							}
@@ -1687,20 +1690,87 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									}
 								}
 									
-								//printf("%s: about to set frame pts\n", parentName);
+								printf("%s: about to set frame pts\n", parentName);
 				
 								frame->pts = pFrame->pkt_pts;
 							
-								//printf("%s: set frame pts, about to encode\n", parentName);
+								printf("%s: set frame pts, about to encode\n", parentName);
+								
+							
 				
 								// encode the image 
 								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
-								//printf("got output = %d\n", got_output);
+								printf("got output = %d\n", got_output);
 									
 								if (retrn < 0) 
 								{
 									printf("Error encoding frame\n");
 									//exit(1);
+								}
+								
+								if(got_output == 1)
+								{
+									if(vidData[ID].startH264 == 1)
+									{
+										/* find the mpeg1 video decoder */
+										vidData[ID].pCodec1 = avcodec_find_decoder(vidData[ID].codec_id);
+										if (!vidData[ID].pCodec1) {
+											fprintf(stderr, "Codec not found\n");
+											//exit(1);
+										}
+					
+										vidData[ID].pCodecCtx1 = avcodec_alloc_context3(vidData[ID].pCodec1);
+										if (!vidData[ID].pCodecCtx1) {
+											fprintf(stderr, "Could not allocate video codec context\n");
+											//exit(1);
+										}
+					
+										if(vidData[ID].pCodec1->capabilities&CODEC_CAP_TRUNCATED)
+											vidData[ID].pCodecCtx1->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
+				   
+										/* For some codecs, such as msmpeg4 and mpeg4, width and height
+										MUST be initialized there because this information is not
+										available in the bitstream. */
+					
+										/* open it */
+										if (avcodec_open2(vidData[ID].pCodecCtx1, vidData[ID].pCodec1, NULL) < 0) {
+											fprintf(stderr, "Could not open codec\n");
+											//exit(1);
+										}
+									
+										vidData[ID].startH264 = 0;
+									}
+									
+									// Decode video frame
+									printf("decoding h264 frame\n");
+									avcodec_decode_video2(vidData[ID].pCodecCtx1, pFrame, &vidData[ID].got_picture, &vidData[ID].pkt);
+									if (vidData[ID].got_picture) 
+									{
+										printf("%s: got picture.\n", parentName);
+										// Convert the image from its native format to RGB
+										//sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
+										//	pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
+										//	frame->data, frame->linesize);
+										
+										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, frame->data[0], frame->linesize[0]);
+									}
+									
+									
+								
+									if(encodedFileCount <= 1000  && (op_sim_time () >= EAestimationTimeApp + 20))
+									{
+									FILE *out;
+								
+									char buf[1024];
+									snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testBeforeEncode%d.ppm", encodedFileCount);
+									out=fopen(buf,"w");
+									fprintf(out,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx->width,vidData[ID].pCodecCtx->height,255);
+									for(int k = 0; k<vidData[ID].pCodecCtx->height; k++)
+										fwrite(frame->data[0] + k * frame->linesize[0],1,vidData[ID].pCodecCtx->width,out);
+									fclose(out);
+								
+									encodedFileCount++;
+									}
 								}
 				
 								av_free_packet(&packt);
