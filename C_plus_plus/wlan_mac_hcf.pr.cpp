@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5858A98F 5858A98F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5865490F 5865490F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -791,6 +791,8 @@ CvMemStorage* storage = 0;
 char cascade_name[100];// =  "C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt2.xml";
 //Create a new Haar classifier
 CvHaarClassifierCascade* cascade = 0;
+
+cv::CascadeClassifier haar_cascade;
 
 int framesCounter = 0;
 
@@ -13993,7 +13995,7 @@ static void trainFaces()
 
 
 // Loren start face recognition
-void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error)
+void faceRecognition(int src_addr, double *accu, double *error)
 {
 	using namespace cv;
 	//cv::Mat gray;
@@ -14015,7 +14017,7 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 	
 	LorenDebugFlag = 1;
 
-	FIN (faceRecognition (testImg, src_addr, accu, error));
+	FIN (faceRecognition (src_addr, accu, error));
 	
 	//Loren
 	if(LorenDebugFlag)
@@ -14024,18 +14026,26 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 		op_prg_odb_print_major(myString,OPC_NIL);
 	}
 	
-	imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg21.jpg", testImg);
+	//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg21.jpg", testImg);
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
-	for(int j = 0; j<1; j++)
-	{
+	//for(int j = 0; j<1; j++)
+	//{
 		printf("starting for loop\n");
 		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
 		
 		// create the container for the face cascade classifiers.
-		cv::CascadeClassifier haar_cascade;
+		//cv::CascadeClassifier haar_cascade;
+		
+		if(!haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml"))
+		{
+			printf("Error loading haar_cascade, exiting function.\n");
+			FOUT;
+		}
 		
 		printf("after cascade classifier\n");
 		//load the xml global assigned elsewhere
+		
+		/*
 		switch(j)
 		{
 			case 0:
@@ -14064,7 +14074,8 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 					sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
 					op_prg_odb_print_major(myString,OPC_NIL);
 					break;
-		}		
+		}
+		*/
 	
 		//sprintf(myString,"Loaded the xml file into the haar_cascade");
 		//op_prg_odb_print_major(myString,OPC_NIL);
@@ -14072,22 +14083,22 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 		//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");
 		
 		//Loren
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
+		//if(LorenDebugFlag)
+		//{
+		//	sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
+		//	op_prg_odb_print_major(myString,OPC_NIL);
+		//}
 
 	
 		if(LorenDebugFlag)
 		{
-			sprintf(myString,"About to check if testImg is empty, (%d)", (int)testImg.empty());
+			sprintf(myString,"About to check if testImg is empty, (%d)", (int)vidData[ID].test.empty());
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 				
-		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
+		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
 		
-		if(testImg.empty())
+		if(vidData[ID].test.empty())
 		{
 			//exit the function
 			printf("Exiting the function.\n");
@@ -14101,8 +14112,8 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 			
-		int type = testImg.type();
-		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
+		int type = vidData[ID].test.type();
+		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
 			
 		if(LorenDebugFlag)
 		{
@@ -14112,7 +14123,7 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 		if(type)
 		{
 			printf("about to call cvtcolor\n");
-			cvtColor(testImg, testImg, CV_BGR2GRAY);
+			cvtColor(vidData[ID].test, vidData[ID].test, CV_BGR2GRAY);
 			printf("just called cvtcolor\n");
 		}
 
@@ -14124,8 +14135,9 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 		// Find the faces in the frame:
 		//std::vector< cv::Rect_<int> > faces;
 		std::vector<cv::Rect> faces;
-		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", testImg);
-		
+		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", testImg);
+		printf("test234234\n");
+		printf("initial vector size = %d\n", (int)faces.size());
 		if(LorenDebugFlag)
 		{
 			sprintf(myString,"About to detect faces.");
@@ -14134,18 +14146,18 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 		
 		try
 		{
-			//haar_cascade.detectMultiScale(testImg, faces);
-			haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+			haar_cascade.detectMultiScale(vidData[ID].test, faces);
+			//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		}
 		catch(int e)
 		{
 			printf("exception occured: %d\n", e);
-			break;
+			FOUT;
 		}
 		
 		
 		printf("after detect faces\n");
-		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg25.jpg", testImg);
+		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg25.jpg", testImg);
 		
 		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
@@ -14171,7 +14183,7 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 				cv::Rect face_i = faces[i];
 				
 				// Crop the face from the image. So simple with OpenCV C++:
-				cv::Mat face = testImg(face_i);
+				cv::Mat face = vidData[ID].test(face_i);
 				
 				// Resizing the face is necessary for Eigenfaces and Fisherfaces. You can easily
 				// verify this, by reading through the face recognition tutorial coming with OpenCV.
@@ -14193,8 +14205,8 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 				prediction = model->predict(face_resized);
 				
 				//release the data for these image objects since they are done being used.
-				face.release();
-				face_resized.release();
+				//face.release();
+				//face_resized.release();
 				
 				// adjust prediciton to be the same as it's corresponding directory name.
 				// prediction = prediction + 1;
@@ -14280,11 +14292,12 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 					break;
 			}
 			
-			printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
-			printf("prediction comparison 2\n");
-			if(prediction == predictionCheck)
-					break;
+			//printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
+			//printf("prediction comparison 2\n");
+			//if(prediction == predictionCheck)
+			//		break;
 		}
+		/*
 		else
 		{
 			if(j == 4)
@@ -14297,7 +14310,8 @@ void faceRecognition(cv::Mat& testImg, int src_addr, double *accu, double *error
 				//imwrite(path, testImg);
 			}
 		}
-	}
+		*/
+	//}
 	printf("incrementing total faces\n");	
 	totalFacesForRecogniton++;
 	
@@ -14635,7 +14649,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				// Initialize the test image.
 				//test = cv::Mat(480,640,CV_8U, double(0));
 				printf("printing image 18\n");
-				cv::imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg18.jpg", vidData[ID].test);	
+				//cv::imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg18.jpg", vidData[ID].test);	
 				printf("after printing image 18\n");
 			}
 			/*
@@ -15140,15 +15154,19 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						{
 							printf("training faces\n");
 							trainFaces();
+							//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 							trainingCompleteFlag = 1;
 						}
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
-							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-							faceRecognition(vidData[ID].test, (int)src_addr, &accuracy, &accuracyError);
+							if(vidData[ID].test.data != NULL)
+							{
+								//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
+								faceRecognition((int)src_addr, &accuracy, &accuracyError);
 							
-							//Loren, reset faceRecogFlag
-							faceRecogFlag = 0;
+								//Loren, reset faceRecogFlag
+								faceRecogFlag = 0;
+							}
 						}
 						
 						
@@ -15493,17 +15511,21 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					{
 						printf("training faces\n");
 						trainFaces();
+						//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 						trainingCompleteFlag = 1;
 					}
 					if(trainingCompleteFlag  && faceRecogFlag)
 					{
-						if(vidData[ID].test.data == NULL)
-							printf("test data is null\n");
-					    imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg20.jpg", vidData[ID].test);
-						faceRecognition(vidData[ID].test, (int)src_addr, &accuracy, &accuracyError);
+						if(vidData[ID].test.data != NULL)
+						{
+							printf("test data is not null\n");
+							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg20.jpg", vidData[ID].test);
+							faceRecognition((int)src_addr, &accuracy, &accuracyError);
 						
-						//Loren, reset faceRecogFlag
-						faceRecogFlag = 0;
+						
+							//Loren, reset faceRecogFlag
+							faceRecogFlag = 0;
+						}
 					}
 					
 					
@@ -15949,8 +15971,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 	}
 	
 	
-	printf("releasing test image\n");
-	vidData[ID].test.release();
+	printf("releasing test image, but not actually.\n");
+	//vidData[ID].test.release();
+	vidData[ID].got_picture = 0;
 
 	FOUT;
 	}
