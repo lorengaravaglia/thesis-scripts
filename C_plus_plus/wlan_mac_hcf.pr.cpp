@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5865490F 5865490F 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5866FDEB 5866FDEB 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -792,7 +792,7 @@ char cascade_name[100];// =  "C:/OpenCV2.1/data/haarcascades/haarcascade_frontal
 //Create a new Haar classifier
 CvHaarClassifierCascade* cascade = 0;
 
-cv::CascadeClassifier haar_cascade;
+//cv::CascadeClassifier haar_cascade;
 
 int framesCounter = 0;
 
@@ -14036,12 +14036,13 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		// create the container for the face cascade classifiers.
 		//cv::CascadeClassifier haar_cascade;
 		
+		/*
 		if(!haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml"))
 		{
 			printf("Error loading haar_cascade, exiting function.\n");
 			FOUT;
 		}
-		
+		*/
 		printf("after cascade classifier\n");
 		//load the xml global assigned elsewhere
 		
@@ -14114,7 +14115,8 @@ void faceRecognition(int src_addr, double *accu, double *error)
 			
 		int type = vidData[ID].test.type();
 		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
-			
+		
+		/*
 		if(LorenDebugFlag)
 		{
 			sprintf(myString,"got gray image type, about to check it. (%d)", type);
@@ -14132,10 +14134,11 @@ void faceRecognition(int src_addr, double *accu, double *error)
 			sprintf(myString,"finished initializing gray image.");
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
+		*/
 		// Find the faces in the frame:
-		//std::vector< cv::Rect_<int> > faces;
-		std::vector<cv::Rect> faces;
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", testImg);
+		std::vector< Rect_<int> > faces;
+		//std::vector<cv::Rect> faces;
+		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", vidData[ID].test);
 		printf("test234234\n");
 		printf("initial vector size = %d\n", (int)faces.size());
 		if(LorenDebugFlag)
@@ -14144,16 +14147,8 @@ void faceRecognition(int src_addr, double *accu, double *error)
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 		
-		try
-		{
-			haar_cascade.detectMultiScale(vidData[ID].test, faces);
-			//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
-		}
-		catch(int e)
-		{
-			printf("exception occured: %d\n", e);
-			FOUT;
-		}
+		vidData[ID].haar_cascade.detectMultiScale(vidData[ID].test, faces);
+		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		
 		printf("after detect faces\n");
@@ -15971,7 +15966,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 	}
 	
 	
-	printf("releasing test image, but not actually.\n");
+	printf("releasing test image.\n");
 	//vidData[ID].test.release();
 	vidData[ID].got_picture = 0;
 

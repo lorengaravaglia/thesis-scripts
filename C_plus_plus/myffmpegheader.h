@@ -45,6 +45,7 @@ AVCodecID codec_id;
 AVCodecContext *c;
 AVFrame *frame;
 cv::Mat test;
+cv::CascadeClassifier haar_cascade;
 
 uint8_t			     *out_buffer;
 
@@ -80,7 +81,7 @@ AVPacket* pack;// = new AVPacket[5000];
 		sprintf_s(filepath, "None");
 		codec_id = AV_CODEC_ID_H264;
 		c = NULL;
-		test = cv::Mat(480,640,CV_8U, double(0));
+		//test = cv::Mat(480,640,CV_8U, double(0));
 		got_picture = 0;
 		frameNumber = 0;
 	}

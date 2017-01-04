@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58654980 58654980 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5866FE31 5866FE31 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -622,6 +622,12 @@ bursty_source_sv_init ()
 	startFFMPEG(vidData[ID], (int)appRate, ID);
 	//printf("filepath = %s\n", vidData[ID].filepath);
 	vidData[ID].restart = 0;
+	
+	if(!vidData[ID].haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml"))
+	{
+		printf("Error loading haar_cascade, exiting function.\n");
+		op_sim_end("Error loading haar_cascade.","","","");
+	}
 
 	
 	FOUT;
@@ -1496,7 +1502,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 							AVPacket          packt;
 							//uint8_t           *buffer = NULL;
-							AVFrame           *pFrame;
+							AVFrame           *pFrame, *pFrameRGB;
 							int 			  retrn, got_output, frameFinished;
 							struct SwsContext *sws_ctx = NULL;
 					
@@ -1592,6 +1598,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
 				
 								frame = av_frame_alloc();
+								
 								if (!frame) 
 								{
 									fprintf(stderr, "Could not allocate video frame\n");
@@ -1610,7 +1617,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								}
 								
 								pFrame = av_frame_alloc();
-								if (!pFrame) 
+								pFrameRGB = av_frame_alloc();
+								if (!pFrame || !pFrameRGB) 
 								{
 									fprintf(stderr, "Could not allocate video frame\n");
 									//exit(1);
@@ -1759,27 +1767,74 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										vidData[ID].startH264 = 0;
 									}
 									
+									
+									uint8_t *buffer;
+									int numBytes;
+				 
+									AVPixelFormat  pFormat = AV_PIX_FMT_BGR24;
+									numBytes = avpicture_get_size(pFormat, vidData[ID].pCodecCtx->width,vidData[ID].pCodecCtx->height) ; //AV_PIX_FMT_RGB24
+									buffer = (uint8_t *) av_malloc(numBytes*sizeof(uint8_t));
+									avpicture_fill((AVPicture *) pFrameRGB, buffer, pFormat, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+				 
+									
 									// Decode video frame
 									printf("decoding h264 frame\n");
 									avcodec_decode_video2(vidData[ID].pCodecCtx1, pFrame, &vidData[ID].got_picture, &vidData[ID].pkt);
 									if (vidData[ID].got_picture) 
 									{
 										printf("%s: got picture.\n", parentName);
+										
+										struct SwsContext * img_convert_ctx;
+										img_convert_ctx = sws_getCachedContext(NULL, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->pix_fmt, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL,NULL);
+										sws_scale(img_convert_ctx, ((AVPicture*)pFrame)->data, ((AVPicture*)pFrame)->linesize, 0, vidData[ID].pCodecCtx1->height, ((AVPicture *)pFrameRGB)->data, ((AVPicture *)pFrameRGB)->linesize);
+				 
+										//cv::Mat img(pFrame->height,pFrame->width,CV_8UC3,pFrameRGB->data[0]); //dst->data[0]);
+										
+										
+										if(vidData[ID].test.data != NULL)
+										{
+											printf("releasing the image before setting it.\n");
+											vidData[ID].test.release();
+										}
+											
+										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8UC3, pFrameRGB->data[0], pFrameRGB->linesize[0]);
+										
+										
 										// Convert the image from its native format to RGB
 										//sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
 										//	pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
 										//	frame->data, frame->linesize);
 										
-										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, frame->data[0], frame->linesize[0]);
+										int type = vidData[ID].test.type();
+										//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
+							
+										sprintf(myString,"got gray image type, about to check it. (%d)", type);
+										op_prg_odb_print_major(myString,OPC_NIL);
+										
+										if(type)
+										{
+											printf("about to call cvtcolor\n");
+											cvtColor(vidData[ID].test, vidData[ID].test, CV_BGR2GRAY);
+											printf("just called cvtcolor\n");
+										}
 										
 										
-										sprintf(printPath, "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\node%d\\testImg.jpg", ID);//, vidData[ID].frameNumber);
+										//Should i have been using pFrame instead of frame?
+										//vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, frame->data[0], frame->linesize[0]);
+										
+										
+										//sprintf(printPath, "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\node%d\\testImg.jpg", ID);//, vidData[ID].frameNumber);
+										sprintf(printPath, "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg%d.jpg", ID);
 										printf("%s\n", printPath);
 										
 										cv::imwrite(printPath, vidData[ID].test);
 										
+										printf("freeing img_convert_ctx.\n");
+										sws_freeContext(img_convert_ctx);
+										printf("freed img_convert_ctx.\n");
 									}
 									
+									av_freep(&buffer);
 									
 									/*
 									if(encodedFileCount <= 1000)
@@ -1804,7 +1859,12 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 								sws_freeContext(sws_ctx);
 								
+								printf("Freeing pFrameRGB\n");
+								av_frame_free(&pFrameRGB);
+								printf("Freed pFrameRGB\n");
+								
 								av_frame_free(&pFrame);
+								
 							
 								av_freep(&frame->data[0]);
 								
