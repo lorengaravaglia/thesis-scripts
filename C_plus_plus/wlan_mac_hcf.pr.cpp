@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5866FDEB 5866FDEB 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586DB3D2 586DB3D2 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14355,13 +14355,13 @@ void faceRecognition(int src_addr, double *accu, double *error)
 }
 
 
-
+/*
 void startFFMPEGH264(FFMPEGData &vidData, int node)
 {
 
 	FIN (startFFMPEGH264(vidData,node));
 	
-	/* find the mpeg1 video decoder */
+	// find the mpeg1 video decoder
     vidData.pCodec1 = avcodec_find_decoder(vidData.codec_id);
     if (!vidData.pCodec1) {
         fprintf(stderr, "Codec not found\n");
@@ -14375,13 +14375,13 @@ void startFFMPEGH264(FFMPEGData &vidData, int node)
     }
 	
     if(vidData.pCodec1->capabilities&CODEC_CAP_TRUNCATED)
-        vidData.pCodecCtx1->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
+        vidData.pCodecCtx1->flags|= CODEC_FLAG_TRUNCATED; // we do not send complete frames
    
-	/* For some codecs, such as msmpeg4 and mpeg4, width and height
-       MUST be initialized there because this information is not
-       available in the bitstream. */
+	// For some codecs, such as msmpeg4 and mpeg4, width and height
+    //   MUST be initialized there because this information is not
+    //   available in the bitstream.
 	
-    /* open it */
+    // open it
     if (avcodec_open2(vidData.pCodecCtx1, vidData.pCodec1, NULL) < 0) {
         fprintf(stderr, "Could not open codec\n");
         //exit(1);
@@ -14389,7 +14389,7 @@ void startFFMPEGH264(FFMPEGData &vidData, int node)
 	FOUT;
 }
 
-
+*/
 
 
 static void

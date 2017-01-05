@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5866FE31 5866FE31 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586DBCE0 586DBCE0 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -954,6 +954,68 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	FOUT;
 }
 
+void restartC(FFMPEGData &vidData, int bitrate)
+{
+
+	FIN (restart(vidData, bitrate));
+
+	printf("restarting c.\n");
+	avcodec_close(vidData.c);
+	av_free(vidData.c);
+
+
+	/* find the mpeg1 video encoder */
+	vidData.codec = avcodec_find_encoder(vidData.codec_id);
+	if (!vidData.codec) {
+		fprintf(stderr, "Codec not found\n");
+		exit(1);
+	}
+
+
+	vidData.c = avcodec_alloc_context3(vidData.codec);
+	if (!vidData.c) {
+		fprintf(stderr, "Could not allocate video codec context\n");
+		exit(1);
+	}
+
+	/* put sample parameters */
+	vidData.c->bit_rate = bitrate;
+	/* resolution must be a multiple of two */
+	vidData.c->width = 640;
+	vidData.c->height = 480;
+	
+	/* frames per second */
+	AVRational test;
+	test.den = 15;
+	test.num = 1;
+	vidData.c->time_base = test;
+	
+	/* emit one intra frame every ten frames
+	* check frame pict_type before passing frame
+	* to encoder, if frame->pict_type is AV_PICTURE_TYPE_I
+	* then gop_size is ignored and the output of encoder
+	* will always be I frame irrespective to gop_size
+	*/
+	vidData.c->gop_size = 10;
+	vidData.c->max_b_frames = 1;
+	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;
+	//c->bit_rate_tolerance = 20000;
+	//c->pix_fmt = AV_PIX_FMT_NV12;
+
+
+	if (vidData.codec_id == AV_CODEC_ID_H264)
+		av_opt_set(vidData.c->priv_data, "preset", "slow", 0);
+
+	/* open it */
+	if (avcodec_open2(vidData.c, vidData.codec, NULL) < 0) {
+		fprintf(stderr, "Could not open codec\n");
+		exit(1);
+	}
+	
+	FOUT;
+
+}
+
 
 void stopFFMPEG(FFMPEGData &vidData)
 {
@@ -961,6 +1023,8 @@ void stopFFMPEG(FFMPEGData &vidData)
 	
 	printf("closing the avcodec\n");
 	avcodec_close(vidData.c);
+	av_free(vidData.c);
+
 	
 	//printf("Closing the codec context\n");
 	avcodec_close(vidData.pCodecCtx);
@@ -1361,6 +1425,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 							// Prepare for restart
 							printf("%s: preparing for restart\n", parentName);
+							
+							/*
 							//printf("apprate = %d, previous apprate = %d\n", (int)appRate, vidData[ID].prevAppRate);
 							
 							//if(vidData[ID].restart == 1)
@@ -1370,7 +1436,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 							// Restart the stream.
 							startFFMPEG(vidData[ID], (int)appRate, ID);
-						
+							*/
+							
+							restartC(vidData[ID], (int)appRate);
 							//printf("done with startFFMPEG.\n");
 							vidData[ID].prevAppRate = (int)appRate;
 						}
@@ -1714,6 +1782,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 											frame->data, frame->linesize);
 									}
 								}
+								
+								av_free_packet(&packt);
 									
 								printf("%s: about to set frame pts\n", parentName);
 				
@@ -1836,6 +1906,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									av_freep(&buffer);
 									
+									av_free_packet(&vidData[ID].pkt);
+									
 									/*
 									if(encodedFileCount <= 1000)
 									{
@@ -1855,7 +1927,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								vidData[ID].frameNumber++;
 				
-								av_free_packet(&packt);
 									
 								sws_freeContext(sws_ctx);
 								
