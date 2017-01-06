@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586DBCE0 586DBCE0 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586EDB4E 586EDB4E 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -978,8 +978,14 @@ void restartC(FFMPEGData &vidData, int bitrate)
 		exit(1);
 	}
 
-	/* put sample parameters */
-	vidData.c->bit_rate = bitrate;
+	if(((bitrate * 8) + 8700000) <= 17000000)
+	{
+		vidData.c->bit_rate = (bitrate * 8) +  8700000;//+ 1000000;	//(int)appRate;
+	}
+	else
+	{
+		vidData.c->bit_rate = 500000;//+ 1000000;	//(int)appRate;
+	}
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -1661,6 +1667,13 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							}
 							*/
 							
+							av_init_packet(&vidData[ID].pkt);
+									
+							//printf("%s: Passed packet init\n", parentName);
+									
+							vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
+							vidData[ID].pkt.size = 0;
+							
 							do
 							{
 								printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
@@ -1714,13 +1727,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								packt.data = NULL;    // packet data will be allocated by the encoder
 								packt.size = 0;
 									
-				
-								av_init_packet(&vidData[ID].pkt);
-									
-								//printf("%s: Passed packet init\n", parentName);
-									
-								vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
-								vidData[ID].pkt.size = 0;
 									
 								//printf("%s: Passed packet value set\n", parentName);
 				
@@ -1752,16 +1758,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									}
 								}
 									
-								//packt.flags |= AV_PKT_FLAG_KEY;
-									
 								vidData[ID].pts = packt.pts;
 									
-								//packt.pts += vidData[ID].last_pts;
-									
 								vidData[ID].dts = packt.dts;
-									
-								//packt.dts += vidData[ID].last_dts;
-								//printf("%s: Passed read frame\n", parentName);
 									
 								// Is this a packet from the video stream?
 								if (packt.stream_index == vidData[ID].videoindex) 
@@ -1783,11 +1782,15 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									}
 								}
 								
+								// Free all of the data that is no longer needed.
+								av_frame_free(&pFrame);
+								
+								sws_freeContext(sws_ctx);
+								
 								av_free_packet(&packt);
 									
 								printf("%s: about to set frame pts\n", parentName);
 				
-								//frame->pts = pFrame->pkt_pts;
 								frame->pts = vidData[ID].frameNumber;
 							
 								printf("%s: set frame pts, about to encode\n", parentName);
@@ -1837,6 +1840,13 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										vidData[ID].startH264 = 0;
 									}
 									
+									pFrame = av_frame_alloc();
+									if (!pFrame) 
+									{
+										fprintf(stderr, "Could not allocate video frame\n");
+										//exit(1);
+									}
+									
 									
 									uint8_t *buffer;
 									int numBytes;
@@ -1850,6 +1860,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									// Decode video frame
 									printf("decoding h264 frame\n");
 									avcodec_decode_video2(vidData[ID].pCodecCtx1, pFrame, &vidData[ID].got_picture, &vidData[ID].pkt);
+									
 									if (vidData[ID].got_picture) 
 									{
 										printf("%s: got picture.\n", parentName);
@@ -1868,13 +1879,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										}
 											
 										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8UC3, pFrameRGB->data[0], pFrameRGB->linesize[0]);
-										
-										
-										// Convert the image from its native format to RGB
-										//sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
-										//	pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
-										//	frame->data, frame->linesize);
-										
+				
 										int type = vidData[ID].test.type();
 										//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
 							
@@ -1906,8 +1911,6 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									av_freep(&buffer);
 									
-									av_free_packet(&vidData[ID].pkt);
-									
 									/*
 									if(encodedFileCount <= 1000)
 									{
@@ -1925,10 +1928,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									encodedFileCount++;
 								}
 								
-								vidData[ID].frameNumber++;
-				
-									
-								sws_freeContext(sws_ctx);
+								
 								
 								printf("Freeing pFrameRGB\n");
 								av_frame_free(&pFrameRGB);
@@ -1944,7 +1944,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 							}while(got_output == 0);
 						
-								
+							vidData[ID].frameNumber++;	
 						
 							
 							int packetSize = inputPacketSize * 8;
@@ -1959,6 +1959,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							lastPacketSize = (vidData[ID].pkt.size % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
 							
+							//done with vidData.pkt, free it
+							av_free_packet(&vidData[ID].pkt);
+						
 							//lastPacketSize = (4000 % packetSize)+ ((64+23)*8);//vidData[ID].pkt.size - ((FrameSizeInPackets - 1)*packetSize); 
 							
 							//printf("last packet size %d, framesizeinpackets = %d\n", lastPacketSize, FrameSizeInPackets);
