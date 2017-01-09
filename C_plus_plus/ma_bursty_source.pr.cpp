@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586EDB4E 586EDB4E 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5872E2E6 5872E2E6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -93,8 +93,6 @@ AVCodecID codec_id = AV_CODEC_ID_H264;
 AVCodecContext *c = NULL;
 */
 
-AVFrame *frame;
-
 /* Function Declarations.	*/
 static void			bursty_source_sv_init ();
 void				startFFMPEG(FFMPEGData &vidData, int bitrate, int ID);
@@ -146,6 +144,11 @@ char 				 parentName[60];
 int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
+
+
+int					 bitrateAdjuster = 3750000;
+int				     maxBitrate = 9500000;
+int					 defaultBitrate = 500000;
 
 int encodedFileCount = 0;
 int64_t timeBase;
@@ -638,6 +641,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 {
 	//char sdp[100];
 	int tempID = 0;
+	int retrn = 0;
 	FIN (startFFMPEG(vidData, bitrate, ID));
 	
 	//printf("Bitrate = %d\n", bitrate);
@@ -647,6 +651,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	
 	printf("Calling ffmpeg code.\n");
+		
 	
 	if(ID < 39)
 	{
@@ -888,13 +893,13 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	printf("Initializing c\n");
 	/* put sample parameters */
 	
-	if(((bitrate * 8) + 8700000) <= 17000000)
+	if(((bitrate * 8) + bitrateAdjuster) <= maxBitrate)
 	{
-		vidData.c->bit_rate = (bitrate * 8) +  8700000;//+ 1000000;	//(int)appRate;
+		vidData.c->bit_rate = (bitrate * 8) +  bitrateAdjuster;//+ 1000000;	//(int)appRate;
 	}
 	else
 	{
-		vidData.c->bit_rate = 500000;//+ 1000000;	//(int)appRate;
+		vidData.c->bit_rate = defaultBitrate;//+ 1000000;	//(int)appRate;
 	}
 	printf("Bitrate = %f\n", (double)vidData.c->bit_rate);
 	/* resolution must be a multiple of two */
@@ -949,6 +954,47 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 		// Need to flush codec buffer before starting encoding over.
 		avcodec_flush_buffers(vidData.pCodecCtx);
 	}
+	
+	vidData.pFrame = av_frame_alloc();
+	vidData.pFrameRGB = av_frame_alloc();	
+	vidData.pFrameH264 = av_frame_alloc();
+	
+	if (!vidData.pFrame || !vidData.pFrameRGB || !vidData.pFrameH264) 
+	{
+		fprintf(stderr, "Could not allocate video frame\n");
+		//exit(1);
+	}
+	
+	vidData.frame = av_frame_alloc();
+				
+	if (!vidData.frame) 
+	{
+		fprintf(stderr, "Could not allocate video frame\n");
+		//exit(1);
+	}
+	vidData.frame->format = vidData.c->pix_fmt;
+	vidData.frame->width = vidData.c->width;
+	vidData.frame->height = vidData.c->height;
+		
+	retrn = av_image_alloc(vidData.frame->data, vidData.frame->linesize, vidData.c->width, vidData.c->height,
+				vidData.c->pix_fmt, 32);
+	if (retrn < 0) 
+	{
+		fprintf(stderr, "Could not allocate raw picture buffer\n");
+		//exit(1);
+	}
+	
+	vidData.sws_ctx = sws_getContext(vidData.pCodecCtx->width,
+							vidData.pCodecCtx->height,
+							vidData.pCodecCtx->pix_fmt,
+							vidData.pCodecCtx->width,
+							vidData.pCodecCtx->height,
+							AV_PIX_FMT_YUV420P,
+							SWS_BILINEAR,
+							NULL,
+							NULL,
+							NULL
+							);
 
 	vidData.restart = 1;
 	FOUT;
@@ -956,7 +1002,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 void restartC(FFMPEGData &vidData, int bitrate)
 {
-
+	int retrn = 0;
 	FIN (restart(vidData, bitrate));
 
 	printf("restarting c.\n");
@@ -978,13 +1024,13 @@ void restartC(FFMPEGData &vidData, int bitrate)
 		exit(1);
 	}
 
-	if(((bitrate * 8) + 8700000) <= 17000000)
+	if(((bitrate * 8) + bitrateAdjuster) <= maxBitrate)
 	{
-		vidData.c->bit_rate = (bitrate * 8) +  8700000;//+ 1000000;	//(int)appRate;
+		vidData.c->bit_rate = (bitrate * 8) +  bitrateAdjuster;//+ 1000000;	//(int)appRate;
 	}
 	else
 	{
-		vidData.c->bit_rate = 500000;//+ 1000000;	//(int)appRate;
+		vidData.c->bit_rate = defaultBitrate;//+ 1000000;	//(int)appRate;
 	}
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
@@ -1017,6 +1063,12 @@ void restartC(FFMPEGData &vidData, int bitrate)
 		fprintf(stderr, "Could not open codec\n");
 		exit(1);
 	}
+	
+	
+	vidData.frame->format = vidData.c->pix_fmt;
+	vidData.frame->width = vidData.c->width;
+	vidData.frame->height = vidData.c->height;
+		
 	
 	FOUT;
 
@@ -1575,10 +1627,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						{
 						
 							AVPacket          packt;
-							//uint8_t           *buffer = NULL;
-							AVFrame           *pFrame, *pFrameRGB;
 							int 			  retrn, got_output, frameFinished;
-							struct SwsContext *sws_ctx = NULL;
 					
 							if(strcmp(curveInApp,"accu_quality_GT50_withNI")==0 || strcmp(curveInApp,"accu_quality_GT50_withoutNI")==0)
 							{
@@ -1628,7 +1677,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 							//lastPacketSize = decodeHuffman_PKT(ids,0);//packetize the image and return the last packet size in bits
 					
-							//if(appOpencvDebugFlag)
+							if(appOpencvDebugFlag)
 							{
 								printf("%s: image data structure packetized\n", parentName);
 							}
@@ -1651,7 +1700,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//printf("ids size = %d, image data structure size = %d\n\n", sizeof(ids), sizeof(myImageStructure));
 							deleteImageDataStructure(ids);
 							
-							//if(appOpencvDebugFlag)
+							if(appOpencvDebugFlag)
 							{
 								printf("image data structure deleted\n");
 							}
@@ -1677,7 +1726,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							do
 							{
 								printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
-				
+								
+								
+								/*
 								frame = av_frame_alloc();
 								
 								if (!frame) 
@@ -1720,7 +1771,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										NULL,
 										NULL
 										);
-									
+								*/	
 								//printf("%s: Passed sws_getContext\n", parentName);
 									
 								av_init_packet(&packt);
@@ -1768,7 +1819,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									//printf("%s: about to decode frame\n", parentName);
 									// Decode video frame
-									avcodec_decode_video2(vidData[ID].pCodecCtx, pFrame, &frameFinished, &packt);
+									avcodec_decode_video2(vidData[ID].pCodecCtx, vidData[ID].pFrame, &frameFinished, &packt);
 										
 									//printf("%s: Passed decode\n", parentName);
 									// Did we get a video frame?
@@ -1776,29 +1827,29 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									{
 										//printf("%s: frame finished.\n", parentName);
 										// Convert the image from its native format to RGB
-										sws_scale(sws_ctx, (uint8_t const * const *)pFrame->data,
-											pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
-											frame->data, frame->linesize);
+										sws_scale(vidData[ID].sws_ctx, (uint8_t const * const *)vidData[ID].pFrame->data,
+											vidData[ID].pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
+											vidData[ID].frame->data, vidData[ID].frame->linesize);
 									}
 								}
 								
 								// Free all of the data that is no longer needed.
-								av_frame_free(&pFrame);
+								//av_frame_free(&pFrame);
 								
-								sws_freeContext(sws_ctx);
+								//sws_freeContext(sws_ctx);
 								
 								av_free_packet(&packt);
 									
-								printf("%s: about to set frame pts\n", parentName);
+								//printf("%s: about to set frame pts\n", parentName);
 				
-								frame->pts = vidData[ID].frameNumber;
+								vidData[ID].frame->pts = vidData[ID].frameNumber;
 							
-								printf("%s: set frame pts, about to encode\n", parentName);
+								//printf("%s: set frame pts, about to encode\n", parentName);
 								
 							
 				
 								// encode the image 
-								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, frame, &got_output);
+								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, vidData[ID].frame, &got_output);
 								printf("got output = %d\n", got_output);
 									
 								if (retrn < 0) 
@@ -1840,13 +1891,14 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										vidData[ID].startH264 = 0;
 									}
 									
+									/*
 									pFrame = av_frame_alloc();
 									if (!pFrame) 
 									{
 										fprintf(stderr, "Could not allocate video frame\n");
 										//exit(1);
 									}
-									
+									*/
 									
 									uint8_t *buffer;
 									int numBytes;
@@ -1854,43 +1906,44 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									AVPixelFormat  pFormat = AV_PIX_FMT_BGR24;
 									numBytes = avpicture_get_size(pFormat, vidData[ID].pCodecCtx->width,vidData[ID].pCodecCtx->height) ; //AV_PIX_FMT_RGB24
 									buffer = (uint8_t *) av_malloc(numBytes*sizeof(uint8_t));
-									avpicture_fill((AVPicture *) pFrameRGB, buffer, pFormat, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
+									avpicture_fill((AVPicture *) vidData[ID].pFrameRGB, buffer, pFormat, vidData[ID].pCodecCtx->width, vidData[ID].pCodecCtx->height);
 				 
 									
 									// Decode video frame
-									printf("decoding h264 frame\n");
-									avcodec_decode_video2(vidData[ID].pCodecCtx1, pFrame, &vidData[ID].got_picture, &vidData[ID].pkt);
+									//printf("decoding h264 frame\n");
+									avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrameH264, &vidData[ID].got_picture, &vidData[ID].pkt);
 									
-									if (vidData[ID].got_picture) 
+									if (vidData[ID].got_picture > 0) 
 									{
 										printf("%s: got picture.\n", parentName);
 										
 										struct SwsContext * img_convert_ctx;
 										img_convert_ctx = sws_getCachedContext(NULL, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->pix_fmt, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL,NULL);
-										sws_scale(img_convert_ctx, ((AVPicture*)pFrame)->data, ((AVPicture*)pFrame)->linesize, 0, vidData[ID].pCodecCtx1->height, ((AVPicture *)pFrameRGB)->data, ((AVPicture *)pFrameRGB)->linesize);
+										
+										sws_scale(img_convert_ctx, ((AVPicture*)vidData[ID].pFrameH264)->data, ((AVPicture*)vidData[ID].pFrameH264)->linesize, 0, vidData[ID].pCodecCtx1->height, ((AVPicture *)vidData[ID].pFrameRGB)->data, ((AVPicture *)vidData[ID].pFrameRGB)->linesize);
 				 
 										//cv::Mat img(pFrame->height,pFrame->width,CV_8UC3,pFrameRGB->data[0]); //dst->data[0]);
 										
 										
 										if(vidData[ID].test.data != NULL)
 										{
-											printf("releasing the image before setting it.\n");
+											//printf("releasing the image before setting it.\n");
 											vidData[ID].test.release();
 										}
 											
-										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8UC3, pFrameRGB->data[0], pFrameRGB->linesize[0]);
+										vidData[ID].test = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8UC3, vidData[ID].pFrameRGB->data[0], vidData[ID].pFrameRGB->linesize[0]);
 				
 										int type = vidData[ID].test.type();
 										//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
 							
-										sprintf(myString,"got gray image type, about to check it. (%d)", type);
-										op_prg_odb_print_major(myString,OPC_NIL);
+										//sprintf(myString,"got gray image type, about to check it. (%d)", type);
+										//op_prg_odb_print_major(myString,OPC_NIL);
 										
 										if(type)
 										{
-											printf("about to call cvtcolor\n");
+											//printf("about to call cvtcolor\n");
 											cvtColor(vidData[ID].test, vidData[ID].test, CV_BGR2GRAY);
-											printf("just called cvtcolor\n");
+											//printf("just called cvtcolor\n");
 										}
 										
 										
@@ -1899,14 +1952,17 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 										
 										
 										//sprintf(printPath, "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\node%d\\testImg.jpg", ID);//, vidData[ID].frameNumber);
+										
+										/*
 										sprintf(printPath, "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg%d.jpg", ID);
 										printf("%s\n", printPath);
 										
 										cv::imwrite(printPath, vidData[ID].test);
+										*/
 										
-										printf("freeing img_convert_ctx.\n");
+										//printf("freeing img_convert_ctx.\n");
 										sws_freeContext(img_convert_ctx);
-										printf("freed img_convert_ctx.\n");
+										//printf("freed img_convert_ctx.\n");
 									}
 									
 									av_freep(&buffer);
@@ -1928,23 +1984,23 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									encodedFileCount++;
 								}
 								
+								vidData[ID].frameNumber++;
 								
+								//printf("Freeing pFrameRGB\n");
+								//av_frame_free(&pFrameRGB);
+								//printf("Freed pFrameRGB\n");
 								
-								printf("Freeing pFrameRGB\n");
-								av_frame_free(&pFrameRGB);
-								printf("Freed pFrameRGB\n");
-								
-								av_frame_free(&pFrame);
+								//av_frame_free(&pFrame);
 								
 							
-								av_freep(&frame->data[0]);
+								//av_freep(&frame->data[0]);
 								
-								av_frame_free(&frame);
+								//av_frame_free(&frame);
 									
 								
 							}while(got_output == 0);
 						
-							vidData[ID].frameNumber++;	
+							
 						
 							
 							int packetSize = inputPacketSize * 8;

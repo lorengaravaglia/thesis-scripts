@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 586DB3D2 586DB3D2 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5872E2F8 5872E2F8 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -14043,7 +14043,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 			FOUT;
 		}
 		*/
-		printf("after cascade classifier\n");
+		//printf("after cascade classifier\n");
 		//load the xml global assigned elsewhere
 		
 		/*
@@ -14113,7 +14113,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 			
-		int type = vidData[ID].test.type();
+		//int type = vidData[ID].test.type();
 		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
 		
 		/*
@@ -14138,9 +14138,11 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		// Find the faces in the frame:
 		std::vector< Rect_<int> > faces;
 		//std::vector<cv::Rect> faces;
-		imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", vidData[ID].test);
-		printf("test234234\n");
-		printf("initial vector size = %d\n", (int)faces.size());
+		
+		
+		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", vidData[ID].test);
+		//printf("test234234\n");
+		//printf("initial vector size = %d\n", (int)faces.size());
 		if(LorenDebugFlag)
 		{
 			sprintf(myString,"About to detect faces.");
@@ -14151,7 +14153,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
 		
 		
-		printf("after detect faces\n");
+		//printf("after detect faces\n");
 		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg25.jpg", testImg);
 		
 		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
@@ -14163,11 +14165,11 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		int size = (int)faces.size();
 		
 		// print number of detected faces
-		//if(LorenDebugFlag)
-		//{
+		if(LorenDebugFlag)
+		{
 			sprintf(myString,"Number of detected faces this loop = %d", size);
 			op_prg_odb_print_major(myString,OPC_NIL);
-		//}
+		}
 
 		if(size != 0)
 		{
@@ -14206,18 +14208,18 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				// adjust prediciton to be the same as it's corresponding directory name.
 				// prediction = prediction + 1;
 					
-				//if(LorenDebugFlag)
-				//{	
+				if(LorenDebugFlag)
+				{	
 					sprintf(myString,"Prediction = %d", prediction);
 					op_prg_odb_print_major(myString,OPC_NIL);
-				//}
+				}
 					
 				if(LorenDebugFlag)
 				{
 					sprintf(myString,"compare prediction");
 					op_prg_odb_print_major(myString,OPC_NIL);
 				}
-				printf("switch statement\n");
+				//printf("switch statement\n");
 				switch (src_addr)
 				{
 					case 1: 
@@ -14281,7 +14283,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 							 break;
 				}
 				printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
-				printf("prediction comparison\n");
+				//printf("prediction comparison\n");
 				
 				if(prediction == predictionCheck)
 					break;
@@ -14307,7 +14309,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		}
 		*/
 	//}
-	printf("incrementing total faces\n");	
+	//printf("incrementing total faces\n");	
 	totalFacesForRecogniton++;
 	
 	printf("prediction check = %d\n", predictionCheck);
