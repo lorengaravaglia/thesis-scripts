@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5872E2F8 5872E2F8 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 587D6289 587D6289 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -695,8 +695,6 @@ static void							wlan_hcf_cw_values_adjust (void);
 static void 						wlan_hcf_find_new_ap_virtual (void);
 static int							wlan_hcf_seq_a_minus_seq_b (int seq_a, int seq_b, int block_size);
 static void							wlan_hcf_ptr_fields_print_functions_set (void);
-						
-void				startFFMPEGH264(FFMPEGData &vidData, int node);
 
 						
 						
@@ -753,6 +751,8 @@ double EACalulationFraction = 0.5;
 double round = 0.7;//round should be equal to EACalulationFraction at the begining 
 int EAdone = 0;
 
+double appRateScaler = 1.0;
+
 
 double lastEAWithoutDropping = 0;
 
@@ -767,11 +767,12 @@ double sumsumD=0;
 
 //PID stuff
 float error = 0;
-float  Kprop  = 0.5;
-float  Kinteg = 0.25;
-float  Kderv  = 0.25;
+float  Kprop  = 5.25;//14.5;//0.5;
+float  Kinteg = 6.0;//0.25;
+float  Kderv  = 0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
+double  Athresh = 0.005;
 
 
 
@@ -2748,6 +2749,17 @@ wlan_hcf_sv_init (void)
 	/* populated only by QSTAs.													*/
 	wlan_hcf_ptr_fields_print_functions_set ();
 	
+	switch(nodes_no)
+	{
+		case 10: appRateScaler = 4.75;
+				 break;
+		case 16: appRateScaler = 5.75;
+				 break;
+		case 20: appRateScaler = 2.75;
+				 break;
+		default: appRateScaler = 1.0;
+				 break;
+	}
 	FOUT;
 	}
 
@@ -3292,8 +3304,6 @@ wlan_hcf_higher_layer_data_arrival (void)
 			up = WLANC_nQSTA_DATA_UP;
 		}	
 	
-	//printf("point 1.\n");
-	
 	/* If this is the very first higher layer packet of this AC, then	*/
 	/* register the outgoing traffic related statistics of this AC.		*/
 	if (!(wlan_ac_flags->stats_registered & WLANC_AC_BITMAP_ARRAY [ac]))		
@@ -3302,9 +3312,13 @@ wlan_hcf_higher_layer_data_arrival (void)
 	/* Update all the load statistics, local and global, general and	*/
 	/* AC specific.														*/
 	op_stat_write (packet_load_handle, 1.0);
-	op_stat_write (packet_load_handle, 0.0);
+	
+	//removed by loren
+	//op_stat_write (packet_load_handle, 0.0);
 	op_stat_write (bits_load_handle,   (double) data_size);
-    op_stat_write (bits_load_handle,   0.0);
+    
+	//removed by loren
+	//op_stat_write (bits_load_handle,   0.0);
 	
 	data_packet_loaded_in_the_last_stateReport_int_count++;
 	
@@ -3315,17 +3329,16 @@ wlan_hcf_higher_layer_data_arrival (void)
 	//last_my_load_calculated_time = op_sim_time();
 	
 	op_stat_write (global_load_handle, (double) data_size);
-    op_stat_write (global_load_handle, 0.0);
+    //op_stat_write (global_load_handle, 0.0);
 	
 	op_stat_write (ac_load_pkts_shndl_arr [ac], 1.0);
-	op_stat_write (ac_load_pkts_shndl_arr [ac], 0.0);
+	//op_stat_write (ac_load_pkts_shndl_arr [ac], 0.0);
 	op_stat_write (ac_load_bits_shndl_arr [ac], (double) data_size);
-    op_stat_write (ac_load_bits_shndl_arr [ac], 0.0);
+    //op_stat_write (ac_load_bits_shndl_arr [ac], 0.0);
 	op_stat_write (ac_gb_load_shndl_arr [ac],   (double) data_size);
-    op_stat_write (ac_gb_load_shndl_arr [ac],   0.0);
+    //op_stat_write (ac_gb_load_shndl_arr [ac],   0.0);
 	
-	//printf("point 2.\n");
-	
+
 	/* Determine the size of the MPDUs of the MSDU.						*/
 	if ((data_size > frag_threshold) && (frag_threshold != -1))
 	{	
@@ -6823,9 +6836,9 @@ wlan_hcf_beacon_send (void)
 				LastError=error;
 				
 				if(sumDCounter != 0)				
-					error=0.005-sumsumD/sumDCounter;
+					error=Athresh-sumsumD/sumDCounter;
 				else
-					error = (float)0.005;
+					error = Athresh;
 				
 				
 				if(EA + Kprop*error - Kinteg*LastError + Kderv*BeforeLastError > 0 )
@@ -10867,7 +10880,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						//op_prg_odb_print_major(myString,OPC_NIL);
 						
-							appRateBits = ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate;
+							appRateBits = appRateScaler * ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate;
 							
 							//Loren
 							printf("appRateBits = %f without pruning flag\n", (double)appRateBits);
@@ -14001,6 +14014,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 	//cv::Mat gray;
 	//char path[200] = "";
 	int ID = (int)src_addr - 1;
+	int tempID = 0;
 	
 	int prediction = -1;
 	int predictionCheck = -2;
@@ -14015,7 +14029,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
     im_width =	75;	//images[0].cols;
     im_height =	75;	//images[0].rows;
 	
-	LorenDebugFlag = 1;
+	//LorenDebugFlag = 1;
 
 	FIN (faceRecognition (src_addr, accu, error));
 	
@@ -14030,7 +14044,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 	// loop structure to loop through the four frontal face cascades included with OpenCV.
 	//for(int j = 0; j<1; j++)
 	//{
-		printf("starting for loop\n");
+		//printf("starting for loop\n");
 		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
 		
 		// create the container for the face cascade classifiers.
@@ -14219,66 +14233,158 @@ void faceRecognition(int src_addr, double *accu, double *error)
 					sprintf(myString,"compare prediction");
 					op_prg_odb_print_major(myString,OPC_NIL);
 				}
-				//printf("switch statement\n");
-				switch (src_addr)
+				
+				if(ID < 39)
 				{
-					case 1: 
-					case 2: predictionCheck = 0;
+					tempID = ID;
+				}
+				else if(ID >= 39 && ID < 78)
+				{
+					tempID = ID - 39;
+				}
+				else
+				{
+					tempID = ID - (2*39);
+				}
+				//printf("switch statement\n");
+				switch (tempID)
+				{
+					//Bezhad
+					case 0: predictionCheck = 0;
 							break;
-					case 3:
-					case 4: predictionCheck = 1;
+					
+					case 1: predictionCheck = 0;
 							break;
-					case 5:
-					case 6: predictionCheck = 2;
+					
+					//Chia
+					case 2: predictionCheck = 1;
 							break;
-					case 7: predictionCheck = 3;
+								
+					case 3: predictionCheck = 1;
 							break;
-					case 8:
-					case 9:
+					
+					//Danny
+					case 4: predictionCheck = 2;
+							break;
+					
+					case 5: predictionCheck = 2;
+							break;
+					
+					//Fuji
+					case 6: predictionCheck = 3;
+							break;
+					
+					//Harsh
+					case 7: predictionCheck = 4;
+							break;
+					
+					case 8: predictionCheck = 4;
+							break;
+					
+					case 9: predictionCheck = 4;
+							break;
+					
 					case 10: predictionCheck = 4;
 							 break;
+					
+					//Hector
 					case 11: predictionCheck = 5;
-							 break; 
+							 break;
+					
+					//Hide
 					case 12: predictionCheck = 6;
 							 break;
-					case 13:
+					
+					//James
+					case 13: predictionCheck = 7;
+							 break;
+					
 					case 14: predictionCheck = 7;
 							 break;
-					case 15:
-					case 16: 
+					
+					//Jeff
+					case 15: predictionCheck = 8;
+							 break;
+					
+					case 16: predictionCheck = 8;
+							 break;
+					
 					case 17: predictionCheck = 8;
 							 break;
-					case 18:
-					case 19: predictionCheck = 9;
+					
+					//Joey
+					case 18: predictionCheck = 9;
 							 break;
-					case 20: 
-					case 21: 
+					
+					case 19:predictionCheck = 9;
+							 break;
+					
+					//Leekc
+					case 20: predictionCheck = 10;
+							 break;
+					
+					case 21: predictionCheck = 10;
+							 break;
+					
 					case 22: predictionCheck = 10;
 							 break;
-					case 23:
+					
+					//Louis
+					case 23: predictionCheck = 11;
+							 break;
+					
 					case 24: predictionCheck = 11;
 							 break;
-					case 25:
+					
+					//Miho
+					case 25: predictionCheck = 12;
+							 break;
+					
 					case 26: predictionCheck = 12;
 							 break;
-					case 27:
-					case 28:
-					case 29:
+					
+					//Ming
+					case 27: predictionCheck = 13;
+							 break;
+					
+					case 28: predictionCheck = 13;
+							 break;
+					
+					case 29: predictionCheck = 13;
+							 break;
+					
 					case 30: predictionCheck = 13;
 							 break;
-					case 31: 
-					case 32: predictionCheck = 14;
+					
+					//Mushiake
+					case 31: predictionCheck = 14;
 							 break;
-					case 33:
+					
+					case 32:predictionCheck = 14;
+							 break;
+					
+					//Rakesh
+					case 33: predictionCheck = 15;
+							 break;
+					
 					case 34: predictionCheck = 15;
 							 break;
+					
+					//Saito
 					case 35: predictionCheck = 16;
 							 break;
-					case 36: 
+					
+					//Victor
+					case 36: predictionCheck = 17;
+							 break;
+					
 					case 37: predictionCheck = 17;
 							 break;
-					case 38: predictionCheck = 18;
+					
+					//Yokoyama
+					case 38: predictionCheck = 19;
 							 break;
+					
 					default: predictionCheck = -1;
 							 break;
 				}
@@ -14351,7 +14457,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 	
 	//testImg.release();
 
-	LorenDebugFlag = 0;
+	//LorenDebugFlag = 0;
 	
 	FOUT;
 }
@@ -14520,14 +14626,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 		
 		//printf("ID = %d\n", ID);
-		
-		//Loren
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"I am %d, packet is coming to access point.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);	
-		}
-		
+				
 		if(opencvDebugFlag)
 		{
 			sprintf(myString,"I am  %d:accuracy is being calculated\n",(int)my_address,(int)my_address, importance);
@@ -14584,7 +14683,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			printf("entered unformatted packet statement\n\n");
 		}
 		op_pk_fd_get (seg_pkptr, 1, &frameN);
-		printf("From Node %d: Frame number = %d\n", (int)src_addr, (int)frameN);
+		//printf("From Node %d: Frame number = %d\n", (int)src_addr, (int)frameN);
 		
 		op_pk_fd_get (seg_pkptr, 2, &packetN);
 		//packetCounter[(int)src_addr] = packetN;
@@ -14641,14 +14740,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 			
 			faceRecogFlag = vidData[ID].got_picture;
-			if(faceRecogFlag)
-			{
-				// Initialize the test image.
-				//test = cv::Mat(480,640,CV_8U, double(0));
-				printf("printing image 18\n");
-				//cv::imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg18.jpg", vidData[ID].test);	
-				printf("after printing image 18\n");
-			}
+
 			/*
  			printf("last_got_picture = %d, ID = %d, lastID = %d\n", last_got_picture, ID, lastID);
 			if((last_got_picture != 1 && ID == lastID) || ID != lastID)			
@@ -14847,8 +14939,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 		
 		//Loren
-		sprintf(myString, "About to compare, frameN = %d, lastframeN = %d", (int)frameN, lastFrameN[(int)src_addr]);
-		op_prg_odb_print_major(myString,OPC_NIL);
+		if(LorenDebugFlag)
+		{
+			sprintf(myString, "About to compare, frameN = %d, lastframeN = %d", (int)frameN, lastFrameN[(int)src_addr]);
+			op_prg_odb_print_major(myString,OPC_NIL);
+		}
 		
 		if(lastFrameN[(int)src_addr] != -1 && frameN != lastFrameN[(int)src_addr] )
 		{
@@ -14889,8 +14984,11 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		    }
 					
 			//Loren
-			sprintf(myString, "Just determined, frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
-			op_prg_odb_print_major(myString,OPC_NIL);		
+			if(LorenDebugFlag)
+			{
+				sprintf(myString, "Just determined, frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
+				op_prg_odb_print_major(myString,OPC_NIL);		
+			}
 			
 			packetCounter[(int)src_addr]=0;
 			//peerStreamData[(int)src_addr] = 0;
@@ -14923,7 +15021,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		{
 						
 			//Loren
-			//if(LorenDebugFlag)
+			if(LorenDebugFlag)
 			{
 				sprintf(myString,"I am %d, frame forward function current time (%f) > EA estimation time + transition time.", (int)my_address, (float)current_time);
 				op_prg_odb_print_major(myString,OPC_NIL);
@@ -15081,7 +15179,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				totalFrames[(int)src_addr]++;
 				
 				//Loren
-				//if(LorenDebugFlag)
+				if(LorenDebugFlag)
 				{
 					sprintf(myString,"I am %d, incomplete frame received.", (int)my_address);
 					op_prg_odb_print_major(myString,OPC_NIL);
@@ -15134,17 +15232,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 								
 						getPSNR(originalImage,cvImage,&mse,&psnr);
 						
-						sprintf(myString,"Start FaceDetect");
+						//sprintf(myString,"Start FaceDetect");
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
 						//Loren: for testing i am not running.
 						//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 						
-						sprintf(myString,"End FaceDetect accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
+						//sprintf(myString,"End FaceDetect accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
 						
-						sprintf(myString,"Start Face Recognition");
+						//sprintf(myString,"Start Face Recognition");
 						op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
@@ -15170,21 +15268,30 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						
 						//sprintf(myString,"End Face Recognition");
 						//op_prg_odb_print_major(myString,OPC_NIL);
+						
+						/*
+						if(accuracy != 0)
+						{
+						opencvDebugFlag = 1;
 						if(opencvDebugFlag)
 						{
-							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-							fprintf(opencvDebugFile,"from accuracy = %lf, accuracyError = %lf\n", accuracy, accuracyError);
+							char opencvTrace[100];
+							sprintf(opencvTrace,"C:\\opnetTraceFiles\\opencvTrace_%d.txt", (int)nodes_no);
+							opencvDebugFile = fopen(opencvTrace,"a");
+							fprintf(opencvDebugFile,"Node %d: accuracy = %lf, accuracyError = %lf\n",(int)src_addr, vidData[ID].nodeAccuracy, (1 - vidData[ID].nodeAccuracy));
 							fclose(opencvDebugFile);
 						}
-						
+						opencvDebugFlag = 0;
+						}
+						*/
 						//m.release();
-						printf("temp file name = %s\n", tempFileName);
-						printf("original file name = %s\n", originalFileName);
-						printf("releasing cvImage\n");
+						//printf("temp file name = %s\n", tempFileName);
+						//printf("original file name = %s\n", originalFileName);
+						//printf("releasing cvImage\n");
 						cvReleaseImage( &cvImage );
-						printf("releasing originalImage\n");
+						//printf("releasing originalImage\n");
 						cvReleaseImage( &originalImage );
-						printf("done releasing images\n");
+						//printf("done releasing images\n");
 					}
 							
 					else
@@ -15475,8 +15582,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//cvImage=cvLoadImage( tempFileName, 0 );
 				
 				//Loren
-				sprintf(myString,"I am %d, complete frame received.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);		
+				//sprintf(myString,"I am %d, complete frame received.", (int)my_address);
+				//op_prg_odb_print_major(myString,OPC_NIL);		
 				
 				/*
 				if(cvImage)
@@ -15489,18 +15596,18 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						op_sim_end("Could not create cvImage for the original image","","","");
 				*/	
 					// Loren: face detect always gets called from here
-					sprintf(myString,"Start FaceDetect 1");
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"Start FaceDetect 1");
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					
 					//Loren: For testing i am not calling this
 					//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 					
-					sprintf(myString,"End FaceDetect 1 accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"End FaceDetect 1 accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					//sprintf(myString,"Start Face Recognition 1 with image file: %s", tempFileName);
 					//op_prg_odb_print_major(myString,OPC_NIL);
 					
-					printf("training faces flag = %d face recog flag = %d\n", trainingCompleteFlag, faceRecogFlag);
+					//printf("training faces flag = %d face recog flag = %d\n", trainingCompleteFlag, faceRecogFlag);
 					
 					
 					//Loren Call Face Recognition 2
@@ -15515,7 +15622,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					{
 						if(vidData[ID].test.data != NULL)
 						{
-							printf("test data is not null\n");
+							//printf("test data is not null\n");
 							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg20.jpg", vidData[ID].test);
 							faceRecognition((int)src_addr, &accuracy, &accuracyError);
 						
@@ -15524,9 +15631,21 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							faceRecogFlag = 0;
 						}
 					}
-					
-					
-					
+					/*
+					if(accuracy != 0)
+					{
+					opencvDebugFlag = 1;
+					if(opencvDebugFlag)
+					{
+						char opencvTrace[100];
+						sprintf(opencvTrace,"C:\\opnetTraceFiles\\opencvTrace_%d.txt", (int)nodes_no);
+						opencvDebugFile = fopen(opencvTrace,"a");
+						fprintf(opencvDebugFile,"Node %d: accuracy = %lf, accuracyError = %lf\n",(int)src_addr, vidData[ID].nodeAccuracy, (1 - vidData[ID].nodeAccuracy));
+						fclose(opencvDebugFile);
+					}
+					opencvDebugFlag = 0;
+					}
+					*/
 					//sprintf(myString,"End FaceRecognition 1");
 					//op_prg_odb_print_major(myString,OPC_NIL);
 					
@@ -15968,7 +16087,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 	}
 	
 	
-	printf("releasing test image.\n");
+	//printf("releasing test image.\n");
 	//vidData[ID].test.release();
 	vidData[ID].got_picture = 0;
 

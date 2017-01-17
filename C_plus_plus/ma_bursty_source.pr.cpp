@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5872E2E6 5872E2E6 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 587BEF56 587BEF56 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -819,9 +819,14 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi");
 	}
-	else
+	else if(tempID == 38)
 	{
 		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\yokoyama\\yokoyama1.avi");
+	}
+	else
+	{
+		printf("bad ID = %d\n", tempID);
+		op_sim_end("Invalid ID", "", "", "");
 	}
 	
 	//Load ffmpeg stream
@@ -892,7 +897,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	printf("Initializing c\n");
 	/* put sample parameters */
-	
+	/*
 	if(((bitrate * 8) + bitrateAdjuster) <= maxBitrate)
 	{
 		vidData.c->bit_rate = (bitrate * 8) +  bitrateAdjuster;//+ 1000000;	//(int)appRate;
@@ -901,6 +906,9 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	{
 		vidData.c->bit_rate = defaultBitrate;//+ 1000000;	//(int)appRate;
 	}
+	*/
+	
+	vidData.c->bit_rate = bitrate * 8;
 	printf("Bitrate = %f\n", (double)vidData.c->bit_rate);
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
@@ -916,7 +924,7 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	vidData.c->gop_size = 10; //10
+	vidData.c->gop_size = 1; //10
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUVJ422P;//
 
@@ -1024,6 +1032,7 @@ void restartC(FFMPEGData &vidData, int bitrate)
 		exit(1);
 	}
 
+	/*
 	if(((bitrate * 8) + bitrateAdjuster) <= maxBitrate)
 	{
 		vidData.c->bit_rate = (bitrate * 8) +  bitrateAdjuster;//+ 1000000;	//(int)appRate;
@@ -1032,6 +1041,9 @@ void restartC(FFMPEGData &vidData, int bitrate)
 	{
 		vidData.c->bit_rate = defaultBitrate;//+ 1000000;	//(int)appRate;
 	}
+	*/
+	
+	vidData.c->bit_rate = bitrate * 8;
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -1048,7 +1060,7 @@ void restartC(FFMPEGData &vidData, int bitrate)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	vidData.c->gop_size = 10;
+	vidData.c->gop_size = 1;//10;
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;
 	//c->bit_rate_tolerance = 20000;
@@ -1417,7 +1429,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					Objid				my_id;
 					Objid				parent_id;
 					char 				temp[5];
-					char				printPath[100];
+					//char				printPath[100];
 					//printf("Start of ma_bursty_source on-on\n");
 					
 					
@@ -1453,7 +1465,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						//char directoryName[10]="";
 						//char imageName[50];
 				
-						myImageStructure *ids;// *originalids;
+						//myImageStructure *ids;// *originalids;
 						
 						int		FrameSizeInPackets=0; 
 						int 	PacketCounter=0;
@@ -1510,7 +1522,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 						//printf("Capturing frame from stream.\n");
 				
-						printf("%s: Frame Size before calculating = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
+						//printf("%s: Frame Size before calculating = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
 				
 						frameSize = appRate/frameRate;
 						originalFrameSize = frameSize;
@@ -1520,7 +1532,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						op_stat_write (app_appRate_stat, (double) appRate*8);
 						
-						printf("methodInApp is %s\n",methodInApp);
+						//printf("methodInApp is %s\n",methodInApp);
 						//printf("transitionTimeApp=%d\n"	,	transitionTimeApp);
 				
 						imageLineNo = rand() % imageNo + 1; // the image line number randomly this is the line number that we want to read from the size info file
@@ -1564,7 +1576,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							q = 100;
 						}
 						
-						printf("Frame Size recalculated = %d\n",(int)frameSize);
+						//printf("Frame Size recalculated = %d\n",(int)frameSize);
 						
 						frameCounter++;
 						frameSizeSum += frameSize;
@@ -1661,11 +1673,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 					
 							if(appOpencvDebugFlag)
 							{
-								printf("after sprintf\n");
 								printf("image file name with path is %s\n",line);
 								printf("Input packet size = %f\n", (double)inputPacketSize);
 							}
 					
+							/*
 							ids = createImageDataStructure(line,inputPacketSize * 8);
 							//originalids = createImageDataStructure(line,inputPacketSize * 8);
 								
@@ -1700,6 +1712,9 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//printf("ids size = %d, image data structure size = %d\n\n", sizeof(ids), sizeof(myImageStructure));
 							deleteImageDataStructure(ids);
 							
+							*/
+							
+							
 							if(appOpencvDebugFlag)
 							{
 								printf("image data structure deleted\n");
@@ -1725,7 +1740,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 							do
 							{
-								printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
+								//printf("%s: Encode video file %s\n",parentName, vidData[ID].filepath);
 								
 								
 								/*
@@ -1850,7 +1865,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 								// encode the image 
 								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, vidData[ID].frame, &got_output);
-								printf("got output = %d\n", got_output);
+								//printf("got output = %d\n", got_output);
 									
 								if (retrn < 0) 
 								{
@@ -1915,7 +1930,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									if (vidData[ID].got_picture > 0) 
 									{
-										printf("%s: got picture.\n", parentName);
+										//printf("%s: got picture.\n", parentName);
 										
 										struct SwsContext * img_convert_ctx;
 										img_convert_ctx = sws_getCachedContext(NULL, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->pix_fmt, vidData[ID].pCodecCtx1->width, vidData[ID].pCodecCtx1->height, AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL,NULL);
