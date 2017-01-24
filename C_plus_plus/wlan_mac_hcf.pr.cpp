@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 587D6289 587D6289 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5886BACF 5886BACF 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -757,6 +757,7 @@ double appRateScaler = 1.0;
 double lastEAWithoutDropping = 0;
 
 double EACalculationLastTime = 0, lastIncrement = 0, lastDecrement = 0;
+double lastAccPrintTime = 0;
 int lastOperation = -1;
 
 double dropping[21];
@@ -767,12 +768,12 @@ double sumsumD=0;
 
 //PID stuff
 float error = 0;
-float  Kprop  = 5.25;//14.5;//0.5;
+float  Kprop  = 5.25;//0.5;
 float  Kinteg = 6.0;//0.25;
 float  Kderv  = 0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
-double  Athresh = 0.005;
+double  Athresh = 0.01;//0.1;//0.005;
 
 
 
@@ -810,6 +811,8 @@ int imgCount = 1;
 
 int totalFacesForRecogniton = 0;
 int totalCorrectFaceRecognitions = 0;
+
+int recogEnable = 1;
 
 /* Callback functions		*/
 #if defined (__cplusplus)
@@ -1906,10 +1909,6 @@ wlan_hcf_sv_init (void)
 		char tempInputLine[20];
 		char dataRatesInputFileName[200];
 
-		//Loren
-		//sprintf(myString,"I am  %d: trying to construct file name\n",(int)my_address);
-		//op_prg_odb_print_major(myString,OPC_NIL);
-				
 		sprintf(dataRatesInputFileName,"C:/opnetInputFiles/%d/node%d_ph.txt",(int)nodes_no,(int)my_address);
 		
 		//sprintf(myString,"I am  %d: input file name to read is constructed and it is %s\n I will try to open the file next",(int)my_address,dataRatesInputFileName);
@@ -2130,9 +2129,7 @@ wlan_hcf_sv_init (void)
 		/* Set the data rate to the minimum data rate of the specified		*/
 		/* physical layer technology.										*/
 		data_tx_rate = (phy_char_flag == WlanC_OFDM_11a) ? WLANC_11a_MIN_MANDATORY_DRATE : WLANC_11b_MIN_MANDATORY_DRATE;
-		//Loren
-		//sprintf(myString,"I am 16");
-		//op_prg_odb_print_major(myString,OPC_NIL);
+
 		}
 		
 	/* Initialize our current data transmission rate with the configured	*/
@@ -2345,9 +2342,7 @@ wlan_hcf_sv_init (void)
 
 	/* Allocating memory for the flags used in this process model. 			*/
 	wlan_flags = (WlanT_Mac_Flags *) op_prg_mem_alloc (sizeof (WlanT_Mac_Flags));
-	//Loren
-	//sprintf(myString,"I am 18");
-	//op_prg_odb_print_major(myString,OPC_NIL);
+
 	/* Initially resetting all the flags.									*/
 	wlan_flags->rts_sent		   	= OPC_FALSE;
 	wlan_flags->rcvd_bad_packet		= OPC_FALSE;
@@ -2490,10 +2485,7 @@ wlan_hcf_sv_init (void)
 	
 	/* Initializing the sum of sizes of the packets in the		*/
 	/* higher layer queue.										*/
-	if(LorenDebugFlag)
-	{
-		printf("initializing total_hlpk_size to zero (0).\n");
-	}
+
 	total_hlpk_size = 0;
 
 	/* Initializing frame response to send to none.				*/
@@ -3181,32 +3173,28 @@ wlan_hcf_higher_layer_data_arrival (void)
 	/* Get packet from the incoming stream from higher layer and obtain	*/
 	/* the packet size.*/
 	
-	//printf("Entered higher layer data arrival.\n");
 	hld_pkptr = op_pk_get (instrm_from_mac_if);	
-	//printf("got packet hld_pkptr.\n");
 	
 	/* If we are in a bridge/switch node, then we don't accept any		*/
 	/* higher layer packet unless we are AP enabled.					*/
 	if ((wlan_flags->bridge_flag == OPC_TRUE) && (ap_flag == OPC_BOOLINT_DISABLED))
 		{
-		//printf("first if statement taken, about to destroy packet.\n");
 		op_pk_destroy (hld_pkptr);
-		//printf("destroyed packet in first if.\n");
+
 		FRET (WlanC_AC_None);
 		}
-	//printf("about to get ici_ptr.\n");
-	
+
 	/* Read ICI parameters at the stream interrupt.						*/
 	ici_ptr = op_intrpt_ici ();
-	//printf("got ici_ptr about to get dest_addr.\n");
+
 	
 	/* Get the destination address from the ICI.						*/
 	op_ici_attr_get_int64 (ici_ptr, "dest_addr", &dest_addr);
-	//printf("got dest_addr, about to get protocol_type.\n");
+
 	
 	/* Get the protocol information of the higher layer data from ICI.	*/
 	op_ici_attr_get_int32 (ici_ptr, "protocol_type", &protocol_type);
-	//printf("got protocol_type, about to do second if statement.\n");
+
 	
 	/* Check for an AP bridge whether the destined station exists in	*/
 	/* the BSS or not. If not then no need to broadcast the packet.		*/
@@ -3214,26 +3202,22 @@ wlan_hcf_higher_layer_data_arrival (void)
 		{
 		/* If the destination station doesn't exist in the BSS then no	*/
 		/* need to broadcast the packet.								*/
-		//printf("took second if, is dest >= 0.\n");
+
 		if (dest_addr >= 0)
 			{
-			printf("dest >= 0, get dest_info_ptr.\n");
 			dest_info_ptr = (WlanT_HCF_Peer_Info *) prg_bin_hash_table_item_get (peer_info_hash_tbl, (void *) &(dest_addr));
-			printf("got dest_info_ptr.\n");
 			if (dest_info_ptr == PRGC_NIL)
 				{
-				//printf("about to do second destroy packet.\n");
 				op_pk_destroy (hld_pkptr);	
-				//printf("did second destroy packet.\n");
+
 				FRET (WlanC_AC_None);	
 				}
 			}
 		}
-	//printf("about to get data size of packet.\n");
+
 	
 	/* Get the size of the packet arrived from higher layer.			*/
 	data_size = op_pk_total_size_get (hld_pkptr);
-	//printf("got size of packet.\n");
 	
 	/*//read data recorded by the app regarding data size 
 	
@@ -3342,15 +3326,12 @@ wlan_hcf_higher_layer_data_arrival (void)
 	/* Determine the size of the MPDUs of the MSDU.						*/
 	if ((data_size > frag_threshold) && (frag_threshold != -1))
 	{	
-		//printf("point 2a.\n");
 		frag_size = frag_threshold;
 	}
 	else
 	{
-		//printf("point 2b.\n");
 		frag_size = data_size;
 	}
-	//printf("point 2c.\n");
 	
 	/* Destroy packet if it is more than max msdu length or its size	*/
 	/* zero. Also, if the size of the higher layer queue will exceed	*/
@@ -3362,28 +3343,24 @@ wlan_hcf_higher_layer_data_arrival (void)
 	if ((data_size > WLANC_MAXMSDU_LENGTH && accept_large_packets == OPC_BOOLINT_DISABLED) ||
 		frag_size > WLANC_MAXMSDU_LENGTH || data_size == 0 || total_hlpk_size + data_size > hld_max_size)
 		{
-		printf ("data_size = %d, WLANC_MAXMSDU_LENGTH = %d, accept_large_packets = %d, OPC_BOOLINT_DISABLED = %d, frag_size = %d, total_hlpk_size = %d, hld_max_size = %d\n", (int)data_size, (int)WLANC_MAXMSDU_LENGTH, (int)accept_large_packets,
-			(int)OPC_BOOLINT_DISABLED, (int)frag_size, (int)total_hlpk_size, (int)hld_max_size);
-		//printf("point 2d.\n");
 		/* Drop the higher layer packet.	*/
 		
 		//op_sim_end ("Trying to debug stuff.", "", "", "");
-		wlan_hcf_hl_packet_drop (hld_pkptr, data_size, ac);
-		//printf("point 2e.\n");
+
 		FRET (WlanC_AC_None); 
 		}
-	//printf("point 2f.\n");
+
 	
 	/* Stamp the packet with the current time. This information will	*/
 	/* remain unchanged even if the packet is copied for				*/
 	/* retransmissions, and	eventually it will be used by the			*/
 	/* destination MAC to compute the end-to-end delay.					*/
 	op_pk_stamp (hld_pkptr);
-	//printf("point 2g.\n");
+
 	
 	/* Enqueue the packet for transmission.								*/	
 	wlan_hcf_hlpk_enqueue (hld_pkptr, ac, dest_addr, my_address, up, protocol_type, data_size, dest_info_ptr);
-	//printf("point 3.\n");
+
 	
 	/* Return the access category of the enqueued higher layer packet.	*/
 	FRET (ac);
@@ -3509,29 +3486,13 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	/* Write an appropriate simulation log message unless the	*/
 	/* same message is written before.							*/
 	
-	//Loren: Debugging
-	//if(LorenDebugFlag)
-	{
-		printf("entered higher layer packet drop function.\n");
-	}
 	
 	if (drop_pkt_entry_log_flag < full_buffer_bit + large_packet_bit)
 		{
 		
-		//Loren: Debugging
-		//if(LorenDebugFlag)
-		{
-			printf("entered higher layer packet drop first if statement.\n");
-		}
-		
 		if (total_hlpk_size + data_size > hld_max_size && !(drop_pkt_entry_log_flag & full_buffer_bit))
 			{
 			
-			//Loren: Debugging
-			//if(LorenDebugFlag)
-			{
-				printf("entered higher layer packet drop second if statement.\n");
-			}	
 				
 			/* Writing log message for dropped packets.			*/
 			op_prg_log_entry_write (drop_pkt_log_handle, 
@@ -3553,11 +3514,6 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 		else if (total_hlpk_size + data_size <= hld_max_size && data_size > 0 && !(drop_pkt_entry_log_flag & large_packet_bit))
 			{
 			
-			//Loren: Debugging
-			//if(LorenDebugFlag)
-			{
-				printf("entered higher layer packet drop else if statement.\n");
-			}
 			
 			/* Writing log message for dropped packets due to	*/
 			/* packet size.										*/
@@ -3580,28 +3536,10 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 			}
 		}
 	
-	//Loren: debugging
-	if(LorenDebugFlag)
-	{
-		printf("entered higher layer packet drop function, about to print packet.\n");
-		op_pk_print(hld_pkptr);
-		printf("entered higher layer packet drop function, about to destroy packet.\n");
-	}
 		
 	/* Destroy the dropped packet.								*/
-	//if(LorenDebugFlag)
-	{
-		printf("I am  %d: hld_pkptr is of type %s\n",(int)my_address, fmt_name);
-	}
-	
-
 	op_prg_mem_free(hld_pkptr); 
-	
-	//Loren: Debugging
-	if(LorenDebugFlag)
-	{
-		printf("entered higher layer packet drop function, destroyed packet.\n");	
-	}
+
 	
 	/* Update local and global, general and AC specific			*/
 	/* statistics that keep track of the dropped data traffic	*/
@@ -3625,11 +3563,6 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	op_stat_write (ac_gb_dropped_buffer_shndl_arr [ac],   (double) data_size);
 	op_stat_write (ac_gb_dropped_buffer_shndl_arr [ac],   0.0);
 	
-	//Loren: Debugging
-	//if(LorenDebugFlag)
-	{
-		printf("exiting higher layer packet drop function.\n");
-	}
 	
 	FOUT;
 	}
@@ -3760,16 +3693,9 @@ wlan_hcf_hlpk_enqueue (Packet* hld_pkptr, WlanT_HCF_Access_Category ac, OpT_Int6
 	
 	/* Adjust the total size and number of all data packets in all AC	*/
 	/* queues.															*/
-	if(LorenDebugFlag)
-	{
-		printf("Total_hlpk_num before increment #1 = %d, total_hlpk_size before increment #1 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-	}
 	total_hlpk_num++;
 	total_hlpk_size += data_size;
-	if(LorenDebugFlag)
-	{
-		printf("Total_hlpk_num after increment #1 = %d, total_hlpk_size before increment #1 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-	}
+
 
 	/* Update the queue size statistic.									*/
 	op_stat_write (hl_packets_rcvd, (double) total_hlpk_num);
@@ -3817,10 +3743,7 @@ wlan_hcf_hlpk_enqueue (Packet* hld_pkptr, WlanT_HCF_Access_Category ac, OpT_Int6
 static OpT_Packet_Size
 wlan_hcf_hlpk_dequeue (WlanT_HCF_Access_Category ac, int queue_pos)
 	{
-	if(LorenDebugFlag)
-	{
-		printf("Entered hlpk dequeue.\n");
-	}
+
 	WlanT_HCF_Hld_Info*	hld_ptr;
 	OpT_Packet_Size		ret_value;
 
@@ -3852,15 +3775,7 @@ wlan_hcf_hlpk_dequeue (WlanT_HCF_Access_Category ac, int queue_pos)
 	/* received.														*/
 	if (hld_ptr->ack_policy != WlanC_Block_ACK)
 	{
-		if(LorenDebugFlag)
-		{
-			printf("total_hlpk_size before decrement #1 = %d\n", (int)total_hlpk_size);
-		}
 		total_hlpk_size -= hld_ptr->size;
-		if(LorenDebugFlag)
-		{
-			printf("total_hlpk_size after decrement #1 = %d\n", (int)total_hlpk_size);
-		}
 	}
 
 	/* Decrement the number of queued packets and update the queue size	*/
@@ -3924,8 +3839,6 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			addba_info_ptr->starting_seq_num = start_seq_num;
 			
 			/* Insert the structure into the packet.					*/
-			//Loren Debug
-			//printf("Here1\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, addba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_ADDBA_Fields));
 			frame_size = WLANC_ACT_MGMT_ADDBA_SIZE;
@@ -3960,8 +3873,6 @@ wlan_hcf_action_mmpdu_prepare_and_enqueue (WlanT_Act_Mgmt_Category category, Wla
 			delba_info_ptr->initiator = ba_initiator;        
 			
 			/* Insert the structure into the packet.					*/
-			//Loren Debug
-			//printf("Here2\n");
 			op_pk_fd_set_ptr (mmpdu_ptr, WLANC_ACT_MGMT_PARAMS_FD, delba_info_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_DELBA_Fields));
 			frame_size = WLANC_ACT_MGMT_DELBA_SIZE;
@@ -4093,16 +4004,9 @@ wlan_hcf_mmpdu_enqueue (Packet* mmpdu_pkptr, OpT_Int64 dest_addr, OpT_Packet_Siz
 		}		
 	
 	/* Adjust the total size and number of all data packets in all AC	*/
-	if(LorenDebugFlag)
-	{
-		printf("Total_hlpk_num before increment #2 = %d, total_hlpk_size before increment #2 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-	}
 	total_hlpk_num++;
 	total_hlpk_size += size;
-	if(LorenDebugFlag)
-	{
-		printf("Total_hlpk_num after increment #2 = %d, total_hlpk_size before increment #2 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-	}
+
 
 	/* Update the queue size statistic.									*/
 	op_stat_write (hl_packets_rcvd, (double) total_hlpk_num);
@@ -4315,16 +4219,9 @@ wlan_hcf_ba_control_enqueue (WlanT_Mac_Frame_Type type, OpT_Int64 dest_addr, OpT
 	hld_ptr = wlan_hcf_ba_control_queue_entry_create (type, dest_addr, up);	
 	
 	/* Update the buffer usage information and queue size statistic.	*/
-	if(LorenDebugFlag)
-	{
-		printf("total_hlpk_size before increment #3 = %d\n", (int)total_hlpk_size);
-	}
+
 	total_hlpk_size += hld_ptr->size;
-	if(LorenDebugFlag)
-	{
-		printf("total_hlpk_size after increment #3 = %d\n", (int)total_hlpk_size);
-	}
-	
+
 	total_hlpk_num++;
 	op_stat_write (hl_packets_rcvd, (double) total_hlpk_num);
 
@@ -5426,8 +5323,7 @@ wlan_hcf_control_frame_send (WlanT_Mac_Frame_Type frame_type, OpT_Int64 dest_add
 		op_pk_fd_set_int32 (wlan_transmit_frame_ptr, WLANC_CNTL_ACCEPT_FD, OPC_TRUE, OPC_FIELD_SIZE_UNCHANGED);
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
-			//Loren Debug
-			//printf("Here3\n");
+
 		op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_CNTL_BA_FD, peer_tid_ba_info_ptr->block_ack_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -5662,8 +5558,7 @@ wlan_hcf_data_frame_send (WlanT_HCF_Hld_Info* hld_ptr)
 			qos_fields_ptr = (WlanT_QoS_Control_Fields *) op_prg_mem_alloc (sizeof (WlanT_QoS_Control_Fields));
 			qos_fields_ptr->tid        = hld_ptr->up;
 			qos_fields_ptr->ack_policy = hld_ptr->ack_policy;
-			//Loren Debug
-			//printf("Here4\n");
+
 			op_pk_fd_set_ptr (wlan_transmit_frame_ptr, WLANC_DATA_QOS_FD, qos_fields_ptr, OPC_FIELD_SIZE_UNCHANGED,	
 						      op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_QoS_Control_Fields));
 		
@@ -6383,9 +6278,6 @@ wlan_hcf_beacon_send (void)
 	/** included in the frame body and adjusts the frame size accordingly.	**/
 	FIN (wlan_hcf_beacon_send (void));
 	
-	/*Loren
-	printf("I am %d: entering beacon send function.\n", (int)my_address);
-	*/
 	
 	/* First initialize the transmission data rate to the lowest supported	*/
 	/* data rate, which is the data rate used for beacons.					*/
@@ -6431,7 +6323,7 @@ wlan_hcf_beacon_send (void)
 	
 	
 	
-			//Mohammad this code is to find number of stations S in the network
+			//Mohammad this code is to find number of stations (S) in the network
 			/* Search for the other WLAN MACs that are in the same LAN with us.	*/
 			temp_proc_record_handle_list_ptr = op_prg_list_create ();
 
@@ -6602,14 +6494,6 @@ wlan_hcf_beacon_send (void)
 				if(EAcalculatedFlag != 1)
 				{
 					EAestimation += totalPeerStreamData[i]/(current_time-start_times[i])/peer_info_ptr -> peer_physicalRate;//for estimation
-					
-					//Loren added for debugging
-					/*
-					sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
-					appRateOutputFile = fopen(myAppRateTraceName, "a");
-					fprintf(appRateOutputFile,"At position EAestimation: EAestimation = %40.40f, total peer stream data = %40.40f, current time = %40.40f, start times = %40.40f, peer_physical rate = %40.40f\n", EAestimation, totalPeerStreamData[i], current_time, start_times[i],peer_info_ptr -> peer_physicalRate);
-					fclose(appRateOutputFile);
-					*/
 				}	
 					
 				sumH+=peer_info_ptr -> peer_averageProtocolOverhead/peer_info_ptr -> peer_physicalRate;
@@ -6645,41 +6529,20 @@ wlan_hcf_beacon_send (void)
 				sumDCounter ++;
 				}
 			
-				
-			printf("current time = %f, EAestimationTime = %d, EAcalculatedFlag = %d, EAestimationFlag = %d\n", current_time, EAestimationTime, EAcalculatedFlag, EAestimationFlag);
 			
 			if (current_time > EAestimationTime && EAcalculatedFlag != 1 && EAestimationFlag == 1)
 				{
 				EAcalculatedFlag = 1;
 				EA = EAestimation;// * 1.1;
-				//Loren added for debugging
-				/*
-				printf("At position 1: EA = %%40.40f\n", EA);
-				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
-				appRateOutputFile = fopen(myAppRateTraceName, "a");
-				fprintf(appRateOutputFile,"At position 1: EA = %40.40f\n", EA);
-				fclose(appRateOutputFile);
-				*/
-				//EA = 0.32;
-				//printf("before change bnadwidth_allocation_method = %s and tempBnadwidth_allocation_method = %s\n",bnadwidth_allocation_method,tempBnadwidth_allocation_method);
+
 				sprintf(bnadwidth_allocation_method,"%s",tempBnadwidth_allocation_method);
-				
-				//printf("after change bnadwidth_allocation_method = %s and tempBnadwidth_allocation_method = %s\n",bnadwidth_allocation_method,tempBnadwidth_allocation_method);
-			
+		
 				}
 			else if (current_time <= EAestimationTime)
 				{
 				//EA = 1.0/(2.0/(cwmin_arr [WlanC_AC_VI]+2)/sumTXOP/stations_no +	( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI]+ 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and TXOP
 				EA = 1.0/(( 1 + (2.0*stations_no/(double)(cwmin_arr [WlanC_AC_VI] + 2.0))*pow(cwmin_arr [WlanC_AC_VI]/(cwmin_arr [WlanC_AC_VI]+2.0),stations_no-1)));//EA using per catigory CWmin and without TXOP
 				
-				//Loren added for debugging
-				/*
-				printf("At position 2: EA = %%40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
-				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
-				appRateOutputFile = fopen(myAppRateTraceName, "a");
-				fprintf(appRateOutputFile,"At position 2: EA = %40.40f, stations no = %d, cwmin_arr = %40.40f, wlan ac vi = %d\n", EA, stations_no, (double)cwmin_arr [WlanC_AC_VI], WlanC_AC_VI);
-				fclose(appRateOutputFile);
-				*/
 				//EA = 0.3*EA;
 				//EA = 1.0/	( 1 + (2.0*stations_no/(double)(phy_cw_min+ 2.0))*pow(/phy_cw_min/(phy_cw_min+2.0),stations_no-1));//EA using phy CWmin
 				}
@@ -6845,46 +6708,14 @@ wlan_hcf_beacon_send (void)
 					EA = EA + Kprop*error - Kinteg*LastError + Kderv*BeforeLastError;
 				else
 					EA = 0;
-				
-				
-				//printf("At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
-				
-				//Loren added for debugging
-				/*
-				sprintf(myAppRateTraceName, "C:\\AppRateTraceFiles\\Apprate_0.txt");
-				appRateOutputFile = fopen(myAppRateTraceName, "a");
-				fprintf(appRateOutputFile,"At position 3: EA = %40.40f, before last error = %40.40f, last error = %40.40f,  error =%40.40f, sum counter = %d, sumsumD = %40.40f\n", EA, BeforeLastError, LastError, error, sumDCounter, sumsumD);
-				fclose(appRateOutputFile);
-				*/
-				//Loren
-				//sprintf(myString,"I am  %d:EA is calculated as %f, during PID.",(int)my_address,(double)EA);
-				//op_prg_odb_print_major(myString,OPC_NIL);
+		
 				
 				EACalculationLastTime = current_time;
 				sumDCounter = 0;
 				sumsumD = 0;
 				
 				}
-			
-			if(current_time > EAestimationTime + transitionTime)
-			{
-				//Loren
-				if(LorenDebugFlag)
-				{
-					sprintf(myString,"I am %d, sim done just compared current time (%f) to EA estimation time + transition time (%d).", (int)my_address, (float)current_time, (int)EAestimationTime+(int)transitionTime);
-					op_prg_odb_print_major(myString,OPC_NIL);
-				
-				
-					//Loren
-					sprintf(myString,"I am  %d:EA is calculated as %40.40f",(int)my_address,(double)EA);
-					op_prg_odb_print_major(myString,OPC_NIL);
-					sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
-					op_prg_odb_print_major(myString,OPC_NIL);
-					//op_sim_end ("EA estimation is done", "", "", "");
-				}
-			}
-			
-			
+						
 			
 			//final algo
 			/*
@@ -7116,8 +6947,6 @@ wlan_hcf_beacon_send (void)
 				)
 				{			
 				LAMBDA = pow((double)EA/sum,(b - 1.0));
-				//Loren
-				printf("Lambda calculated here: LAMBDA = %40.40f, EA = %40.40f, sum = %40.40f, b = %f\n", (double)LAMBDA, (double)EA, (double)sum, (double)b);
 				}
 			else if(strcmp(tempBnadwidth_allocation_method,"accu_H")==0 || strcmp(tempBnadwidth_allocation_method,"accu_link_H")==0 
 				|| strcmp(tempBnadwidth_allocation_method,"wdis_H")==0 ||strcmp(tempBnadwidth_allocation_method,"wdis_link_H")==0
@@ -7272,8 +7101,6 @@ wlan_hcf_beacon_send (void)
 	/* if we are configured to do so.										*/
 	if (bss_edca_params_arr != OPC_NIL)
 		{
-		//Loren Debug
-		//printf("Here5\n");
 		pk_bbstruct_ptr->edca_param_set_arr = (WlanT_AC_EDCA_Param_Rec *)
 			op_prg_mem_copy_create (bss_edca_params_arr, sizeof (WlanT_AC_EDCA_Param_Rec) * WLANC_HCF_AC_COUNT);
 		
@@ -7585,8 +7412,6 @@ wlan_hcf_stateReport_send (void)
 	
 	pk_srstruct_ptr->pk_droppedBRate = my_droppedB_sum/(op_sim_time()-last_my_droppedB_calculated_time);
 	last_sent_droppedBRate = pk_srstruct_ptr->pk_droppedBRate;
-	//Loren
-	printf("pk_droppedBRate = %f, my_droppedB_sum = %40.40f, op_sim_time = %f, last_my_droppedB_calculated_time = %f\n", (double)pk_srstruct_ptr->pk_droppedBRate, my_droppedB_sum, op_sim_time(), last_my_droppedB_calculated_time);
 	
 	
 	
@@ -8020,8 +7845,7 @@ wlan_hcf_ba_control_frame_send (WlanT_HCF_Hld_Info* ba_cntl_info_ptr)
 		op_pk_fd_set_int32 (ba_control_pkptr, WLANC_CNTL_ACCEPT_FD, OPC_TRUE, OPC_FIELD_SIZE_UNCHANGED);
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_HEADER_FD, pk_chstruct_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          wlan_pk_chstruct_copy, wlan_pk_chstruct_destroy, sizeof (WlanT_Control_Header_Fields));
-		//Loren Debug
-		//printf("Here6\n");
+
 		op_pk_fd_set_ptr (ba_control_pkptr, WLANC_CNTL_BA_FD, ba_cntl_fields_ptr, OPC_FIELD_SIZE_UNCHANGED, 
 				          op_prg_mem_copy_create, op_prg_mem_free, sizeof (WlanT_BA_Control_Fields));
 
@@ -8152,9 +7976,6 @@ wlan_hcf_interrupts_process (void)
 	/** WlanC_AC_None.														**/
 	FIN (wlan_hcf_interrupts_process (void));
 	
-	/*Loren: here for following program flow
-	printf("got to interrupts process beginning.\n");
-	*/
 	
 	/* Check if debugging is enabled.										*/
 	wlan_trace_active = (debug_mode && op_prg_odb_ltrace_active ("wlan"));
@@ -8165,22 +7986,13 @@ wlan_hcf_interrupts_process (void)
 	/* Determine interrupt type and code to divide treatment along the		*/
 	/* lines of interrupt type.						  						*/
 	intrpt_type = op_intrpt_type ();
-	//Loren
-	//printf("interrupt type = %d\n", (int)intrpt_type);
 	
 	intrpt_code = (WlanT_Mac_Intrpt_Code) op_intrpt_code ();
-	//Loren
-	//printf("interrupt code = %d\n", (int)intrpt_code);
 	
 	/* Stream interrupts are either arrivals from the higher layer, or		*/
 	/* from the physical layer.												*/
 	if (intrpt_type == OPC_INTRPT_STRM)
 		{
-		//Loren
-		if(myStringDebug)
-		{
-			printf("I am %d: stream interrupt type.\n", (int)my_address);
-		}
 		/* Determine the stream on which the arrival occurred.				*/
 		i_strm = op_intrpt_strm ();
 	
@@ -8189,10 +8001,8 @@ wlan_hcf_interrupts_process (void)
 		/* the destination address.											*/
 		if (i_strm == instrm_from_mac_if)
 			{
-			//Loren
 			/* Process stream interrupt received from higher layer.			*/
 			ret_value = wlan_hcf_higher_layer_data_arrival ();
-			//printf("ret_value = %s\n", ret_value);
 			}
 
 		/* If the event was an arrival from the physical layer, accept the	*/
@@ -8203,29 +8013,19 @@ wlan_hcf_interrupts_process (void)
 			/* necessary. The statwire interrupt from the receiver before	*/
 			/* the arrival of the physical layer packet won't reset this	*/
 			/* flag when signal extension is used in 11g networks.			*/
-			
-			//Loren
-			//printf("I am %d: took i_strm not equal.\n", (int)my_address);
+
 			if (wlan_flags->receiver_busy == OPC_TRUE && rx_state_info_ptr->rx_end_time - PRECISION_RECOVERY <= current_time)
 				{
 				wlan_flags->receiver_busy = OPC_FALSE;
 				}
 
 			/* Process stream interrupt received from physical layer.		*/
-			/*Loren*/
-			//printf("I am %d: calling physical layer data arrival\n", (int)my_address);
-			
 			wlan_hcf_physical_layer_data_arrival (); 			
   			}
 	 	}	
 	/* Handle stat interrupt received from the receiver.					*/
 	else if (intrpt_type == OPC_INTRPT_STAT)
 		{
-		//Loren
-		if(myStringDebug)
-		{
-			printf("I am %d: stat interrupt type from receiver.\n", (int)my_address);
-		}
 		/* Make sure it is not a stat interrupt from the transmitter.		*/
 		if (intrpt_code < TRANSMITTER_BUSY_INSTAT)
 			{
@@ -8250,11 +8050,6 @@ wlan_hcf_interrupts_process (void)
 	else if ((intrpt_type == OPC_INTRPT_SELF || intrpt_type == OPC_INTRPT_REMOTE) && intrpt_code == WlanC_Beacon_Tx_Time) //(mohammad) we add code to handle interrepts for sending status report. the code should be similar to the beacon handling code. 
 		{
 		
-		//Loren
-		if(myStringDebug)
-		{
-			printf("I am %d: time to send beacon interrupt.\n", (int)my_address);
-		}
 			/*
 		
 			//this code is to calculate statistics at the AP about accuracy and distortion
@@ -8567,12 +8362,7 @@ wlan_hcf_interrupts_process (void)
 	/* (mohammad) Check whether it is time to change operational speed. 											*/
 	else if ((intrpt_type == OPC_INTRPT_SELF ) && intrpt_code == WlanC_OperationalSpeed_Change) //(mohammad) we add code to handle interrepts for changing the operational speed 
 	{
-				//Loren
-		if(myStringDebug)
-		{
-			printf("I am %d: changing operational speed interrupt.\n", (int)my_address);
-		}
-		printf("My data rates value = %lf , dataRatePeriodCounter = %d\n", (double)myDataRates[dataRatePeriodCounter], dataRatePeriodCounter);
+		//printf("My data rates value = %lf , dataRatePeriodCounter = %d\n", (double)myDataRates[dataRatePeriodCounter], dataRatePeriodCounter);
 		operational_speed = myDataRates[dataRatePeriodCounter];
 		dataRatePeriodCounter++;
 		
@@ -9192,11 +8982,6 @@ wlan_hcf_interrupts_process (void)
 		{
 		/* This is an interrupt scheduled by a roaming STA to report its	*/
 		/* association or deassociation. Find out the address of the STA.	*/
-		//Loren
-		if(myStringDebug)
-		{
-			printf("I am %d: interrupt scheduled by roaming STA.\n", (int)my_address);
-		}
 		
 		integer_sta_mac_addr = intrpt_code >> WLANC_ADDRESS_BIT_SHIFT;
 		sta_mac_addr = integer_sta_mac_addr;
@@ -9270,11 +9055,6 @@ wlan_hcf_interrupts_process (void)
 
 	else if (intrpt_type == OPC_INTRPT_SELF)
 		{
-				//Loren
-		if(myStringDebug)
-		{
-			printf("I am  %d:self interrupt",(int)my_address);
-		}
 		
 		if (intrpt_code == WlanC_NAV_Reset_Time)
 			{
@@ -9461,15 +9241,8 @@ wlan_hcf_peer_tid_ba_info_flush (WlanT_HCF_BA_State* peer_tid_ba_info_ptr, WlanT
 		for (i = peer_tid_ba_info_ptr->mpdu_count - 1; i >= 0; i--)
 			{
 			/* Decrease the buffer usage by higher layer data.				*/
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size before decrement #2 = %d\n",(int)total_hlpk_size);
-			}
+
 			total_hlpk_size -= peer_tid_ba_info_ptr->retx_arr [i]->size;
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size after decrement #2 = %d\n", (int)total_hlpk_size);
-			}
 			
 			/* Destroy the MPDU packet and its information record.			*/
 			op_pk_destroy (peer_tid_ba_info_ptr->retx_arr [i]->pkptr);
@@ -9515,11 +9288,6 @@ wlan_hcf_peer_tid_ba_info_flush (WlanT_HCF_BA_State* peer_tid_ba_info_ptr, WlanT
 				/* Process the reassembled MSDU: forward to the higher		*/
 				/* layer or enqueue it to transmit to its final destination	*/
 				/* in the BSS.*/
-				
-				/*Loren
-				sprintf(myString,"I am %d, calling frame forward function 1.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-				*/
 				
 				wlan_hcf_completed_frame_forward (msdu_pkptr, peer_tid_ba_info_ptr->peer_addr, my_address, current_msdu_ptr->final_dest_addr, 
 												  current_msdu_ptr->hl_protocol, current_msdu_ptr->pkt_id, peer_tid_ba_info_ptr->tid);
@@ -9949,14 +9717,8 @@ wlan_hcf_physical_layer_data_arrival (void)
 
 			/* Extracting the MSDU (or MSDU fragment) from the packet.				*/
 			
-			/*Loren*/
-			//printf("I am  %d: getting seg_pkptr MDSU\n",(int)my_address);
-		
 			op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);
 			int pack_size = op_pk_total_size_get (seg_pkptr);
-			
-			//Loren
-			//printf("I am  %d: seg_pkptr size = %d\n",(int)my_address, (int)pack_size);
 			
 			
 			
@@ -10122,10 +9884,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 					}
 				else
 					{
-					/*Loren
-					printf("I am %d, calling wlan_hcf_data_process function 1.\n", (int)my_address);
-					*/
-					
 					wlan_hcf_data_process (rcvd_frame_type, seg_pkptr, dest_addr, remote_sta_addr, pk_dhstruct_ptr->address3, pk_dhstruct_ptr->hl_protocol,
 						pk_dhstruct_ptr->sequence_control & WLANC_FRAG_NUM_BIT_MASK, pk_dhstruct_ptr->more_frag, data_pkt_id, tid, src_sta_info_ptr);
 					}
@@ -10290,10 +10048,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 		fresp_to_send = WlanC_None; 
 		
 		/* Extracting the Beacon Body packet.						*/
-		/*Loren
-		printf("I am  %d: getting seg_pkptr 1\n",(int)my_address);
-		*/
-		
 		op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);//"Frame Body"
 
 		
@@ -10458,9 +10212,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 				{
 					sprintf(myString,"I am  %d:fee is being calculated",(int)my_address);
 					op_prg_odb_print_major(myString,OPC_NIL);
-					//Loren
-					//sprintf(myString,"I am 2, myDebugFlag = %d, myDataFileGenerationFlag = %d, myStringDebug = %d, generatePacketTraceFlag = %d, opencvDebugFlag = %d", myDebugFlag, myDataFileGenerationFlag, myStringDebug, generatePacketTraceFlag, opencvDebugFlag);
-					//op_prg_odb_print_major(myString,OPC_NIL);
 				}
 			
 			//start sending state report after finishing estimation
@@ -10533,7 +10284,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 					double tempF = pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
 						/(importance * accuracyConstant_a * accuracyConstant_b * last_sent_physicalRate * pow(last_sent_physicalRate/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT),accuracyConstant_b-1)),1/(accuracyConstant_b-1)); 
 					
-					printf(" f Calculated here: tempF = %40.40f, current lambda = %40.40f, importance = %f, last_sent_PhysicalRate = %f",(double)tempF, (double)current_lambda, (double)importance, (double)last_sent_physicalRate);
 					f = tempF;
 					
 					//double tempF = ((double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*pow(-current_lambda*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)
@@ -10868,8 +10618,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 						
 						appRateBits = (double) tempFrameSize*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8*1024*1024;
 						
-						//Loren
-						printf("appRateBits = %f with pruning flag\n", (double)appRateBits);
 							
 						//appRateBits = (double) f * last_sent_physicalRate - (double) f * last_sent_physicalRate *pruning_percent/100.0;//-last_sent_droppedBRate;
 						
@@ -10881,9 +10629,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 						//op_prg_odb_print_major(myString,OPC_NIL);
 						
 							appRateBits = appRateScaler * ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate;
-							
-							//Loren
-							printf("appRateBits = %f without pruning flag\n", (double)appRateBits);
 			
 						}
 									
@@ -10891,23 +10636,17 @@ wlan_hcf_physical_layer_data_arrival (void)
 				else if(strcmp(bnadwidth_allocation_method,"EDCA")==0)
 				{
 					appRateBits = (double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
-					//Loren
-					printf("appRateBits = %f with EDCA\n", (double)appRateBits);
 				}
 				else if(strcmp(bnadwidth_allocation_method,"EDCA_estimation")==0 || strcmp(bnadwidth_allocation_method,"EDCA_estimation_txop")==0)
 				{
 					if(!EAcalculatedFlag)
 					{
 						appRateBits = (double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
-						//Loren
-						printf("appRateBits = %f with EDCA estimation not ea calculated.\n", (double)appRateBits);
 					}
 					else
 					{
 						appRateBits = (double)max_operational_speed*current_lambda/nodes_no;//-last_sent_droppedBRate;
-						//Loren
-						printf("appRateBits = %f with EDCA estimation, ea calculated.\n", (double)appRateBits);
-						}
+					}
 				}
 					
 				
@@ -11351,9 +11090,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 		fresp_to_send = WlanC_None; 
 		
 		/* Extracting the stateReport Body packet.						*/
-		/*Loren
-		printf("I am  %d: getting seg_pkptr stateReport\n",(int)my_address);
-		*/
 		op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);
 
 		/* Extracting the stateReport Body structure from packet.		*/
@@ -11773,12 +11509,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 	else if	(rcvd_frame_type == WlanC_Ack)
 		{
 		
-		
-		if(LorenDebugFlag)
-		{
-			printf("calling op_pk_fd_access_read_only_ptr 16.\n");
-		}
-		
 		//Loren: Function gets called from here in normal operation.	
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_CNTL_HEADER_FD, (const void **) &pk_chstruct_ptr); 		
 		dest_addr = pk_chstruct_ptr->rx_addr;
@@ -12069,7 +11799,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 
 		/* Access the header fields of the control frame.						*/
 		//loren: not normally called from here.
-		//printf("calling op_pk_fd_access_read_only_ptr 17.\n");
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_CNTL_HEADER_FD, (const void **) &pk_chstruct_ptr);
 
 		/* Store the duration information.										*/
@@ -12131,7 +11860,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 
 		/* Access the header fields of the control frame.						*/
 		//loren: not normally called from here.
-		//printf("calling op_pk_fd_access_read_only_ptr 18.\n");
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_CNTL_HEADER_FD, (const void **) &pk_chstruct_ptr);
 
 		/* Store the duration information.										*/
@@ -12260,7 +11988,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 		/* extracted from the received packet.									*/\
 		
 		//loren: not normally called from here.
-		//printf("calling op_pk_fd_access_read_only_ptr 19.\n");
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_DATA_HEADER_FD, (const void **) &pk_dhstruct_ptr);
 
 		/* Obtain the destination this packet id addressed to.					*/
@@ -12276,11 +12003,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 			/* Data packet id of the received data frame is extracted.			*/
 			op_pk_fd_get_pkid (wlan_rcvd_frame_ptr, WLANC_DATA_PKID_FD, &data_pkt_id);
 
-			/* Extracting the MMPDU (or MMPDU fragment) from the packet.		*/
-			/*Loren
-			printf("I am  %d: getting seg_pkptr MMPDU\n",(int)my_address);
-			*/
-	
+			/* Extracting the MMPDU (or MMPDU fragment) from the packet.		*/	
 			op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);
 
 			/* Acknowledge the MMPDU.											*/
@@ -12297,9 +12020,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 			if (wlan_hcf_tuple_find (rcvd_frame_type, 0, remote_sta_addr, pk_dhstruct_ptr->sequence_control, dest_addr, 
 									 pk_dhstruct_ptr->retry, &src_sta_info_ptr, &prev_seq_num) == OPC_FALSE)
 				{
-				/*Loren
-				printf("I am %d, calling wlan_hcf_data_process function 2.\n", (int)my_address);
-				*/
 				wlan_hcf_data_process (rcvd_frame_type, seg_pkptr, dest_addr, remote_sta_addr, 0, pk_dhstruct_ptr->hl_protocol,
 					pk_dhstruct_ptr->sequence_control & WLANC_FRAG_NUM_BIT_MASK, pk_dhstruct_ptr->more_frag, data_pkt_id, 0, src_sta_info_ptr);
 				}
@@ -12383,7 +12103,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 		/* Access the MAC header of the packet.								*/
 		
 		//loren: not normally called from here. 
-		//printf("calling op_pk_fd_access_read_only_ptr 20.\n");
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_DATA_HEADER_FD, (const void **) &pk_dhstruct_ptr);
 
 		/* Obtain the destination this packet id addressed to.				*/
@@ -12405,9 +12124,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 			{	
 			/* Extracting the MSDU from the packet only if the packet is destined	*/
 			/* for this station.*/
-			/*Loren
-		    printf("I am  %d: getting seg_pkptr MSDU 1\n",(int)my_address);
-			*/
 			op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);
 
 			/* If its a duplicate packet then destroy it and do nothing, otherwise 	*/
@@ -12422,9 +12138,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 				
 				/* Insert the packet into reassembling buffer. If it completes an	*/
 				/* MSDU or MMPDU then process it and send to the higher layer.		*/
-				/*Loren
-				printf("I am %d, calling wlan_hcf_data_process function 3.\n", (int)my_address);
-				*/
 				
 				op_pk_fd_get_pkid (wlan_rcvd_frame_ptr, WLANC_DATA_PKID_FD, &data_pkt_id);
 				wlan_hcf_data_process (rcvd_frame_type, seg_pkptr, dest_addr, remote_sta_addr, pk_dhstruct_ptr->address3, pk_dhstruct_ptr->hl_protocol,
@@ -12527,8 +12240,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 		/* Retrieve the packet header and destination information.		*/
 		
 		//loren: not normally called from here. 
-		//printf("calling op_pk_fd_access_read_only_ptr 21.\n");
-	
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_CNTL_HEADER_FD, (const void **) &pk_chstruct_ptr);
 			
 		dest_addr = pk_chstruct_ptr->rx_addr;
@@ -12831,13 +12542,10 @@ wlan_hcf_data_process (WlanT_Mac_Frame_Type frame_type, Packet* seg_pkptr, OpT_I
 		/* and the new fragment is a series of fragments for the data 	*/
 		/* packet.													  	*/
 		
-		//Loren
-		//printf("packet transmitted in multiple fragments.\n");
+
 		/* Get the size of the defragmentation list.					*/
 		list_size = op_prg_list_size (defragmentation_list_ptr);
 		
-		//Loren
-		//printf("List size = %d\n", list_size);
 		/* Initialize the current node index which will indicate		*/
 		/* whether the entry for the station exists in the list.		*/
 		current_index = -1;
@@ -12956,14 +12664,7 @@ wlan_hcf_data_process (WlanT_Mac_Frame_Type frame_type, Packet* seg_pkptr, OpT_I
 			wlan_hcf_action_mmpdu_process (seg_pkptr, sta_addr, src_sta_info_ptr);
 		}
 		else
-		{
-			/*Loren */
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, Entering completed frame forward function from here.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
-			
+		{			
 			wlan_hcf_completed_frame_forward (seg_pkptr, sta_addr, dest_addr, final_dest_addr, protocol_type, pkt_id, tid);	
 		}
 		
@@ -13107,10 +12808,6 @@ wlan_hcf_ba_data_process (WlanT_Mac_Frame_Type frame_type, Packet* mpdu_body_pkp
 			/* layer or enqueue it to transmit to its final destination	*/
 			/* in the BSS.	`											*/
 			
-			/*Loren: function is not normally called from here.
-			sprintf(myString,"I am %d, starting frame forward function 3.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-			*/
 			
 			wlan_hcf_completed_frame_forward (msdu_pkptr, peer_addr, my_address, msdu_info_ptr->final_dest_addr, msdu_info_ptr->hl_protocol, msdu_info_ptr->pkt_id, tid);
 
@@ -13431,10 +13128,6 @@ wlan_hcf_bar_process (OpT_Int64 peer_addr, Packet* rcvd_frame_pkptr)
 			/* layer or enqueue it to transmit to its final destination	*/
 			/* in the BSS.												*/
 			
-			/*Loren
-			sprintf(myString,"I am %d, starting frame forward function 4.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-			*/
 			
 			wlan_hcf_completed_frame_forward (msdu_pkptr, peer_addr, my_address, current_msdu_ptr->final_dest_addr, 
 											  current_msdu_ptr->hl_protocol, current_msdu_ptr->pkt_id, ba_cntl_fields_ptr->tid);
@@ -13494,11 +13187,6 @@ wlan_hcf_bar_process (OpT_Int64 peer_addr, Packet* rcvd_frame_pkptr)
 			/* Process the reassembled MSDU: forward to the higher		*/
 			/* layer or	enqueue it to transmit to its final destination	*/
 			/* in the BSS.												*/
-			
-			/*Loren
-			sprintf(myString,"I am %d, starting frame forward function 5.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-			*/
 			
 			wlan_hcf_completed_frame_forward (msdu_pkptr, peer_addr, my_address, current_msdu_ptr->final_dest_addr, current_msdu_ptr->hl_protocol,
 											  current_msdu_ptr->pkt_id, ba_cntl_fields_ptr->tid);
@@ -13649,11 +13337,6 @@ wlan_hcf_delayed_ba_complete_msdu_check (WlanT_HCF_BA_State* ba_info_ptr)
 			/* Process the reassembled MSDU: forward to the higher		*/
 			/* layer or	enqueue it to transmit to its final destination	*/
 			/* in the BSS.												*/
-			
-			/*Loren
-			sprintf(myString,"I am %d, starting frame forward function 6.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-			*/
 			
 			wlan_hcf_completed_frame_forward (msdu_pkptr, ba_info_ptr->peer_addr, my_address, current_msdu_ptr->final_dest_addr, 
 											  current_msdu_ptr->hl_protocol, current_msdu_ptr->pkt_id, ba_info_ptr->tid);
@@ -13942,27 +13625,13 @@ static void trainFaces()
 			
 	*/
 	fn_csv = "G:\\Masters_Thesis_Files\\Honda.csv"; 
-    //string fn_haar = cascade);		// we don't need to load the xml because it is a global assigned elsewhere.
     
-    if(LorenDebugFlag)
-	{
-		printf("CSV file Path: %s\n", fn_csv.c_str());
-	}
 	
     // These vectors hold the images and corresponding labels:
 	// added "std::" before vector to allow c++ to use vector types.
     std::vector<cv::Mat> images;
     std::vector<int> labels;
-	
 
-	//sprintf(myString, "Just read the input image width (%d), height (%d), and type (%d).", cols, rows, type);
-	//op_prg_odb_print_major(myString,OPC_NIL);	
-	if(LorenDebugFlag)
-	{
-		sprintf(myString,"In face recognition about to read csv.");
-		op_prg_odb_print_major(myString,OPC_NIL);
-	}
-	
     // Read in the data (fails if no valid input filename is given, but you'll get an error message):
     try 
 	{
@@ -13975,31 +13644,9 @@ static void trainFaces()
 		return;
     }
 	
-	/*
-    // Get the height from the first image. We'll need this
-    // later in code to reshape the images to their original
-    // size AND we need to reshape incoming faces to this size:
-    im_width = images[0].cols;
-    im_height = images[0].rows;
-	sprintf(myString, "Just read the image width (%d) and height (%d).", im_width, im_height);
-	op_prg_odb_print_major(myString,OPC_NIL);
-	*/
-	// Create a FaceRecognizer and train it on the given images:
-    //model = cv::createFisherFaceRecognizer();
-	
-	if(LorenDebugFlag)
-	{
-		sprintf(myString,"Just created face model about to train images.");
-		op_prg_odb_print_major(myString,OPC_NIL);
-	}	
 		
 	model->train(images, labels);
 	
-	if(LorenDebugFlag)
-	{
-		sprintf(myString,"Created FaceRecognizer object.");
-		op_prg_odb_print_major(myString,OPC_NIL);
-	}
 	
 	FOUT;
 	
@@ -14011,8 +13658,7 @@ static void trainFaces()
 void faceRecognition(int src_addr, double *accu, double *error)
 {
 	using namespace cv;
-	//cv::Mat gray;
-	//char path[200] = "";
+
 	int ID = (int)src_addr - 1;
 	int tempID = 0;
 	
@@ -14021,7 +13667,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 	
 	// Min and max face sizes used to speed up face detection.
     int min_face_size = 100;
-    int max_face_size = 300;
+    int max_face_size = 400;
 
     // Image height and width for the resized image used in prediction.
     // These values match the dimensions of the training images to improve
@@ -14029,91 +13675,11 @@ void faceRecognition(int src_addr, double *accu, double *error)
     im_width =	75;	//images[0].cols;
     im_height =	75;	//images[0].rows;
 	
-	//LorenDebugFlag = 1;
-
 	FIN (faceRecognition (src_addr, accu, error));
 	
-	//Loren
-	if(LorenDebugFlag)
-	{
-		sprintf(myString,"Entering face recognition function with image from node %d", (int)src_addr);
-		op_prg_odb_print_major(myString,OPC_NIL);
-	}
-	
-	//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg21.jpg", testImg);
-	// loop structure to loop through the four frontal face cascades included with OpenCV.
-	//for(int j = 0; j<1; j++)
-	//{
-		//printf("starting for loop\n");
-		// check if the pointer for img is NULL. If it is something went wrong and we should exit the loop.
+			
 		
-		// create the container for the face cascade classifiers.
-		//cv::CascadeClassifier haar_cascade;
-		
-		/*
-		if(!haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml"))
-		{
-			printf("Error loading haar_cascade, exiting function.\n");
-			FOUT;
-		}
-		*/
-		//printf("after cascade classifier\n");
-		//load the xml global assigned elsewhere
-		
-		/*
-		switch(j)
-		{
-			case 0:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
-					op_prg_odb_print_major(myString,OPC_NIL);
-					break;
-			case 1:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 1");
-					op_prg_odb_print_major(myString,OPC_NIL);
-					break;
-			case 2:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt2.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					op_prg_odb_print_major(myString,OPC_NIL);
-					break;
-			case 3:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_profileface.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 2");
-					op_prg_odb_print_major(myString,OPC_NIL);
-					break;
-			case 4:
-			default:
-					haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");// cascade_name was in here.
-					sprintf(myString,"Loaded the xml file into the haar_cascade, case 3");
-					op_prg_odb_print_major(myString,OPC_NIL);
-					break;
-		}
-		*/
-	
-		//sprintf(myString,"Loaded the xml file into the haar_cascade");
-		//op_prg_odb_print_major(myString,OPC_NIL);
-		//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");// cascade_name was in here.
-		//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_default.xml");
-		
-		//Loren
-		//if(LorenDebugFlag)
-		//{
-		//	sprintf(myString,"Loaded the xml file into the haar_cascade, case 0");
-		//	op_prg_odb_print_major(myString,OPC_NIL);
-		//}
-
-	
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"About to check if testImg is empty, (%d)", (int)vidData[ID].test.empty());
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-				
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg22.jpg", testImg);
-		
-		if(vidData[ID].test.empty())
+		if (vidData[ID].test.empty())
 		{
 			//exit the function
 			printf("Exiting the function.\n");
@@ -14121,56 +13687,13 @@ void faceRecognition(int src_addr, double *accu, double *error)
 		}
 		
 						
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"about to get gray image type.");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-			
-		//int type = vidData[ID].test.type();
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg23.jpg", testImg);
-		
-		/*
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"got gray image type, about to check it. (%d)", type);
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-		if(type)
-		{
-			printf("about to call cvtcolor\n");
-			cvtColor(vidData[ID].test, vidData[ID].test, CV_BGR2GRAY);
-			printf("just called cvtcolor\n");
-		}
 
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"finished initializing gray image.");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-		*/
 		// Find the faces in the frame:
 		std::vector< Rect_<int> > faces;
-		//std::vector<cv::Rect> faces;
-		
-		
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg24.jpg", vidData[ID].test);
-		//printf("test234234\n");
-		//printf("initial vector size = %d\n", (int)faces.size());
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"About to detect faces.");
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
-		
-		vidData[ID].haar_cascade.detectMultiScale(vidData[ID].test, faces);
-		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
-		
-		
-		//printf("after detect faces\n");
-		//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg25.jpg", testImg);
-		
-		//haar_cascade.detectMultiScale(testImg, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+
+		//vidData[ID].haar_cascade.detectMultiScale(vidData[ID].test, faces);
+		vidData[ID].haar_cascade.detectMultiScale(vidData[ID].test, faces, 1.2, 6, 0|CV_HAAR_SCALE_IMAGE, cvSize(min_face_size, min_face_size),cvSize(max_face_size, max_face_size) );
+
 		
 		// At this point you have the position of the faces in
 		// faces. Now we'll get the faces, make a prediction and
@@ -14178,12 +13701,6 @@ void faceRecognition(int src_addr, double *accu, double *error)
 	
 		int size = (int)faces.size();
 		
-		// print number of detected faces
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"Number of detected faces this loop = %d", size);
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
 
 		if(size != 0)
 		{
@@ -14211,28 +13728,10 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				cv::resize(face, face_resized, cv::Size(im_width, im_height), 1.0, 1.0, cv::INTER_CUBIC);
 				
 		
-				// Now perform the prediction, see how easy that is:
-		
+				// Now perform the prediction, see how easy that is:	
 				prediction = model->predict(face_resized);
 				
-				//release the data for these image objects since they are done being used.
-				//face.release();
-				//face_resized.release();
-				
-				// adjust prediciton to be the same as it's corresponding directory name.
-				// prediction = prediction + 1;
-					
-				if(LorenDebugFlag)
-				{	
-					sprintf(myString,"Prediction = %d", prediction);
-					op_prg_odb_print_major(myString,OPC_NIL);
-				}
-					
-				if(LorenDebugFlag)
-				{
-					sprintf(myString,"compare prediction");
-					op_prg_odb_print_major(myString,OPC_NIL);
-				}
+								
 				
 				if(ID < 39)
 				{
@@ -14246,7 +13745,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				{
 					tempID = ID - (2*39);
 				}
-				//printf("switch statement\n");
+				
 				switch (tempID)
 				{
 					//Bezhad
@@ -14388,116 +13887,43 @@ void faceRecognition(int src_addr, double *accu, double *error)
 					default: predictionCheck = -1;
 							 break;
 				}
-				printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
-				//printf("prediction comparison\n");
 				
 				if(prediction == predictionCheck)
 					break;
 			}
-			
-			//printf("prediction = %d, prediction check = %d\n", prediction, predictionCheck);
-			//printf("prediction comparison 2\n");
-			//if(prediction == predictionCheck)
-			//		break;
+
 		}
-		/*
-		else
-		{
-			if(j == 4)
-			{
-				vidData[ID].noFaceCount++;
-				printf("Node %d no face count: %d\n",(int)src_addr, vidData[ID].noFaceCount);
-				
-				//sprintf(path,"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg\\testImg-node%d-%d.jpg", (int)src_addr, (int)vidData[ID].noFaceCount);
-				
-				//imwrite(path, testImg);
-			}
-		}
-		*/
-	//}
-	//printf("incrementing total faces\n");	
+
 	totalFacesForRecogniton++;
-	
-	printf("prediction check = %d\n", predictionCheck);
 	
 	if(prediction == predictionCheck)
 	{
 		totalCorrectFaceRecognitions++;
-		vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
 		vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
-		printf("node %d correct recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
+		//printf("node %d correct recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 	}
+	
+	/*
 	else
 	{
-		vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
 		printf("node %d incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 	}
+	*/
 	vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
 	
 	*accu = (double)vidData[ID].nodeAccuracy/(double)100;
 	*error = (double)1.0 - (double)vidData[ID].nodeAccuracy/(double)100;
 	
 	// print out accuracy to the simulation console.
-	sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
-	op_prg_odb_print_major(myString,OPC_NIL);
+	//sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
+	//op_prg_odb_print_major(myString,OPC_NIL);
 	
-	printf("Total Faces = %d, Total Correct Recognitions = %d\n", totalFacesForRecogniton, totalCorrectFaceRecognitions);
-	
-	// print out the results to the opencv trace file.
-	//opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-	//fprintf(opencvDebugFile,"Prediction = %d\n node 1 Face Recognition Accuracy = %.5f%%\n",prediction, node1accuracy);
-	//fclose(opencvDebugFile);
+	//printf("Total Faces = %d, Total Correct Recognitions = %d\n", totalFacesForRecogniton, totalCorrectFaceRecognitions);
 
-	//Loren
-	if(LorenDebugFlag)
-	{
-		sprintf(myString,"Exiting face recognition function with image from node %d", (int)src_addr);
-		op_prg_odb_print_major(myString,OPC_NIL);
-	}
-	
-	//testImg.release();
-
-	//LorenDebugFlag = 0;
 	
 	FOUT;
 }
 
-
-/*
-void startFFMPEGH264(FFMPEGData &vidData, int node)
-{
-
-	FIN (startFFMPEGH264(vidData,node));
-	
-	// find the mpeg1 video decoder
-    vidData.pCodec1 = avcodec_find_decoder(vidData.codec_id);
-    if (!vidData.pCodec1) {
-        fprintf(stderr, "Codec not found\n");
-        //exit(1);
-    }
-	
-    vidData.pCodecCtx1 = avcodec_alloc_context3(vidData.pCodec1);
-    if (!vidData.pCodecCtx1) {
-        fprintf(stderr, "Could not allocate video codec context\n");
-        //exit(1);
-    }
-	
-    if(vidData.pCodec1->capabilities&CODEC_CAP_TRUNCATED)
-        vidData.pCodecCtx1->flags|= CODEC_FLAG_TRUNCATED; // we do not send complete frames
-   
-	// For some codecs, such as msmpeg4 and mpeg4, width and height
-    //   MUST be initialized there because this information is not
-    //   available in the bitstream.
-	
-    // open it
-    if (avcodec_open2(vidData.pCodecCtx1, vidData.pCodec1, NULL) < 0) {
-        fprintf(stderr, "Could not open codec\n");
-        //exit(1);
-    }
-	FOUT;
-}
-
-*/
 
 
 static void
@@ -14510,14 +13936,7 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	OpT_Packet_Size					pkt_size;
 	char							msg_string [128];
 	int ID = (int)src_addr - 1;
-	//cv::Mat	m;
-	//cv::Mat test;
-	
-	
-	//Loren: Added for running ffmpeg process.
-	//cv:: Size s;
-	//int rows = 0, cols = 0;
-	
+
 	double truthArray[100][2];
 	FILE * truthFile;
 	char truthFileName[300] = "";
@@ -14530,14 +13949,6 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	/** final destination in the BSS (by APs) or both (in case of		**/
 	/** broadcast).														**/
 	FIN (wlan_hcf_completed_frame_forward (seg_pkptr, src_addr, dest_addr, final_dest_addr, protocol_type, pkt_id, tid));
-	
-	
-	/*Loren */
-	//if(LorenDebugFlag)
-	//{
-		sprintf(myString,"I am %d, starting frame forward function. ap_flag = %d", (int)my_address, (int)ap_flag);
-		op_prg_odb_print_major(myString,OPC_NIL);
-	//}
 	
 
 	
@@ -14554,12 +13965,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		(final_dest_addr != my_address && prg_bin_hash_table_item_get (peer_info_hash_tbl, (void *) &(final_dest_addr)) != PRGC_NIL))
 		{
 		
-		//Loren
-		//if(LorenDebugFlag)
-		//{
-			sprintf(myString,"I am %d, frame forward function, transmitting data.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-		//}
 			
 		/* Printing out information to ODB.							*/
 		if (wlan_trace_active == OPC_TRUE)
@@ -14609,23 +14014,15 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		int frameN, packetN, packetStatus,FrameSizeInPackets,imageLineNumber,q,i,myDatasize = 0;
 		int frameNew = 0;
 		double sendingTime;
-		IplImage * cvImage, *originalImage;
+		//IplImage * cvImage, *originalImage;
 
 		double accuracy = 0;
-		double accuracyError = 0;
-			
+		double accuracyError = 0;	
 		double mse = 255 * 255, psnr = 0;
-			
 		double startTime = 0;
-		//int rows = 0, cols = 0;
-		//int ret, got_picture;
-		//cv::Size s_source;
+
 		int faceRecogFlag = 0;
 		
-		
-		
-		
-		//printf("ID = %d\n", ID);
 				
 		if(opencvDebugFlag)
 		{
@@ -14633,232 +14030,38 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
 		
-		printf("\nI am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
+		//printf("\nI am %d: got packet from node %d.\n", (int)my_address, (int)src_addr);
 		
 		send_to_higher = OPC_TRUE;
 	
-		//hoon the code that read the data from the packet.
+		//code that reads the data from the packet.
 			
 		sendingTime = 0;
-		
-		//op_pk_print(seg_pkptr);
-		
-		
-		/*
-			if(LorenDebugFlag)
-			{
-				printf("entered formatted packet statement\n\n");
-				op_pk_print(seg_pkptr);
-			}
-			op_pk_nfd_get(seg_pkptr, "frame_counter", &frameN);
-			if(LorenDebugFlag)
-			{
-				printf("got frame counter\n\n");
-			}
-			op_pk_nfd_get(seg_pkptr, "packet_counter", &packetN);
-			if(LorenDebugFlag)
-			{
-				printf("got packet counter\n\n");
-			}
-			op_pk_nfd_get(seg_pkptr, "packet_status", &packetStatus);
-			if(LorenDebugFlag)
-			{
-				printf("got packet status\n\n");
-			}
-			op_pk_nfd_get(seg_pkptr, "FrameSizeInPackets", &FrameSizeInPackets);
-			if(LorenDebugFlag)
-			{
-				printf("got frame size in packets\n\n");
-			}
-
-		*/
-		//loren debugging
-		if(LorenDebugFlag)
-		{
-			op_pk_print(seg_pkptr);
-		}
-		//op_pk_fd_get (seg_pkptr, 0, &sendingTime);
-		if(LorenDebugFlag)
-		{
-			printf("entered unformatted packet statement\n\n");
-		}
-		op_pk_fd_get (seg_pkptr, 1, &frameN);
-		//printf("From Node %d: Frame number = %d\n", (int)src_addr, (int)frameN);
-		
+	
+		op_pk_fd_get (seg_pkptr, 1, &frameN);	
 		op_pk_fd_get (seg_pkptr, 2, &packetN);
-		//packetCounter[(int)src_addr] = packetN;
 		op_pk_fd_get (seg_pkptr, 3, &packetStatus);
 		op_pk_fd_get (seg_pkptr, 4, &FrameSizeInPackets);
-		//lastFrameSizeInPackets[(int)src_addr] = FrameSizeInPackets;
-		//}	
 		
-		//Loren, commenting out to speed up simulation
-		//printf("I am %d: got packet from node %d. Frame Number = %d  Packet Number = %d  Frame Size in Packets = %d\n", (int)my_address, (int)src_addr, (int)frameN, (int)packetN, (int)FrameSizeInPackets);
 		
 		
 		if(current_time > EAestimationTime +1)//+ transitionTime)// time sensitive
 		{
 			
-			//op_pk_nfd_get (seg_pkptr, "image_line_number", &imageLineNumber);
-				
 			op_pk_fd_get (seg_pkptr, 5, &imageLineNumber);
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("From Node %d: after getting image line number\n", (int)src_addr);
-			}
-			
-			//op_pk_nfd_get (seg_pkptr, "quality", & q);
 				
 			op_pk_fd_get (seg_pkptr, 6, & q);
-			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("From Node %d: got quality, about to load image pointer.\n", (int)src_addr);
-			}
-			
-			
-			//Loren commment this out if switching to actual image
-			//op_pk_nfd_get (seg_pkptr, "total_packet_size", &myDatasize);
 				
 			op_pk_fd_get (seg_pkptr, 7, &myDatasize);
 			
-			//loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("From Node %d: after getting data size.\n", (int)src_addr);
-			}
-			
-			//unsigned char *getArray = new unsigned char [myDatasize];
-			
-			//Loren, debugging
-			if(LorenDebugFlag)
-			{
-				printf("From Node %d: after getting creating array.\n", (int)src_addr);
-			}
-			
-			
 			faceRecogFlag = vidData[ID].got_picture;
-
-			/*
- 			printf("last_got_picture = %d, ID = %d, lastID = %d\n", last_got_picture, ID, lastID);
-			if((last_got_picture != 1 && ID == lastID) || ID != lastID)			
-			//if(packetN == (FrameSizeInPackets - 1))//
-			{
 			
-			
-				last_got_picture = vidData[ID].got_picture;
-				
-				
-				
-				if(vidData[ID].startH264 == 1)
-				{
-					printf("starting ffmpeg h264\n");
-					startFFMPEGH264(vidData[ID], ID);
-					vidData[ID].startH264 = 0;
-				}
-			
-			
-			
-				printf("From Node %d: about to allocate frame.\n", (int)src_addr);
-				vidData[ID].pFrame=av_frame_alloc();
-								
-				printf("From Node %d: about to check stream index.\n", (int)src_addr);
-				
-				if(vidData[ID].pkt.stream_index == vidData[ID].videoindex)
-				{
-					
-					//char* filename = "C:\\Users\\Loren\\Documents\\Visual Studio 2012\\Projects\\FFMPEG testing\\FFMPEG testing\\test1.h264";
-										
-					//printf("decoding packet\n");
-					//ret = avcodec_decode_video2(vidData[ID].pCodecCtx1, vidData[ID].pFrame, &got_picture, &vidData[ID].pkt);
-
-						
-					printf("From Node %d: finished decode.\n", (int)src_addr);
-					//printf("frame type = %d, return value = %d got_picture = %d\n", (int)vidData[ID].pFrame->pict_type, ret, got_picture);
-					if(ret < 0)
-					{
-						printf("Decode Error.\n");
-						//break;
-						//return -1;
-					}
-					
-					printf("From Node %d: adjusting the packet\n", (int)src_addr);
-					/*if(vidData[ID].pkt.data)
-					{
-						//printf("packet stuff\n");
-						vidData[ID].pkt.size -= ret;
-						vidData[ID].pkt.data += ret;
-					}
-					
-					printf("From Node %d: got_picture = %d\n", (int)src_addr, got_picture);
-					last_got_picture = got_picture;
-					faceRecogFlag = got_picture;
-					if(got_picture)
-					{
-					
-						
-						//printf("about to set scale.\n");
-						//printf("pFrame pkt_size = %d\n", pFrame->pkt_size);
-						//printf("pFrame picture size = %d\n", avpicture_get_size(dst_pixfmt, pFrame->width, pFrame->height));
-											
-						FILE *e;
-						int i;
-						char buf[1024];
-						snprintf(buf, sizeof(buf), "G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\test%d.ppm", imgCount);
-						e=fopen(buf,"w");
-						fprintf(e,"P5\n%d %d\n%d\n",vidData[ID].pCodecCtx1->width,vidData[ID].pCodecCtx1->height,255);
-						for(i=0;i<vidData[ID].pCodecCtx1->height;i++)
-							fwrite(vidData[ID].pFrame->data[0] + i * vidData[ID].pFrame->linesize[0],1,vidData[ID].pCodecCtx1->width,e);
-						fclose(e);
-
-						imgCount++;
-						
-				
-											
-						
-						//printf("I am %d: First Frame height = %d, Frame width = %d\n", (int)my_address, rows, cols);
-							
-						printf("From Node %d: populating mat data.\n", (int)src_addr);			
-						m = cv::Mat(vidData[ID].pCodecCtx1->height, vidData[ID].pCodecCtx1->width, CV_8U, vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
-						//m = cv::Mat(vidData[ID].pFrame->height, vidData[ID].pFrame->width, CV_8UC3,vidData[ID].pFrame->data[0], vidData[ID].pFrame->linesize[0]);
-						printf("writing image now\n");
-						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg.jpg", m);
-						printf("cloning mat\n");
-			
-						test = m.clone();
-				
-						imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg19.jpg", test);
-				
-						printf("I am %d: releasing mat m\n", (int)my_address);
-						m.release();
-						
-						//break;
-					}
-				//}
-
-				//printf("I am %d: freeing codec context and format context.\n", (int)my_address);
-				
-				}
-			
-				printf("I am %d: trying to unref pkt\n", (int)my_address);
-				av_free_packet(&vidData[ID].pkt);
-				
-				printf("I am %d: freeing frame.\n", (int)my_address);
-
-				av_frame_free(&vidData[ID].pFrame);
-				
-			}//
-			lastID = ID;
-			*/
 		}
 		
 		if(current_time < EAestimationTime - 5)// time sensitive
 		{
 			op_pk_fd_get (seg_pkptr, 6, &startTime);
-			start_times[(int)src_addr] = startTime;
-			//printf("after reading  6\n");
+			start_times[(int)src_addr] = startTime;;
 		}
 		
 				
@@ -14890,11 +14093,14 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			fclose(receivedPacketTrace);
 		}
 		
-		
+		/*
 		//Loren
-		printf("from %d:frameN = %d\tpacketN=%d\tFrameSizeInPackets=%d\tID=%d\tpacketStatus=%d\tsendingTime=%f\tcurrent_time=%f\timageLineNumber=%d\tq=%d\tpacketCounter=%d\tmyDatasize=%d\n",
+		if(LorenDebugFlag)
+		{
+			printf("from %d:frameN = %d\tpacketN=%d\tFrameSizeInPackets=%d\tID=%d\tpacketStatus=%d\tsendingTime=%f\tcurrent_time=%f\timageLineNumber=%d\tq=%d\tpacketCounter=%d\tmyDatasize=%d\n",
 				(int)src_addr,(int)frameN,(int)packetN,(int)FrameSizeInPackets,(int)op_pk_id (seg_pkptr),(int)packetStatus,(float)sendingTime,(float)current_time,imageLineNumber,q,packetCounter[(int)src_addr],myDatasize);
-		
+		}
+		*/
 		//fill lost packets array
 							
 		if(frameN == lastFrameN[(int)src_addr])                //if some packet are lost in between
@@ -14906,7 +14112,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					lostPackets[(int)src_addr][lostPacketsCounter[(int)src_addr]++] = lastPacketN[(int)src_addr] + i;
 				}
 				//Loren added for debug
-				printf("from %d:in filling lost packets inbetween current frame: frameN=%d\tlastFrameN=%d\tlastFrameSizeInPackets=%d\tpacketCounter=%d\tlostPacketsCounter=%d\n",(int)src_addr,(int)frameN,lastFrameN[(int)src_addr],lastFrameSizeInPackets[(int)src_addr],packetCounter[(int)src_addr],lostPacketsCounter[(int)src_addr]);
+				//printf("from %d:in filling lost packets inbetween current frame: frameN=%d\tlastFrameN=%d\tlastFrameSizeInPackets=%d\tpacketCounter=%d\tlostPacketsCounter=%d\n",(int)src_addr,(int)frameN,lastFrameN[(int)src_addr],lastFrameSizeInPackets[(int)src_addr],packetCounter[(int)src_addr],lostPacketsCounter[(int)src_addr]);
 				if(opencvDebugFlag)
 				{
 					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -14926,7 +14132,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				lostPackets[(int)src_addr][lostPacketsCounter[(int)src_addr]++] = lastPacketN[(int)src_addr] + i;
 			}
 			//Loren added for debug
-			printf("from %d:in filling lost packets from the end of the previous frame: frameN=%d\tlastFrameN=%d\tlastFrameSizeInPackets=%d\tlastPacketN=%d\tpacketCounter=%d\tlostPacketsCounter=%d\n",(int)src_addr,(int)frameN,lastFrameN[(int)src_addr],lastFrameSizeInPackets[(int)src_addr],lastPacketN[(int)src_addr],packetCounter[(int)src_addr],lostPacketsCounter[(int)src_addr]);
+			//printf("from %d:in filling lost packets from the end of the previous frame: frameN=%d\tlastFrameN=%d\tlastFrameSizeInPackets=%d\tlastPacketN=%d\tpacketCounter=%d\tlostPacketsCounter=%d\n",(int)src_addr,(int)frameN,lastFrameN[(int)src_addr],lastFrameSizeInPackets[(int)src_addr],lastPacketN[(int)src_addr],packetCounter[(int)src_addr],lostPacketsCounter[(int)src_addr]);
 			if(opencvDebugFlag)
 			{
 				opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -14937,14 +14143,14 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		}
 		//end of fill lost packets array
 			
-		
+		/*
 		//Loren
 		if(LorenDebugFlag)
 		{
 			sprintf(myString, "About to compare, frameN = %d, lastframeN = %d", (int)frameN, lastFrameN[(int)src_addr]);
 			op_prg_odb_print_major(myString,OPC_NIL);
 		}
-		
+		*/
 		if(lastFrameN[(int)src_addr] != -1 && frameN != lastFrameN[(int)src_addr] )
 		{
 			for(i = 0; i < frameN - lastFrameN[(int)src_addr] - 1;i++)    //to handle missed frames
@@ -14965,11 +14171,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					}
 			}
 			
-			//if(LorenDebugFlag)
-			{
-			
-				printf("node %d packet counter = %d, last frame size in packets = %d\n", (int)src_addr, (int)packetCounter[(int)src_addr], (int)lastFrameSizeInPackets[(int)src_addr]);
-			}	
 				
 			if(packetCounter[(int)src_addr] < lastFrameSizeInPackets[(int)src_addr])    //incomplete packet received
 			{
@@ -14982,13 +14183,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				
 				//fprintf(receivedPacketTrace,"completeFrameRecievedFlag is set to one,node=%d,packetCounter=%d,lastFrameSizeInPackets=%d\n",(int)src_addr,packetCounter[(int)src_addr],lastFrameSizeInPackets[(int)src_addr]);
 		    }
-					
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString, "Just determined, frameRecievedFlag = %d, completeFrameRecievedFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag);
-				op_prg_odb_print_major(myString,OPC_NIL);		
-			}
 			
 			packetCounter[(int)src_addr]=0;
 			//peerStreamData[(int)src_addr] = 0;
@@ -15010,24 +14204,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				lostPacketsCounter[(int)src_addr] = 0;
 			
 			
-		//Loren
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"I am %d, frame forward function about to compare current time (%f) to EA estimation time + transition time (%d).", (int)my_address, (float)current_time, (int)EAestimationTime+(int)transitionTime);
-			op_prg_odb_print_major(myString,OPC_NIL);	
-		}
-		
     	if(current_time > EAestimationTime+transitionTime)       // time sensitive
 		{
-						
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, frame forward function current time (%f) > EA estimation time + transition time.", (int)my_address, (float)current_time);
-				op_prg_odb_print_major(myString,OPC_NIL);
-				sprintf(myString, "frameRecievedFlag = %d, completeFrameRecievedFlag = %d, faceRecogFlag = %d", (int)frameRecievedFlag, (int)completeFrameRecievedFlag, (int)faceRecogFlag);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
+					
 			
 			//construct the image name
 			//get the image name using the sizeinfo file line number
@@ -15088,16 +14267,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 							
 				
 				fscanf(f,"%s%s",imageName, directoryName);
-				*/
-				//Loren
-				if(opencvDebugFlag)
-				{
-					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-					fprintf(opencvDebugFile,"this frame came from %d: lastImageLineNumber = %d, q = %d, imageName=%s, directoryName = %s\n",(int)src_addr,lastImageLineNumber[(int)src_addr],lastQ[(int)src_addr],imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]]);
-					printf("this frame came from %d: lastImageLineNumber = %d, q = %d, imageName=%s, directoryName = %s\n",(int)src_addr,lastImageLineNumber[(int)src_addr],lastQ[(int)src_addr],imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]]);
-					fclose(opencvDebugFile);
-				}
-				
+				*/				
 				
 				
 				if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0)
@@ -15172,19 +14342,13 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			{
 									
 				int M[]={1000000};
-				myImageStructure * ids = createImageDataStructure(tempFileName,op_pk_total_size_get (seg_pkptr));//load the image from the image file
-				myImageStructure * idsOriginal = createImageDataStructure(originalFileName,op_pk_total_size_get (seg_pkptr));//load the image from the image file
+				//myImageStructure * ids = createImageDataStructure(tempFileName,op_pk_total_size_get (seg_pkptr));//load the image from the image file
+				//myImageStructure * idsOriginal = createImageDataStructure(originalFileName,op_pk_total_size_get (seg_pkptr));//load the image from the image file
 						
 				incompleteFrames[(int)src_addr]++;
 				totalFrames[(int)src_addr]++;
 				
-				//Loren
-				if(LorenDebugFlag)
-				{
-					sprintf(myString,"I am %d, incomplete frame received.", (int)my_address);
-					op_prg_odb_print_major(myString,OPC_NIL);
-				}
-				
+				/*
 				if(!ids || !idsOriginal)
 				{
 					op_sim_end("Could not create my image data structure","","","");
@@ -15192,7 +14356,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				
 				decodeHuffman_PKT(ids,0);//packetize the image
 				decodeHuffman_PKT(idsOriginal,0);//packetize the imageOriginal
-						
+				*/		
 				if(opencvDebugFlag)
 				{
 					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -15212,25 +14376,21 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						
 				//printf("end of printing lost packets\n");
 						
-				if(reconstruct(ids,lostPackets[(int)src_addr],lostPacketsCounter[(int)src_addr]))
-				{			
+				//if(reconstruct(ids,lostPackets[(int)src_addr],lostPacketsCounter[(int)src_addr]))
+				//{			
 					concealedFrames[(int)src_addr]++;
 							
-					reconstruct(idsOriginal,M,1);
+					//reconstruct(idsOriginal,M,1);
 		
 					//printf("Image reconstructed\n");
-					cvImage=convertToOPENCV(ids);
-					originalImage = convertToOPENCV(idsOriginal);		
+					//cvImage=convertToOPENCV(ids);
+					//originalImage = convertToOPENCV(idsOriginal);		
 							
-					if(cvImage!=NULL && idsOriginal !=NULL )
-					{
-						//printf("image converted to cv\n");
-						if(opencvDebugFlag)
-						{
-							//printf("Image %s truth is %f,%f\n",tempFileName,truthArray[0][0],truthArray[0][1]);
-						}			
+					//if(cvImage!=NULL && idsOriginal !=NULL )
+					//{
+		
 								
-						getPSNR(originalImage,cvImage,&mse,&psnr);
+						//getPSNR(originalImage,cvImage,&mse,&psnr);
 						
 						//sprintf(myString,"Start FaceDetect");
 						op_prg_odb_print_major(myString,OPC_NIL);
@@ -15247,58 +14407,45 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
 						{
-							printf("training faces\n");
+							//printf("training faces\n");
 							trainFaces();
-							//haar_cascade.load("C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 							trainingCompleteFlag = 1;
 						}
 						if(trainingCompleteFlag  && faceRecogFlag)
 						{
-							if(vidData[ID].test.data != NULL)
+							if(recogEnable == 1)
 							{
-								//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Training\\videos\\behzad\\testImg4.jpg", m);
-								faceRecognition((int)src_addr, &accuracy, &accuracyError);
-							
-								//Loren, reset faceRecogFlag
-								faceRecogFlag = 0;
+								
+								//when an incomplete frame is received the FFMPEG frame would not be able to be recovered. Add to the non-recognition count.
+								//printf("node %d incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", (int)src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
+								
+								vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
+								
+								accuracy = (double)vidData[ID].nodeAccuracy/(double)100;
+								accuracyError = (double)1.0 - ((double)vidData[ID].nodeAccuracy/(double)100);
+								
+								// print out accuracy to the simulation console.
+								//sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
+								//op_prg_odb_print_major(myString,OPC_NIL);
+									
+								//faceRecognition((int)src_addr, &accuracy, &accuracyError);
 							}
+							//Loren, reset faceRecogFlag
+							faceRecogFlag = 0;
 						}
-						
-						
-						
-						//sprintf(myString,"End Face Recognition");
-						//op_prg_odb_print_major(myString,OPC_NIL);
-						
-						/*
-						if(accuracy != 0)
-						{
-						opencvDebugFlag = 1;
-						if(opencvDebugFlag)
-						{
-							char opencvTrace[100];
-							sprintf(opencvTrace,"C:\\opnetTraceFiles\\opencvTrace_%d.txt", (int)nodes_no);
-							opencvDebugFile = fopen(opencvTrace,"a");
-							fprintf(opencvDebugFile,"Node %d: accuracy = %lf, accuracyError = %lf\n",(int)src_addr, vidData[ID].nodeAccuracy, (1 - vidData[ID].nodeAccuracy));
-							fclose(opencvDebugFile);
-						}
-						opencvDebugFlag = 0;
-						}
-						*/
-						//m.release();
-						//printf("temp file name = %s\n", tempFileName);
-						//printf("original file name = %s\n", originalFileName);
-						//printf("releasing cvImage\n");
-						cvReleaseImage( &cvImage );
-						//printf("releasing originalImage\n");
-						cvReleaseImage( &originalImage );
-						//printf("done releasing images\n");
+											
+						//cvReleaseImage( &cvImage );
+
+						//cvReleaseImage( &originalImage );
+					/*	
 					}
 							
 					else
 					{
 						op_sim_end("Could not create cvImage using convertToOPENCV","","","");
 					}
-					
+					*/
+				/*	
 				}
 				
 				else
@@ -15315,18 +14462,15 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						}
 									
 				}
-				
-				printf("updating lost packet counter\n");
+				*/
+				//printf("updating lost packet counter\n");
 				lostPacketsCounter[(int)src_addr] = 0;//reset counter for the next frame
 				op_stat_write (CVAccuracyI, accuracyError);
 				op_stat_write (CVAccuracyA, accuracy);
 									
+				//deleteImageDataStructure(ids);
+				//deleteImageDataStructure(idsOriginal);
 				
-				printf("deleting ids\n");
-				deleteImageDataStructure(ids);
-				printf("deleting idsOriginal\n");
-				deleteImageDataStructure(idsOriginal);
-				printf("done deleting image data Structure\n");
 				if(opencvDebugFlag)
 				{
 					opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -15581,10 +14725,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				//printf("temp file name = %s\n", tempFileName);
 				//cvImage=cvLoadImage( tempFileName, 0 );
 				
-				//Loren
-				//sprintf(myString,"I am %d, complete frame received.", (int)my_address);
-				//op_prg_odb_print_major(myString,OPC_NIL);		
-				
 				/*
 				if(cvImage)
 				{
@@ -15595,10 +14735,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					else
 						op_sim_end("Could not create cvImage for the original image","","","");
 				*/	
-					// Loren: face detect always gets called from here
-					//sprintf(myString,"Start FaceDetect 1");
-					//op_prg_odb_print_major(myString,OPC_NIL);
-					
 					//Loren: For testing i am not calling this
 					//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 					
@@ -15622,32 +14758,16 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					{
 						if(vidData[ID].test.data != NULL)
 						{
-							//printf("test data is not null\n");
-							//imwrite("G:\\Masters_Thesis_Files\\Honda_Database\\TestImg\\testImg20.jpg", vidData[ID].test);
-							faceRecognition((int)src_addr, &accuracy, &accuracyError);
-						
+							if(recogEnable == 1)
+							{
+								faceRecognition((int)src_addr, &accuracy, &accuracyError);
+							}
 						
 							//Loren, reset faceRecogFlag
 							faceRecogFlag = 0;
 						}
 					}
-					/*
-					if(accuracy != 0)
-					{
-					opencvDebugFlag = 1;
-					if(opencvDebugFlag)
-					{
-						char opencvTrace[100];
-						sprintf(opencvTrace,"C:\\opnetTraceFiles\\opencvTrace_%d.txt", (int)nodes_no);
-						opencvDebugFile = fopen(opencvTrace,"a");
-						fprintf(opencvDebugFile,"Node %d: accuracy = %lf, accuracyError = %lf\n",(int)src_addr, vidData[ID].nodeAccuracy, (1 - vidData[ID].nodeAccuracy));
-						fclose(opencvDebugFile);
-					}
-					opencvDebugFlag = 0;
-					}
-					*/
-					//sprintf(myString,"End FaceRecognition 1");
-					//op_prg_odb_print_major(myString,OPC_NIL);
+
 					
 					if(opencvDebugFlag)
 					{
@@ -15860,29 +14980,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					peerStreamDistortion[(int)src_addr] = 25;
 				}
 						
-				accuracyCalculationCounter[(int)src_addr]++;
-					
-					
-						
-				//Loren		
-				//if(myDataFileGenerationFlag == 1)
-				//{
-						
-					//MyExcecutionTrace = fopen(MyExcecutionTracename,"a");
-					//fprintf(MyExcecutionTrace,"At Time %f,from Node %d:DaraRate=%f,Accuracy=%f,Distortion=%f\n",
-				
-				
-					/* Loren, commenting out to speed up simulation
-					sprintf(myString,"1At Time %f,from Node %d:DataRate=%f,Accuracy=%f,Distortion=%f,totalData=%f,trimmedCounter=%d,totalCounter=%d,accuracyError=%f,cvAccuracy=%f,cvAccuracyError=%f,mse=%f,psnr=%f,incompleteFrames=%d,completeFrames=%d,missedFrames=%d,totalFrames=%d,concealedFrames=%d\n",
-					(double)op_sim_time(),(int)src_addr,(double)peerStreamDataRate[(int)src_addr],(double)peerStreamAccuracy[(int)src_addr],(double)peerStreamDistortion[(int)src_addr],(double)totalPeerStreamData[(int)src_addr],trimmedAccuracyCounter[(int)src_addr],accuracyCalculationCounter[(int)src_addr],peerStreamAccuracyError[(int)src_addr],accuracy,accuracyError,mse,psnr,incompleteFrames[(int)src_addr],completeFrames[(int)src_addr],missedFrames[(int)src_addr],totalFrames[(int)src_addr],concealedFrames[(int)src_addr]);
-					//Remove when changing back.
-					op_prg_odb_print_major(myString, OPC_NIL);
-					
-					*/
-					//fclose(MyExcecutionTrace);
-				//}
-					
-											
+				accuracyCalculationCounter[(int)src_addr]++;										
 						
 				peerStreamAccuracy[(int)src_addr] = 0;
 				peerStreamDistortion[(int)src_addr] = 0;
@@ -15905,20 +15003,21 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			
 					//}//end of my stat
 				
-					
+			if(current_time > lastAccPrintTime + 1.0)
+			{
+				lastAccPrintTime = current_time;
+				printf("Node Accuracy:\n");
+				for(int i = 0; i < nodes_no; i++)
+				{
+					printf("%.5f\n", vidData[i].nodeAccuracy);
+				}
+				printf("Total Faces = %d, Total Correct Recognitions = %d\n", totalFacesForRecogniton, totalCorrectFaceRecognitions);
+			}		
 			if(accuracy > 1)
 				op_sim_end("accuracy is greater than one","","","");
 					
 		}//end of if (current_time> 22)
-			
-				
-			
-		//Loren
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"I am %d, frame forward function current time (%f), EA estimation time + transition time code done or skipped.", (int)my_address, (float)current_time);
-			op_prg_odb_print_major(myString,OPC_NIL);	
-		}
+
 	
 		if(lastFrameN[(int)src_addr] != -1 && frameN != lastFrameN[(int)src_addr] && packetN != 0)//packetCounter[(int)src_addr] == 1 && lastPacketN[(int)src_addr] != 0)//if some packets are lost from the beginig of the frame
 		{
@@ -15927,14 +15026,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				lostPackets[(int)src_addr][lostPacketsCounter[(int)src_addr]++] = i;
 				//lostPacketsCounter[(int)src_addr]++;
 			}
-				
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, checking lost packets.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);	
-			}
-				
+
 			if(opencvDebugFlag)
 			{
 				opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
@@ -15954,19 +15046,9 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		completeFrameRecievedFlag = 0;
 		frameRecievedFlag = 0;
 		
-		//Loren
-		if(LorenDebugFlag)
-		{
-			sprintf(myString,"I am %d, updating packet counter.", (int)my_address);
-			op_prg_odb_print_major(myString,OPC_NIL);
-		}
 		
 		packetCounter[(int)src_addr]++;
-		
-		
-		//if(opencvDebugFlag)
-		//printf("my statistics done\n");
-		
+
 	}
 			
 		
@@ -15975,36 +15057,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		/* address.														*/
 		if (send_to_higher == OPC_TRUE)
 		{
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, sending to higher layer.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
-			
+
 			/* Update the local/global throughput and end-to-end delay	*/
 			/* statistics based on the packet that will be forwarded to	*/
 			/* the higher layer.										*/
 			wlan_hcf_accepted_frame_stats_update (seg_pkptr, tx_ac);
 			
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, done sending to higher layer.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
 			
 			/* Set the contents of the LLC-destined ICI.				*/
 			op_ici_attr_set_int64 (llc_iciptr, "src_addr", src_addr);
 			op_ici_attr_set_int64 (llc_iciptr, "dest_addr", final_dest_addr);
 			op_ici_attr_set (llc_iciptr, "protocol_type", protocol_type);
-			
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, got ici information.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
 			
 			/* Install the ICI.											*/
 			op_ici_install (llc_iciptr);
@@ -16016,22 +15079,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				op_prg_odb_print_major (msg_string, OPC_NIL);
 			}
 			
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, sending to higher layer for real.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
-			
 			/* Sending data to higher layer.							*/
 			wlan_rcvd_pkt_higher_layer_forward (seg_pkptr, wlan_flags->bridge_flag, mac_client_reassembly_buffer, outstrm_to_mac_if);
-			
-			//Loren
-			if(LorenDebugFlag)
-			{
-				sprintf(myString,"I am %d, done sending to higher layer for real.", (int)my_address);
-				op_prg_odb_print_major(myString,OPC_NIL);
-			}
 			
 		}
 	}
@@ -16052,7 +15101,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				strcpy (msg_string, "Gateway is not an access point so all received fragments are discarded.");
 				op_prg_odb_print_major (msg_string, OPC_NIL);
 			}
-			printf("destroying packet\n");
 			op_pk_destroy (seg_pkptr);
 		}
 		else
@@ -16068,7 +15116,6 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			/* can't be used for bridge-to-bridge connections.			*/
 			if (dest_addr == BRIDGE_BROADCAST_ADDR || dest_addr == PVST_BPE_MCAST_ADDR)
 			{
-				printf("destroying packet1\n");
 				op_pk_destroy (seg_pkptr);
 			}
 			else
@@ -16086,9 +15133,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		}
 	}
 	
-	
-	//printf("releasing test image.\n");
-	//vidData[ID].test.release();
+
 	vidData[ID].got_picture = 0;
 
 	FOUT;
@@ -16203,15 +15248,9 @@ wlan_hcf_ba_process (OpT_Int64 peer_addr, Packet* rcvd_frame_pkptr)
 			/* MPDU is acknowledged in the BA. Destroy the copy we kept	*/
 			/* and update the total buffer usage by queued packets.		*/
 			op_pk_destroy (ba_info_ptr->retx_arr [current_mpdu]->pkptr);
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size before decrement #3 = %d\n", (int)total_hlpk_size);
-			}
+
 			total_hlpk_size -= ba_info_ptr->retx_arr [current_mpdu]->size;
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size after decrement #3 = %d\n",(int)total_hlpk_size);
-			}
+
 			op_prg_mem_free (ba_info_ptr->retx_arr [current_mpdu]);
 			
 			/* Record the sequence number of the MPDU if it is the new	*/
@@ -16330,15 +15369,9 @@ wlan_hcf_ba_process (OpT_Int64 peer_addr, Packet* rcvd_frame_pkptr)
 
 		/* As the final step, create and enqueue a BAR.					*/
 		hld_ptr = wlan_hcf_ba_control_queue_entry_create (WlanC_BAR, peer_addr, (OpT_uInt8) ba_cntl_fields_ptr->tid);
-		if(LorenDebugFlag)
-		{
-			printf("total_hlpk_size before increment #4 = %d\n",(int)total_hlpk_size);
-		}
+
 		total_hlpk_size += hld_ptr->size;
-		if(LorenDebugFlag)
-		{
-			printf("total_hlpk_size after increment #4 = %d\n", (int)total_hlpk_size);
-		}
+
 		op_prg_list_insert (ac_tx_queue, hld_ptr, insertion_index);
 		
 		/* Update the number of queued packets and related statistics.	*/
@@ -17117,15 +16150,9 @@ wlan_hcf_frame_discard (WlanT_HCF_Access_Category discard_ac)
 			/* remove the discarded frame from the transmission queue.		*/
 			if (((WlanT_HCF_Hld_Info *) op_prg_list_access (hlpk_lptr_arr [discard_ac], OPC_LISTPOS_HEAD))->ack_policy == WlanC_Block_ACK)
 				{
-				if(LorenDebugFlag)
-				{
-					printf("total_hlpk_size before decrement #4 = %d\n", (int)total_hlpk_size);
-				}
+
 				total_hlpk_size -= seg_bufsize;
-				if(LorenDebugFlag)
-				{
-					printf("total_hlpk_size after decrement #4 = %d\n", (int)total_hlpk_size);
-				}
+
 				}
 			}
 
@@ -17347,16 +16374,9 @@ wlan_hcf_bar_mpdus_discard (WlanT_HCF_Hld_Info* bar_info_ptr)
 				ba_info_ptr->max_acked_seq_num = mpdu_fields_ptr->sequence_control >> WLANC_FRAG_NUM_SIZE;
 			
 			/* Decrease the buffer usage by higher layer data.			*/
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size before decrement #5 = %d\n",(int)total_hlpk_size);
-			}
+
 			total_hlpk_size -= ba_info_ptr->retx_arr [current_mpdu]->size;
-			if(LorenDebugFlag)
-			{
-				printf("total_hlpk_size after decrement #5 = %d\n", (int)total_hlpk_size);
-			}
-			
+
 			/* Update the dropped data statistics.						*/
 			discard_pksize = (double) ba_info_ptr->retx_arr [current_mpdu]->size;
 			op_stat_write (retx_drop_pkts_handle,               1.0);
@@ -18482,17 +17502,10 @@ wlan_hcf_sv_reset (void)
 					voice_ac_queue_size--;
 					
 					/* Also update the related state variables.				*/
-					if(LorenDebugFlag)
-					{
-						printf("Total_hlpk_num before decrement #6 = %d, total_hlpk_size before decrement #6 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-					}
+
 					total_hlpk_num--;
 					total_hlpk_size -= hld_ptr->size;
-										if(LorenDebugFlag)
-					{
-						printf("Total_hlpk_num after decrement #6 = %d, total_hlpk_size after decrement #6 = %d\n", (int)total_hlpk_num, (int)total_hlpk_size);
-					}
-					
+
 					/* Destroy the packet (action frame body) and			*/
 					/* information record.									*/
 					if (hld_ptr->type == WlanC_Action)
@@ -19295,13 +18308,7 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 					
 						if(strcmp(tempBnadwidth_allocation_method,"wdis2")==0||strcmp(tempBnadwidth_allocation_method,"dist2")==0)//power of two distortion curve
 							{
-							//loren for debugging
-							/*
-							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 1.\n",(int)my_address,tempBnadwidth_allocation_method);
-							fclose(opencvDebugFile);
-							*/
-							
+				
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0)//in Mbytes
 								{
 								
@@ -19386,22 +18393,9 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							|| strcmp(tempBnadwidth_allocation_method,"dist_withoutAnyEnhancement")==0|| strcmp(tempBnadwidth_allocation_method,"wdis_withoutAnyEnhancement")==0
 							)
 							{
-							//loren for debugging
-							/*
-							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 2.\n",(int)my_address,tempBnadwidth_allocation_method);
-							fclose(opencvDebugFile);
-							*/
-							
+				
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0 || strcmp(curve,"accu_quality_GT50_withoutNI")==0)//in Mbytes
 								{
-								//loren for debugging
-								/*
-								opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-								fprintf(opencvDebugFile,"I am  %d:Curve is %s, took 2.\n",(int)my_address,curve);
-								fclose(opencvDebugFile);
-								*/
-								
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");				
 								accuracyConstant_a = 3.216;
@@ -19481,23 +18475,8 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							)
 							{
 							
-							//loren for debugging
-							/*
-							opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-							fprintf(opencvDebugFile,"I am  %d:Bandwidth Allocation Method is %s, took 3.\n",(int)my_address,tempBnadwidth_allocation_method);
-							fclose(opencvDebugFile);
-							*/
-							
 							if(strcmp(curve,"accu_quality_GT50_withNI")==0)//in Mbytes
-								{
-								
-								//Loren for debugging
-								/*
-								opencvDebugFile = fopen("C:\\opnetTraceFiles\\opencvTrace.txt","a");
-								fprintf(opencvDebugFile,"I am  %d:Curve is %s, took 3.\n",(int)my_address,curve);
-								fclose(opencvDebugFile);
-								*/
-								
+								{				
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");	
 								
@@ -19737,11 +18716,6 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							sprintf(myString,"first line is %s\n",line);
 							op_prg_odb_print_major(myString,OPC_NIL);
 							}
-						//Loren: Debugging
-						if(LorenDebugFlag)
-						{	
-							printf("first line is %s\n",line);
-						}
 						
 						sscanf(line,"%d",&imageNo);//read image number from the size info file first line
 						//imageLineNo = rand() % imageNo + 1; // the image line number randomly this is the line number that we want to read from the size info file
@@ -19760,11 +18734,6 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 							
 							for(q = 1 ; q < 101;q++)
 								fscanf(sizeInfo,"%d",&sizes[lineNo][q]);
-							
-							//if(LorenDebugFlag)
-							//{
-							//	printf("%s%s\n",imageName[lineNo], directoryName[lineNo]);
-							//}
 							
 						}
 							
