@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A op_runsim 7 5886AB78 5886AB78 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                            ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5890053D 5890053D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -152,6 +152,48 @@ int					 defaultBitrate = 500000;
 
 int encodedFileCount = 0;
 int64_t timeBase;
+
+const char *allPaths[39] = {"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\fuji\\fuji1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh3.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh4.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hector\\hector1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hide\\hide1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff3.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc3.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming3.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming4.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\saito\\saito1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor1.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi",
+"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\yokoyama\\yokoyama1.avi"};
+
+
 
 //FILE * appRateOutputFile;
 //char myAppRateTraceName[100];
@@ -662,159 +704,198 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	//translate the node number into the proper sdp file name.
 	if(tempID == 0)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 1)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 2)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 3)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 4)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 5)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 6)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\fuji\\fuji1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 7)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 8)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 9)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh3.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 10)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh4.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 11)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hector\\hector1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 12)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\hide\\hide1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 13)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 14)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\james\\james2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 15)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 16)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 17)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff3.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 18)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 19)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 20)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 21)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 22)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc3.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 23)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 24)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 25)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 26)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 27)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 28)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 29)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming3.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 30)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming4.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 31)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 32)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 33)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 34)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 35)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\saito\\saito1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 36)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 37)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else if(tempID == 38)
 	{
-		sprintf(vidData.filepath, "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\yokoyama\\yokoyama1.avi");
+		vidData.predictionCheck = tempID;
+		sprintf(vidData.filepath, allPaths[tempID]);
 	}
 	else
 	{
@@ -982,16 +1063,35 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	FOUT;
 }
 
-void restartC(FFMPEGData &vidData, int bitrate)
+void restartC(FFMPEGData &vidData, int bitrate, int flag)
 {
 	int retrn = 0;
 	FIN (restart(vidData, bitrate));
 
-	//printf("restarting c.\n");
 	avcodec_close(vidData.c);
 	av_free(vidData.c);
+	
+	if(flag)
+	{
+		// Close the video file
+		// Close the codecs
+		avformat_close_input(&vidData.pFormatCtx);
+		vidData.predictionCheck++;
+		if( vidData.predictionCheck > 38)
+			vidData.predictionCheck = 0;
+		
+		printf("predictioncheck = %d\n", vidData.predictionCheck);
+		printf("filepath = %s\n", vidData.filepath);
+		sprintf(vidData.filepath, allPaths[vidData.predictionCheck]);
+		printf("after filepath %s\n", vidData.filepath);
+		// Open video file
+		if (avformat_open_input(&vidData.pFormatCtx, vidData.filepath, NULL, NULL) != 0)
+			op_sim_end("input could not be opened."," ","","");
 
-
+		if (avformat_find_stream_info(vidData.pFormatCtx, NULL)<0)
+			op_sim_end("stream infor could not be opened."," ","",""); // Couldn't find stream information
+			
+	}
 	/* find the mpeg1 video encoder */
 	vidData.codec = avcodec_find_encoder(vidData.codec_id);
 	if (!vidData.codec) {
@@ -999,14 +1099,12 @@ void restartC(FFMPEGData &vidData, int bitrate)
 		exit(1);
 	}
 
-
 	vidData.c = avcodec_alloc_context3(vidData.codec);
 	if (!vidData.c) {
 		fprintf(stderr, "Could not allocate video codec context\n");
 		exit(1);
 	}
 
-	
 	vidData.c->bit_rate = bitrate * 8;
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
@@ -1442,7 +1540,8 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							//printf("%s: preparing for restart\n", parentName);
 							printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
 							
-							restartC(vidData[ID], (int)appRate);
+							restartC(vidData[ID], (int)appRate, 0);
+							printf("after restart\n");
 							vidData[ID].prevAppRate = (int)appRate;
 						}
 				
@@ -1621,10 +1720,10 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								printf("image data structure deleted\n");
 							}
 					
-							
+							printf("packet init\n");
 							av_init_packet(&vidData[ID].pkt);
 									
-							//printf("%s: Passed packet init\n", parentName);
+							printf("%s: Passed packet init\n", parentName);
 									
 							vidData[ID].pkt.data = NULL;    // packet data will be allocated by the encoder
 							vidData[ID].pkt.size = 0;
@@ -1638,56 +1737,66 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 				
 				
 								fflush(stdout);
-				
+								printf("before av_read_frame\n");
 				
 								if(av_read_frame(vidData[ID].pFormatCtx, &packt) < 0)
 								{
+									
 									//Reached the end of the video, return to the beginning.
 									int frameIndex = 0;
 				
+									//restartC(vidData[ID], (int)appRate, 1);
+									printf("out of restart\n");
 									if(av_seek_frame(vidData[ID].pFormatCtx, vidData[ID].videoindex, frameIndex, AVSEEK_FLAG_FRAME | AVSEEK_FLAG_BACKWARD) < 0 )
 									{
 										printf("error moving to beginning of file.\n");
 									}
 									else
 									{
-										//printf("%s: succeeded seeking to beginning of file.\n", parentName);
+									
+										
+										printf("%s: succeeded seeking to beginning of file.\n", parentName);
 										// Need to flush codec buffer before starting encoding over.
 										avcodec_flush_buffers(vidData[ID].pCodecCtx);
-										
+										printf("done flushing buffer\n");
 										
 										av_read_frame(vidData[ID].pFormatCtx, &packt);
+										printf("reading frame done\n");
 									}
 								}
+								printf("after av_read_frame\n");
 									
 								vidData[ID].pts = packt.pts;
 									
 								vidData[ID].dts = packt.dts;
 									
+								printf("1\n");
 								// Is this a packet from the video stream?
 								if (packt.stream_index == vidData[ID].videoindex) 
 								{
+								printf("6\n");
 									// Decode video frame
 									avcodec_decode_video2(vidData[ID].pCodecCtx, vidData[ID].pFrame, &frameFinished, &packt);
-										
+									printf("7\n");	
 									// Did we get a video frame?
 									if (frameFinished) 
 									{
+										printf("8\n");
 										// Convert the image from its native format to RGB
 										sws_scale(vidData[ID].sws_ctx, (uint8_t const * const *)vidData[ID].pFrame->data,
 											vidData[ID].pFrame->linesize, 0, vidData[ID].pCodecCtx->height,
 											vidData[ID].frame->data, vidData[ID].frame->linesize);
 									}
 								}
-								
+								printf("2\n");
 								av_free_packet(&packt);
-									
+								printf("3\n");	
 				
 								vidData[ID].frame->pts = vidData[ID].frameNumber;
-				
+								printf("4\n");
 								// encode the image 
 								retrn = avcodec_encode_video2(vidData[ID].c, &vidData[ID].pkt, vidData[ID].frame, &got_output);
-									
+								printf("5\n");	
 								if (retrn < 0) 
 								{
 									printf("Error encoding frame\n");

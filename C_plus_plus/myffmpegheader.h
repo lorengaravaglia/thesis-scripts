@@ -51,7 +51,7 @@ uint8_t			     *out_buffer;
 struct SwsContext    *sws_ctx;
 int64_t pts, dts, last_pts, last_dts;
 double prevAppRate;
-int noFaceCount, got_picture, frameNumber;
+int noFaceCount, got_picture, frameNumber, predictionCheck;
 double nodeCorrect, nodeTotal, nodeAccuracy;
 
 int					 videoindex, restart,frameCount, startH264;
@@ -88,6 +88,7 @@ AVPacket* pack;// = new AVPacket[5000];
 		//test = cv::Mat(480,640,CV_8U, double(0));
 		got_picture = 0;
 		frameNumber = 0;
+		predictionCheck = -2;
 	}
 
 };

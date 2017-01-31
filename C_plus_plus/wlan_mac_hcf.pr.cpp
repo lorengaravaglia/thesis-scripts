@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 5886BACF 5886BACF 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 588FDD0D 588FDD0D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -6351,12 +6351,13 @@ wlan_hcf_beacon_send (void)
 			/* this MAC (AP).														*/
 			stations_no = op_prg_list_size (temp_proc_record_handle_list_ptr) - 1;//(Mohammad) This is S
 		
+			/*
 			if(fee_lambda_trace_flag)
 				{
 				sprintf(myString,"I am  %d:Number of stations in the network is %d",(int)my_address,stations_no);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				}
-	
+			*/
 	
 			op_stat_write(number_of_stations, (int)stations_no);
 	
@@ -6405,13 +6406,14 @@ wlan_hcf_beacon_send (void)
 				if(peer_info_ptr == PRGC_NIL)
 					op_sim_end ("peer info are not available. check the code that add to the hash table", "", "", "");
 				
+				/*
 				if(fee_lambda_trace_flag)
 					{
 					sprintf(myString,"I am  %d:node %d information: a=%f, b=%f, c=%f, importance=%f, frameRate=%f, physicalRate=%f, droppedBRate=%f, droppedRRate=%f",(int)my_address,i,peer_info_ptr -> peer_a , peer_info_ptr -> peer_b ,peer_info_ptr -> peer_c , peer_info_ptr -> peer_importance , 
 						(double)peer_info_ptr -> peer_frameRate, peer_info_ptr -> peer_physicalRate, peer_info_ptr -> peer_droppedBRate, peer_info_ptr -> peer_droppedRRate);
 					op_prg_odb_print_major(myString,OPC_NIL);
 					}
-			
+				*/
 				if(strcmp(tempBnadwidth_allocation_method,"dist2")==0)
 					{
 					double tb= (peer_info_ptr ->peer_b*peer_info_ptr -> peer_physicalRate/1000000.0/(double)peer_info_ptr -> peer_frameRate);
@@ -6926,13 +6928,13 @@ wlan_hcf_beacon_send (void)
 						
 			op_stat_write(EA_stat, (double)EA);
 			op_stat_write(sumD_stat, (double)sumD);
-		
+			/*
 			if(fee_lambda_trace_flag)
 				{
 				sprintf(myString,"I am  %d:EA is calculated as %f",(int)my_address, (double)EA);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				}
-		
+			*/
 			if(strcmp(tempBnadwidth_allocation_method,"dist2")==0||strcmp(tempBnadwidth_allocation_method,"wdis2")==0)
 				{
 				LAMBDA = pow(2,(sum-EA)/(double)sumB);
@@ -6990,8 +6992,8 @@ wlan_hcf_beacon_send (void)
 				sprintf(myString,"I am  %d:LAMBDA is calculated as %40.40f",(int)my_address,(double)LAMBDA);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
-				sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
-				op_prg_odb_print_major(myString,OPC_NIL);
+				//sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
+				//op_prg_odb_print_major(myString,OPC_NIL);
 				
 				}
 			
@@ -10207,13 +10209,13 @@ wlan_hcf_physical_layer_data_arrival (void)
 			if(strcmp(bnadwidth_allocation_method,"matlabOptimization_accu")!=0 && strcmp(bnadwidth_allocation_method,"matlabOptimization_accuD")!=0 
 				&&strcmp(bnadwidth_allocation_method,"matlabOptimization_dist")!=0 && strcmp(bnadwidth_allocation_method,"matlabOptimization_wdist")!=0)
 				{
-			
+				/*	
 				if(fee_lambda_trace_flag)
 				{
 					sprintf(myString,"I am  %d:fee is being calculated",(int)my_address);
 					op_prg_odb_print_major(myString,OPC_NIL);
 				}
-			
+				*/
 			//start sending state report after finishing estimation
 			if (current_time > EAestimationTime && stateReportStarted ==0)
 				{
@@ -10235,15 +10237,15 @@ wlan_hcf_physical_layer_data_arrival (void)
 					
 					//printf("bnadwidth_allocation_method = %s and tempBnadwidth_allocation_method = %s\n",bnadwidth_allocation_method,tempBnadwidth_allocation_method);
 					
-					sprintf(myString,"I am  %d:Importance is  %f",(int)my_address,(double) importance);
-					op_prg_odb_print_major(myString,OPC_NIL);
+					//sprintf(myString,"I am  %d:Importance is  %f",(int)my_address,(double) importance);
+					//op_prg_odb_print_major(myString,OPC_NIL);
 					
 					sprintf(myString,"I am  %d:Lambda is recieved as %e",(int)my_address,(double) current_lambda);
 					op_prg_odb_print_major(myString,OPC_NIL);
-			
+					/*
 					sprintf(myString,"I am  %d:Frame rate is %5.40f",(int)my_address,(double)op_stat_local_read(APPL_FRAMERATE_INSTAT));
 					op_prg_odb_print_major(myString,OPC_NIL);
-				
+					
 					sprintf(myString,"I am  %d:Constant a is %40.40f",(int)my_address,(double)accuracyConstant_a);
 					op_prg_odb_print_major(myString,OPC_NIL);
 	
@@ -10255,7 +10257,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 				
 					sprintf(myString,"I am  %d:last sent physical rate %f",(int)my_address,(double)last_sent_physicalRate);
 					op_prg_odb_print_major(myString,OPC_NIL);
-				
+					*/
 				
 				}
 				
@@ -10512,23 +10514,26 @@ wlan_hcf_physical_layer_data_arrival (void)
 					sprintf(myString,"I am  %d:fee is calculated as %f",(int)my_address,(double) f);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
-				
+					/*
 					sprintf(myString,"I am  %d:physical rate is %f",(int)my_address,(double) last_sent_physicalRate);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
 					
 					sprintf(myString,"I am  %d:frame rate is %f",(int)my_address,(double)op_stat_local_read(APPL_FRAMERATE_INSTAT));
-			
+
 					op_prg_odb_print_major(myString,OPC_NIL);
+					*/
 					sprintf(myString,"I am  %d:protocol overhead rate is %f",(int)my_address,(double)last_sent_protocolOverheadRate);
-					
+								
 					op_prg_odb_print_major(myString,OPC_NIL);
+					/*
 					sprintf(myString,"I am  %d:nodes number is %d",(int)my_address,(int)nodes_no);
 					
 					op_prg_odb_print_major(myString,OPC_NIL);
 					sprintf(myString,"I am  %d:operational_speed number is %d",(int)my_address,(int)operational_speed);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
+					*/
 					}
 				
 				op_stat_write (fee_stat, (double) f);
@@ -10723,10 +10728,11 @@ wlan_hcf_physical_layer_data_arrival (void)
 					
 					if(fee_lambda_trace_flag)
 					{
+					/*
 					sprintf(myString,"I am  %d:TXOP is being calculated",(int)my_address);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
-				
+					*/
 					sprintf(myString,"I am  %d:appRateBits is %f",(int)my_address,(double) appRateBits);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
@@ -10779,14 +10785,14 @@ wlan_hcf_physical_layer_data_arrival (void)
 				//	}
 				op_stat_write (lambda_stat, current_lambda);
 				
-				
+				/*
 				if(fee_lambda_trace_flag)
 					{
 					sprintf(myString,"I am  %d:appRateBits is calculated as %f and written to the application rate",(int)my_address, appRateBits);
 			
 					op_prg_odb_print_major(myString,OPC_NIL);
 					}
-				
+				*/
 				
 				
 					if(strcmp(curve,"accu_quality_GT50_withNI")==0 && (strcmp(bnadwidth_allocation_method,"dist2")==0 || strcmp(bnadwidth_allocation_method,"wdis2")==0) )//in Mbytes
@@ -13732,7 +13738,7 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				prediction = model->predict(face_resized);
 				
 								
-				
+				/*
 				if(ID < 39)
 				{
 					tempID = ID;
@@ -13745,8 +13751,8 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				{
 					tempID = ID - (2*39);
 				}
-				
-				switch (tempID)
+				*/
+				switch (vidData[ID].predictionCheck)
 				{
 					//Bezhad
 					case 0: predictionCheck = 0;
@@ -15002,7 +15008,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 			}
 			
 					//}//end of my stat
-				
+
 			if(current_time > lastAccPrintTime + 1.0)
 			{
 				lastAccPrintTime = current_time;
