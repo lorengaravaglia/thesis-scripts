@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 588FDD0D 588FDD0D 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58953FA4 58953FA4 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -715,7 +715,7 @@ double calculationPeriod = 7.5;
 int myDebugFlag = 0;
 int myDataFileGenerationFlag = 0;
 int myStringDebug = 0;
-int fee_lambda_trace_flag = 1;
+int fee_lambda_trace_flag = 1; //was 1
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
 int LorenDebugFlag = 0;
@@ -10575,7 +10575,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 						{
 						double tempError, prunedError;
 						
-						
+						printf("in pruning flag statement\n");
 							
 							if(f * last_sent_physicalRate <=0)
 								op_sim_end ("f * last_sent_physicalRate - last_sent_droppedBRate is less than 0", "", "", "");
