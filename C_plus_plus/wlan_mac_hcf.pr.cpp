@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58953FA4 58953FA4 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58BE2E6E 58BE2E6E 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -468,6 +468,7 @@ unsigned int	WLANC_AC_BITMAP_ARRAY [WLANC_HCF_AC_COUNT] = {0x0001, 0x0002, 0x000
 static char myString[3000];
 						
 int pruning_flag = 1;
+int Weighted_Flag = 0;
 //int accu_woe_flag = 0;
 char curve[101];
 						
@@ -715,7 +716,7 @@ double calculationPeriod = 7.5;
 int myDebugFlag = 0;
 int myDataFileGenerationFlag = 0;
 int myStringDebug = 0;
-int fee_lambda_trace_flag = 1; //was 1
+int fee_lambda_trace_flag = 0; //was 1
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
 int LorenDebugFlag = 0;
@@ -768,9 +769,9 @@ double sumsumD=0;
 
 //PID stuff
 float error = 0;
-float  Kprop  = 5.25;//0.5;
-float  Kinteg = 6.0;//0.25;
-float  Kderv  = 0.75;//0.25;
+float  Kprop  = 3.0;//5.25;//0.5;
+float  Kinteg = 0.5;//6.0;//0.25;
+float  Kderv  = 0.5;//0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
 double  Athresh = 0.01;//0.1;//0.005;
@@ -1972,6 +1973,8 @@ wlan_hcf_sv_init (void)
 					
 		
 	if((int)my_address !=0 )  //Read importance input file
+	{
+		if((int)Weighted_Flag)
 		{
 		FILE * importanceFile;
 		char importanceFileName[500];
@@ -2015,12 +2018,20 @@ wlan_hcf_sv_init (void)
 		importance = atof(tempInputLine);
 
 		fclose(importanceFile);
-	
-		}	
-	else
-		{
-		importance = op_dist_uniform (100) ;
 		}
+		else
+		{
+			importance = 1/(double)nodes_no;
+		}
+	}	
+	else
+	{
+		importance = op_dist_uniform (100) ;
+	}
+	
+	//Loren for debugging.
+	sprintf(myString,"I am  %d: importance %f is to be used",(int)my_address,(float)importance);
+	op_prg_odb_print_major(myString,OPC_NIL);
 			
 	if(strcmp(tempBnadwidth_allocation_method,"matlabOptimization_accu")==0 || strcmp(tempBnadwidth_allocation_method,"matlabOptimization_accuD")==0
 		||strcmp(tempBnadwidth_allocation_method,"matlabOptimization_dist")==0||strcmp(tempBnadwidth_allocation_method,"matlabOptimization_wdist")==0)
@@ -6406,14 +6417,14 @@ wlan_hcf_beacon_send (void)
 				if(peer_info_ptr == PRGC_NIL)
 					op_sim_end ("peer info are not available. check the code that add to the hash table", "", "", "");
 				
-				/*
-				if(fee_lambda_trace_flag)
+				//Loren
+				//if(fee_lambda_trace_flag)
 					{
 					sprintf(myString,"I am  %d:node %d information: a=%f, b=%f, c=%f, importance=%f, frameRate=%f, physicalRate=%f, droppedBRate=%f, droppedRRate=%f",(int)my_address,i,peer_info_ptr -> peer_a , peer_info_ptr -> peer_b ,peer_info_ptr -> peer_c , peer_info_ptr -> peer_importance , 
 						(double)peer_info_ptr -> peer_frameRate, peer_info_ptr -> peer_physicalRate, peer_info_ptr -> peer_droppedBRate, peer_info_ptr -> peer_droppedRRate);
 					op_prg_odb_print_major(myString,OPC_NIL);
 					}
-				*/
+				
 				if(strcmp(tempBnadwidth_allocation_method,"dist2")==0)
 					{
 					double tb= (peer_info_ptr ->peer_b*peer_info_ptr -> peer_physicalRate/1000000.0/(double)peer_info_ptr -> peer_frameRate);
@@ -6496,6 +6507,7 @@ wlan_hcf_beacon_send (void)
 				if(EAcalculatedFlag != 1)
 				{
 					EAestimation += totalPeerStreamData[i]/(current_time-start_times[i])/peer_info_ptr -> peer_physicalRate;//for estimation
+					//printf("total peer stream data = %f, current time = %f, start time = %f, physical rate = %d\n", (float)totalPeerStreamData[i], (float)current_time, (float)start_times[i], (int)peer_info_ptr -> peer_physicalRate);
 				}	
 					
 				sumH+=peer_info_ptr -> peer_averageProtocolOverhead/peer_info_ptr -> peer_physicalRate;
@@ -6992,8 +7004,8 @@ wlan_hcf_beacon_send (void)
 				sprintf(myString,"I am  %d:LAMBDA is calculated as %40.40f",(int)my_address,(double)LAMBDA);
 				op_prg_odb_print_major(myString,OPC_NIL);
 				
-				//sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
-				//op_prg_odb_print_major(myString,OPC_NIL);
+				sprintf(myString,"I am  %d:EAestimation is calculated as %40.40f",(int)my_address,(double)EAestimation);
+				op_prg_odb_print_major(myString,OPC_NIL);
 				
 				}
 			
@@ -10583,7 +10595,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 							
 							
 														
-							tempFrameSize = (double)( f * last_sent_physicalRate )/8.0/1024.0/1024.0/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT);
+							tempFrameSize = (double)( f * last_sent_physicalRate )/8.0/1024.0/1024.0/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT);//1024.0
 							
 							
 							
@@ -10598,6 +10610,8 @@ wlan_hcf_physical_layer_data_arrival (void)
 							op_prg_odb_print_major(myString,OPC_NIL);
 						
 							prunedError = 1-((1-tempError) * pruning_percent/100.0);
+						
+							printf("pruned error = %f, tempError = %f, pruning percent = %d\n", (float)prunedError, (float)tempError, (int)pruning_percent);
 						
 						
 							if(prunedError-accuracyConstant_c <=0)
@@ -10621,8 +10635,8 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
-						appRateBits = (double) tempFrameSize*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8*1024*1024;
-						
+						appRateBits = (double) f * ((100 - pruning_percent)/100) * last_sent_physicalRate;//(double) tempFrameSize*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8*1024*1024;
+						printf("appratebits = %f\n", (float)appRateBits);
 							
 						//appRateBits = (double) f * last_sent_physicalRate - (double) f * last_sent_physicalRate *pruning_percent/100.0;//-last_sent_droppedBRate;
 						
@@ -10838,8 +10852,8 @@ wlan_hcf_physical_layer_data_arrival (void)
 												
 						dFOPT = pow(4.381,2) * pow(2,-203.8*(appRateBits/8.0/20.0/1024.0/1024.0));//f(x) = a^2 * 2 ^ (-b*x)
 						DFR = pow(4.381,2) * pow(2,-203.8*(double)op_stat_local_read(4)/1024.0/1024.0);
-						AFOPT= 8.597e-013 * pow((appRateBits/8.0/20.0/1024.0/1024.0),-3.654) + 0.08355;
-						AFR =8.597e-013 * pow((double)op_stat_local_read(4)/1024.0/1024.0,-3.654) + 0.08355; 
+						AFOPT= accuracyConstant_a * pow((appRateBits/8.0/20.0/1024.0/1024.0),accuracyConstant_b) + accuracyConstant_c; //8.597e-013, -3.654, 0.08355
+						AFR = accuracyConstant_a * pow((double)op_stat_local_read(4)/1024.0/1024.0,accuracyConstant_b) + accuracyConstant_c; 
 						
 						}
 					
@@ -13768,126 +13782,95 @@ void faceRecognition(int src_addr, double *accu, double *error)
 					case 3: predictionCheck = 1;
 							break;
 					
-					//Danny
-					case 4: predictionCheck = 2;
-							break;
-					
-					case 5: predictionCheck = 2;
-							break;
-					
 					//Fuji
-					case 6: predictionCheck = 3;
+					case 4: predictionCheck = 3;
 							break;
 					
 					//Harsh
+					case 5: predictionCheck = 4;
+							break;
+					
+					case 6: predictionCheck = 4;
+							break;
+					
 					case 7: predictionCheck = 4;
 							break;
 					
 					case 8: predictionCheck = 4;
-							break;
-					
-					case 9: predictionCheck = 4;
-							break;
-					
-					case 10: predictionCheck = 4;
 							 break;
 					
 					//Hector
-					case 11: predictionCheck = 5;
+					case 9: predictionCheck = 5;
 							 break;
 					
 					//Hide
-					case 12: predictionCheck = 6;
+					case 10: predictionCheck = 6;
 							 break;
 					
 					//James
-					case 13: predictionCheck = 7;
+					case 11: predictionCheck = 7;
 							 break;
 					
-					case 14: predictionCheck = 7;
+					case 12: predictionCheck = 7;
 							 break;
 					
 					//Jeff
+					case 13: predictionCheck = 8;
+							 break;
+					
+					case 14: predictionCheck = 8;
+							 break;
+					
 					case 15: predictionCheck = 8;
 							 break;
 					
-					case 16: predictionCheck = 8;
-							 break;
-					
-					case 17: predictionCheck = 8;
-							 break;
-					
 					//Joey
-					case 18: predictionCheck = 9;
+					case 16: predictionCheck = 9;
 							 break;
 					
-					case 19:predictionCheck = 9;
+					case 17: predictionCheck = 9;
 							 break;
-					
-					//Leekc
-					case 20: predictionCheck = 10;
-							 break;
-					
-					case 21: predictionCheck = 10;
-							 break;
-					
-					case 22: predictionCheck = 10;
-							 break;
-					
+
 					//Louis
-					case 23: predictionCheck = 11;
+					case 18: predictionCheck = 11;
 							 break;
 					
-					case 24: predictionCheck = 11;
+					case 19: predictionCheck = 11;
 							 break;
 					
 					//Miho
-					case 25: predictionCheck = 12;
+					case 20: predictionCheck = 12;
 							 break;
 					
-					case 26: predictionCheck = 12;
+					case 21: predictionCheck = 12;
 							 break;
 					
 					//Ming
-					case 27: predictionCheck = 13;
+					case 22: predictionCheck = 13;
 							 break;
 					
-					case 28: predictionCheck = 13;
+					case 23: predictionCheck = 13;
 							 break;
 					
-					case 29: predictionCheck = 13;
+					case 24: predictionCheck = 13;
 							 break;
 					
-					case 30: predictionCheck = 13;
+					case 25: predictionCheck = 13;
 							 break;
 					
 					//Mushiake
-					case 31: predictionCheck = 14;
+					case 26: predictionCheck = 14;
 							 break;
 					
-					case 32:predictionCheck = 14;
-							 break;
-					
-					//Rakesh
-					case 33: predictionCheck = 15;
-							 break;
-					
-					case 34: predictionCheck = 15;
+					case 27:predictionCheck = 14;
 							 break;
 					
 					//Saito
-					case 35: predictionCheck = 16;
+					case 28: predictionCheck = 16;
 							 break;
-					
-					//Victor
-					case 36: predictionCheck = 17;
-							 break;
-					
-					case 37: predictionCheck = 17;
-							 break;
-					
+
 					//Yokoyama
-					case 38: predictionCheck = 19;
+					case 29: predictionCheck = 19;
 							 break;
 					
 					default: predictionCheck = -1;
@@ -13956,7 +13939,7 @@ wlan_hcf_completed_frame_forward (Packet* seg_pkptr, OpT_Int64 src_addr, OpT_Int
 	/** broadcast).														**/
 	FIN (wlan_hcf_completed_frame_forward (seg_pkptr, src_addr, dest_addr, final_dest_addr, protocol_type, pkt_id, tid));
 	
-
+	//printf("frame Forward Function\n");
 	
 if (ap_flag == OPC_BOOLINT_ENABLED) 
 	{
@@ -14029,6 +14012,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 
 		int faceRecogFlag = 0;
 		
+		//printf("got packet from %d\n", (int)src_addr);
 				
 		if(opencvDebugFlag)
 		{
@@ -14663,7 +14647,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					
 					//for curve accuracy error = 1-detectionIndex + false detection index
 						
-					peerStreamAccuracy2[(int)src_addr] = (8.597e-013 * pow(peerStreamData2[(int)src_addr]/8.0/1024.0/1024.0,-3.654)+0.08355);
+					peerStreamAccuracy2[(int)src_addr] = (accuracyConstant_a * pow(peerStreamData2[(int)src_addr]/8.0/1024.0/1024.0,accuracyConstant_b)+accuracyConstant_c); //8.597e-013, -3.654, 0.08355
 					
 					peerStreamAccuracyError2[(int)src_addr] = peerStreamAccuracy2[(int)src_addr];
 					
@@ -14675,7 +14659,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					if(strcmp(tempBnadwidth_allocation_method,"wdis2")==0||strcmp(tempBnadwidth_allocation_method,"dist2")==0)
 						peerStreamDistortion2[(int)src_addr] = pow(4.501,2) * pow(2,-2668 * peerStreamData[(int)src_addr]/8.0/1024.0/1024.0);
 					else
-						peerStreamDistortion2[(int)src_addr] = 17.93 * pow(peerStreamData[(int)src_addr]/8.0/1024.0/1024.0,-0.143) + -23.72;
+						peerStreamDistortion2[(int)src_addr] = accuracyConstant_a * pow(peerStreamData[(int)src_addr]/8.0/1024.0/1024.0,accuracyConstant_b) + accuracyConstant_c; //17.93, -0.143, -23.72
 				}
 					
 						
@@ -14958,7 +14942,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					
 					//for curve accuracy error = 1-detectionIndex + false detection index
 					
-					peerStreamAccuracy[(int)src_addr] = (8.597e-013 * pow(peerStreamData[(int)src_addr]/8.0/1024.0/1024.0,-3.654)+0.08355);
+					peerStreamAccuracy[(int)src_addr] = (accuracyConstant_a * pow(peerStreamData[(int)src_addr]/8.0/1024.0/1024.0,accuracyConstant_b) + accuracyConstant_a);
 							
 					peerStreamAccuracyError[(int)src_addr] = peerStreamAccuracy[(int)src_addr];
 					if(peerStreamAccuracy[(int)src_addr] <0 || peerStreamAccuracy[(int)src_addr] > 1)

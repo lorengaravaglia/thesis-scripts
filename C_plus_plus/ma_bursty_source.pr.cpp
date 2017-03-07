@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58954DD9 58954DD9 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58BDF5B5 58BDF5B5 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -96,7 +96,8 @@ AVCodecContext *c = NULL;
 /* Function Declarations.	*/
 static void			bursty_source_sv_init ();
 void				startFFMPEG(FFMPEGData &vidData, int bitrate, int ID);
-long random_at_most(long max);
+void                restartC(FFMPEGData &vidData, int bitrate, int flag);
+//long random_at_most(long max);
 //void				stopFFMPEG(FFMPEGData &vidData);
 //void				startFFMPEGH264(FFMPEGData &vidData, int node);
 
@@ -117,7 +118,7 @@ int					 flag = 0;
 int 				 appOpencvDebugFlag = 0;
 int 				 Node_LorenDebugFlag = 0;
 int 				 EAestimationTimeApp = 20;	//should match EAestimationTime in mac
-int 				 transitionTimeApp = 460;//20; 	// used to be 460
+int 				 transitionTimeApp = 20;//20; 	// used to be 460
 int 				 frameSizeAverageCalculationPeriod = 0.5;
 
 char 			 	 curveInApp[100]="";
@@ -147,19 +148,17 @@ int 				 allocateFlag = 0;
 int					 numOff = 5;
 
 
-int					 bitrateAdjuster = 3750000;
-int				     maxBitrate = 9500000;
-int					 defaultBitrate = 500000;
+//int					 bitrateAdjuster = 3750000;
+//int				     maxBitrate = 9500000;
+//int					 defaultBitrate = 500000;
 
-int encodedFileCount = 0;
-int64_t timeBase;
+//int encodedFileCount = 0;
+//int64_t timeBase;
 
-const char allPaths[39][100] = {"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad1.avi",
+const char allPaths[30][100] = {"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\behzad\\behzad2.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\chia\\chia2.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny1.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\danny\\danny2.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\fuji\\fuji1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\harsh\\harsh2.avi",
@@ -174,9 +173,6 @@ const char allPaths[39][100] = {"G:\\Masters_Thesis_Files\\Honda_Database\\Datab
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\jeff\\jeff3.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\joey\\joey2.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc1.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc2.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\leekc\\leekc3.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\louis\\louis2.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\miho\\miho1.avi",
@@ -187,11 +183,7 @@ const char allPaths[39][100] = {"G:\\Masters_Thesis_Files\\Honda_Database\\Datab
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\ming\\ming4.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake1.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\mushiake\\mushiake2.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh1.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\rakesh\\rakesh2.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\saito\\saito1.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor1.avi",
-"G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\victor\\victor2.avi",
 "G:\\Masters_Thesis_Files\\Honda_Database\\Database1\\Testing\\videos\\yokoyama\\yokoyama1.avi"};
 
 
@@ -687,19 +679,29 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 
 	
 	//printf("Calling ffmpeg code.\n");
-		
+	int factor = 1;
 	
-	if(ID < 39)
+	if(nodes_no_app < 30)
 	{
-		tempID = ID;
+		factor = 30/nodes_no_app;	
 	}
-	else if(ID >= 39 && ID < 78)
+	tempID = factor * ID;
+	
+	if(factor == 0)
 	{
-		tempID = ID - 39;
+		factor = 1;
 	}
-	else
+//	if(tempID <= 29)
+//	{
+		
+//	}
+	if(tempID > 29 && tempID <= 59)
 	{
-		tempID = ID - (2*39);
+		tempID = (factor * ID) - 30;
+	}
+	else if(tempID > 59)
+	{
+		tempID = (factor * ID) - (2*30);
 	}
 
 	//translate the node number into the proper sdp file name.
@@ -853,56 +855,14 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 		vidData.predictionCheck = tempID;
 		sprintf(vidData.filepath, allPaths[tempID]);
 	}
-	else if(tempID == 30)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 31)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 32)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 33)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 34)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 35)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 36)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 37)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
-	else if(tempID == 38)
-	{
-		vidData.predictionCheck = tempID;
-		sprintf(vidData.filepath, allPaths[tempID]);
-	}
 	else
 	{
 		printf("bad ID = %d\n", tempID);
 		op_sim_end("Invalid ID", "", "", "");
 	}
+	
+	printf("filepath: %s\n", vidData.filepath);
+	printf("tempID = %d, factor = %d\n", tempID, factor);
 	
 	//Load ffmpeg stream
 	vidData.pFormatCtx = avformat_alloc_context();
@@ -989,9 +949,10 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	vidData.c->gop_size = 1; //10
+	vidData.c->gop_size = 15; //10
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;//AV_PIX_FMT_YUVJ422P;//
+	vidData.c->bit_rate_tolerance = 200;
 
 	if (vidData.codec_id == AV_CODEC_ID_H264)
 	{
@@ -1004,9 +965,8 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 		fprintf(stderr, "Could not open codec\n");
 		//exit(1);
 	}
-	timeBase = (int64_t(vidData.pFormatCtx->streams[vidData.videoindex]->time_base.num) * AV_TIME_BASE) / int64_t(vidData.pFormatCtx->streams[vidData.videoindex]->time_base.den);
+	//timeBase = (int64_t(vidData.pFormatCtx->streams[vidData.videoindex]->time_base.num) * AV_TIME_BASE) / int64_t(vidData.pFormatCtx->streams[vidData.videoindex]->time_base.den);
 
-	//Loren encodedfile count is a global value, won't work for multiple files.
 	if(av_seek_frame(vidData.pFormatCtx, vidData.videoindex, vidData.pts, AVSEEK_FLAG_FRAME) < 0 )
 	{
 		printf("error moving to beginning of file.\n");
@@ -1067,20 +1027,20 @@ void startFFMPEG(FFMPEGData &vidData, int bitrate, int ID)
 void restartC(FFMPEGData &vidData, int bitrate, int flag)
 {
 	int retrn = 0;
-	FIN (restart(vidData, bitrate));
+	FIN (restart(vidData, bitrate, flag));
 
 	avcodec_close(vidData.c);
 	av_free(vidData.c);
+	printf("entered restartC flag = %d\n", flag);
 	
 	
-	/*
 	if(flag)
 	{
 		// Close the video file
 		// Close the codecs
 		avformat_close_input(&vidData.pFormatCtx);
-		vidData.predictionCheck = (int)random_at_most(38);
-		if( vidData.predictionCheck > 38)
+		vidData.predictionCheck++;
+		if( vidData.predictionCheck > 29)
 			vidData.predictionCheck = 0;
 		
 		//printf("predictioncheck = %d\n", vidData.predictionCheck);
@@ -1126,7 +1086,7 @@ void restartC(FFMPEGData &vidData, int bitrate, int flag)
 		}
 			
 	}
-	*/
+	
 	/* find the mpeg1 video encoder */
 	vidData.codec = avcodec_find_encoder(vidData.codec_id);
 	if (!vidData.codec) {
@@ -1140,7 +1100,7 @@ void restartC(FFMPEGData &vidData, int bitrate, int flag)
 		exit(1);
 	}
 
-	vidData.c->bit_rate = bitrate * 8;
+	vidData.c->bit_rate = ceil(0.95 * (bitrate * 8));
 	/* resolution must be a multiple of two */
 	vidData.c->width = 640;
 	vidData.c->height = 480;
@@ -1157,10 +1117,10 @@ void restartC(FFMPEGData &vidData, int bitrate, int flag)
 	* then gop_size is ignored and the output of encoder
 	* will always be I frame irrespective to gop_size
 	*/
-	vidData.c->gop_size = 1;//10;
+	vidData.c->gop_size = 15;//10;
 	vidData.c->max_b_frames = 1;
 	vidData.c->pix_fmt = AV_PIX_FMT_YUV420P;
-	//c->bit_rate_tolerance = 20000;
+	vidData.c->bit_rate_tolerance = 200;
 	//c->pix_fmt = AV_PIX_FMT_NV12;
 
 
@@ -1183,6 +1143,7 @@ void restartC(FFMPEGData &vidData, int bitrate, int flag)
 
 }
 
+/*
 long random_at_most(long max) {
   unsigned long
     // max <= RAND_MAX < ULONG_MAX, so this is okay.
@@ -1201,7 +1162,7 @@ long random_at_most(long max) {
   // Truncated division is intentional
   return x/bin_size;
 }
-
+*/
 /*
 void stopFFMPEG(FFMPEGData &vidData)
 {
@@ -1593,6 +1554,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						{
 							// Prepare for restart
 							//printf("%s: preparing for restart\n", parentName);
+							printf("%s: previous apprate = %d\n", parentName, ((int)vidData[ID].prevAppRate*8));
 							printf("%s: Frame Size = %d, AppRate = %d\n",parentName, (int)frameSize,(int)appRate);
 							
 							restartC(vidData[ID], (int)appRate, 0);
@@ -1784,7 +1746,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 							
 							do
 							{
-									
+								//printf("%s: in do while\n", parentName);
 								av_init_packet(&packt);
 								packt.data = NULL;    // packet data will be allocated by the encoder
 								packt.size = 0;
@@ -1797,8 +1759,11 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									//Reached the end of the video, return to the beginning.
 									int frameIndex = 0;
-				
-									//restartC(vidData[ID], (int)appRate, 1);
+									
+									//printf("choosing new video\n");
+									
+									printf("%s: apprate = %d\n", parentName, ((int)appRate*8));
+									restartC(vidData[ID], (int)appRate, 1);
 									
 									if(av_seek_frame(vidData[ID].pFormatCtx, vidData[ID].videoindex, frameIndex, AVSEEK_FLAG_FRAME | AVSEEK_FLAG_BACKWARD) < 0 )
 									{
@@ -1853,6 +1818,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 								if(got_output == 1)
 								{
+									//printf("got output\n");
 									if(vidData[ID].startH264 == 1)
 									{
 										/* find the mpeg1 video decoder */
@@ -1926,7 +1892,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 									
 									av_freep(&buffer);
 				
-									encodedFileCount++;
+									//encodedFileCount++;
 								}
 								
 								vidData[ID].frameNumber++;					
@@ -2073,7 +2039,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								}
 								else
 								{
-									// Send the packet to the lower layer.	
+									// Send the packet to the lower layer.
 									op_pk_send (pkptr, 0);
 								}	
 							}
@@ -2119,7 +2085,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						//"This occurs for packet size distribution in bursty_source process model."));
 						pksize *= 8;//get packet size in bits.
 									
-						next_frame_arrival_time = op_sim_time () + frameSize / appRate ;
+						next_frame_arrival_time = op_sim_time () + frameSize / appRate;
 						
 						//printf("next frame arrival time = %f\n", (float)next_frame_arrival_time);
 									
@@ -2130,7 +2096,7 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 						
 						averageFrameSize = frameSize; //initialization
 											
-						//printf("%s: appRate = %f, pksize = %f, frameSize = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize);
+						printf("%s: appRate = %f, pksize = %f, frameSize = %f, next frame arrival time = %f\n",parentName, (float)appRate,(float)pksize,(float)frameSize, (float)next_frame_arrival_time);
 						FrameSizeInPackets = ceil(frameSize*8.0/pksize);
 									
 						RTPoverhead += (64+23)*8 + (FrameSizeInPackets-1)*23*8;
