@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58BE2E6E 58BE2E6E 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58CEDB98 58CEDB98 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -716,7 +716,7 @@ double calculationPeriod = 7.5;
 int myDebugFlag = 0;
 int myDataFileGenerationFlag = 0;
 int myStringDebug = 0;
-int fee_lambda_trace_flag = 0; //was 1
+int fee_lambda_trace_flag = 1; //was 1
 int generatePacketTraceFlag = 0;
 int opencvDebugFlag = 0;
 int LorenDebugFlag = 0;
@@ -768,13 +768,13 @@ double sumsumD=0;
 
 
 //PID stuff
-float error = 0;
-float  Kprop  = 3.0;//5.25;//0.5;
-float  Kinteg = 0.5;//6.0;//0.25;
-float  Kderv  = 0.5;//0.75;//0.25;
+float error;
+float  Kprop  = 5.25;//0.5;
+float  Kinteg = 6.0;//0.25;
+float  Kderv  = 0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
-double  Athresh = 0.01;//0.1;//0.005;
+double  Athresh = 0.005;//0.005;
 
 
 
@@ -3356,7 +3356,7 @@ wlan_hcf_higher_layer_data_arrival (void)
 		{
 		/* Drop the higher layer packet.	*/
 		
-		//op_sim_end ("Trying to debug stuff.", "", "", "");
+		wlan_hcf_hl_packet_drop (hld_pkptr, data_size, ac);	
 
 		FRET (WlanC_AC_None); 
 		}
@@ -3549,7 +3549,8 @@ wlan_hcf_hl_packet_drop (Packet* hld_pkptr, OpT_Packet_Size data_size, WlanT_HCF
 	
 		
 	/* Destroy the dropped packet.								*/
-	op_prg_mem_free(hld_pkptr); 
+	op_pk_destroy (hld_pkptr);
+	//op_prg_mem_free(hld_pkptr); 
 
 	
 	/* Update local and global, general and AC specific			*/
@@ -6418,13 +6419,14 @@ wlan_hcf_beacon_send (void)
 					op_sim_end ("peer info are not available. check the code that add to the hash table", "", "", "");
 				
 				//Loren
-				//if(fee_lambda_trace_flag)
+				/*
+				if(fee_lambda_trace_flag)
 					{
 					sprintf(myString,"I am  %d:node %d information: a=%f, b=%f, c=%f, importance=%f, frameRate=%f, physicalRate=%f, droppedBRate=%f, droppedRRate=%f",(int)my_address,i,peer_info_ptr -> peer_a , peer_info_ptr -> peer_b ,peer_info_ptr -> peer_c , peer_info_ptr -> peer_importance , 
 						(double)peer_info_ptr -> peer_frameRate, peer_info_ptr -> peer_physicalRate, peer_info_ptr -> peer_droppedBRate, peer_info_ptr -> peer_droppedRRate);
 					op_prg_odb_print_major(myString,OPC_NIL);
 					}
-				
+				*/
 				if(strcmp(tempBnadwidth_allocation_method,"dist2")==0)
 					{
 					double tb= (peer_info_ptr ->peer_b*peer_info_ptr -> peer_physicalRate/1000000.0/(double)peer_info_ptr -> peer_frameRate);
@@ -9732,7 +9734,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 			/* Extracting the MSDU (or MSDU fragment) from the packet.				*/
 			
 			op_pk_fd_get_pkt (wlan_rcvd_frame_ptr, WLANC_DATA_BODY_FD, &seg_pkptr);
-			int pack_size = op_pk_total_size_get (seg_pkptr);
+			//int pack_size = op_pk_total_size_get (seg_pkptr);
 			
 			
 			
@@ -10647,14 +10649,15 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						//op_prg_odb_print_major(myString,OPC_NIL);
 						
-							appRateBits = appRateScaler * ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate;
+							appRateBits = ((double) f * last_sent_physicalRate);//-last_sent_droppedBRate; apprateScaler
 			
 						}
 									
 					}
 				else if(strcmp(bnadwidth_allocation_method,"EDCA")==0)
 				{
-					appRateBits = (double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
+					//printf("I am %d: application rate = %f\n", (int)my_address, (double)operational_speed);
+					appRateBits =  (double)max_operational_speed/nodes_no;//(double)max_operational_speed/nodes_no;//-last_sent_droppedBRate;
 				}
 				else if(strcmp(bnadwidth_allocation_method,"EDCA_estimation")==0 || strcmp(bnadwidth_allocation_method,"EDCA_estimation_txop")==0)
 				{
@@ -12005,7 +12008,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 		op_stat_write (mgmt_traffic_rcvd_handle, 0.0);
 		
 		/* Address information, sequence control fields, and the data is		*/
-		/* extracted from the received packet.									*/\
+		/* extracted from the received packet.									*/
 		
 		//loren: not normally called from here.
 		op_pk_fd_access_read_only_ptr (wlan_rcvd_frame_ptr, WLANC_DATA_HEADER_FD, (const void **) &pk_dhstruct_ptr);
@@ -13724,6 +13727,8 @@ void faceRecognition(int src_addr, double *accu, double *error)
 
 		if(size != 0)
 		{
+			totalFacesForRecogniton += size;
+		
 			// loop through all of the faces in the image.
 			for(int i = 0; i < size; i++) 
 			{
@@ -13878,30 +13883,34 @@ void faceRecognition(int src_addr, double *accu, double *error)
 				}
 				
 				if(prediction == predictionCheck)
+				{
+					vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
+					totalCorrectFaceRecognitions++;
 					break;
+				}
 			}
 
 		}
 
-	totalFacesForRecogniton++;
-	
+	/*
 	if(prediction == predictionCheck)
 	{
-		totalCorrectFaceRecognitions++;
 		vidData[ID].nodeCorrect = vidData[ID].nodeCorrect + 1.0;
+		toalCorrectFaceRecognitions++;
+		
 		//printf("node %d correct recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 	}
-	
+	*/
 	/*
 	else
 	{
 		printf("node %d incorrect recognition predicted, total recognitions = %d, correct recognitions = %d", src_addr, (int)vidData[ID].nodeTotal, (int)vidData[ID].nodeCorrect);
 	}
 	*/
-	vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
+	vidData[ID].nodeAccuracy = (((double)vidData[ID].nodeCorrect/(double)totalFrames[(int)src_addr])*(double)100);//(((double)vidData[ID].nodeCorrect/(double)vidData[ID].nodeTotal)*(double)100);
 	
 	*accu = (double)vidData[ID].nodeAccuracy/(double)100;
-	*error = (double)1.0 - (double)vidData[ID].nodeAccuracy/(double)100;
+	*error = (double)1.0 - ((double)vidData[ID].nodeAccuracy/(double)100);
 	
 	// print out accuracy to the simulation console.
 	//sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
@@ -14383,17 +14392,17 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 						//getPSNR(originalImage,cvImage,&mse,&psnr);
 						
 						//sprintf(myString,"Start FaceDetect");
-						op_prg_odb_print_major(myString,OPC_NIL);
+						//op_prg_odb_print_major(myString,OPC_NIL);
 						
 						//Loren: for testing i am not running.
 						//faceDetection(cvImage,imageName[lastImageLineNumber[(int)src_addr]], directoryName[lastImageLineNumber[(int)src_addr]],&accuracy,&accuracyError,truthArray);
 						
 						//sprintf(myString,"End FaceDetect accuracy = %lf accuracy error = %lf", accuracy, accuracyError);
-						op_prg_odb_print_major(myString,OPC_NIL);
+						//op_prg_odb_print_major(myString,OPC_NIL);
 						
 						
 						//sprintf(myString,"Start Face Recognition");
-						op_prg_odb_print_major(myString,OPC_NIL);
+						//op_prg_odb_print_major(myString,OPC_NIL);
 						//Loren, call faceRecognition
 						if(trainingCompleteFlag == 0)
 						{
@@ -14415,8 +14424,8 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 								accuracyError = (double)1.0 - ((double)vidData[ID].nodeAccuracy/(double)100);
 								
 								// print out accuracy to the simulation console.
-								//sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
-								//op_prg_odb_print_major(myString,OPC_NIL);
+								sprintf(myString,"node %d Face Recognition Accuracy = %.5f%%",(int)src_addr, vidData[ID].nodeAccuracy);
+								op_prg_odb_print_major(myString,OPC_NIL);
 									
 								//faceRecognition((int)src_addr, &accuracy, &accuracyError);
 							}
@@ -14684,7 +14693,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 					MyExcecutionTrace = fopen(MyExcecutionTracename,"a");
 					//fprintf(MyExcecutionTrace,"At Time %f,from Node %d:DaraRate=%f,Accuracy=%f,Distortion=%f\n",
 					fprintf(MyExcecutionTrace,"2At Time %f,from Node %d:DataRate=%f,Accuracy=%f,Distortion=%f,totalData=%f,trimmedCounter=%d,totalCounter=%d,accuracyError=%f,cvAccuracy=%f,cvAccuracyError=%f,mse=%f,psnr=%f,incompleteFrames=%d,completeFrames=%d,missedFrames=%d,totalFrames=%d,concealedFrames=%d\n",
-					(double)op_sim_time(),(int)src_addr,(double)peerStreamDataRate2[(int)src_addr],(double)peerStreamAccuracy2[(int)src_addr],(double)peerStreamDistortion2[(int)src_addr],(double)totalPeerStreamData2[(int)src_addr],trimmedAccuracyCounter2[(int)src_addr],accuracyCalculationCounter2[(int)src_addr],peerStreamAccuracyError2[(int)src_addr],accuracy,accuracyError,mse,psnr, incompleteFrames[(int)src_addr],completeFrames[(int)src_addr],missedFrames[(int)src_addr],totalFrames[(int)src_addr],concealedFrames[(int)src_addr]);
+					(double)op_sim_time(),(int)src_addr,(double)peerStreamDataRate2[(int)src_addr],(double)peerStreamAccuracy2[(int)src_addr],(double)peerStreamDistortion2[(int)src_addr],(double)totalPeerStreamData2[(int)src_addr],trimmedAccuracyCounter2[(int)src_addr],accuracyCalculationCounter2[(int)src_addr],peerStreamAccuracyError2[(int)src_addr],accuracy,accuracyError,mse,psnr, incompleteFrames[(int)src_addr],(int)completeFrames[(int)src_addr],(int)missedFrames[(int)src_addr],(int)totalFrames[(int)src_addr],(int)concealedFrames[(int)src_addr]);
 					fclose(MyExcecutionTrace);
 				}
 					
@@ -15001,6 +15010,12 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 				{
 					printf("%.5f\n", vidData[i].nodeAccuracy);
 				}
+				for(int i = 0; i < nodes_no; i++)
+				{
+					printf("Node %d: Total Frames Old = %d, node total = %d, correct recognitions = %d\n", (i+1), (int)totalFrames[i+1], (int)vidData[i].nodeTotal, (int)vidData[i].nodeCorrect);
+					printf("Time %f: from Node %d:DataRate=%f,totalData=%f, incompleteFrames=%d,completeFrames=%d,missedFrames=%d,totalFrames=%d,concealedFrames=%d\n",
+					(double)op_sim_time(),(int)(i+1),(double)peerStreamDataRate2[i+1],(double)totalPeerStreamData2[i+1], (int)incompleteFrames[i+1],completeFrames[i+1],(int)missedFrames[i+1],(int)totalFrames[i+1],(int)concealedFrames[i+1]);
+				}
 				printf("Total Faces = %d, Total Correct Recognitions = %d\n", totalFacesForRecogniton, totalCorrectFaceRecognitions);
 			}		
 			if(accuracy > 1)
@@ -15038,7 +15053,7 @@ if (ap_flag == OPC_BOOLINT_ENABLED)
 		
 		
 		packetCounter[(int)src_addr]++;
-
+		
 	}
 			
 		
@@ -18470,9 +18485,9 @@ wlan_mac_hcf_state::wlan_mac_hcf (OP_SIM_CONTEXT_ARG_OPT)
 								sprintf(cascade_name,"%s","C:\\OpenCV2.4\\opencv\\data\\haarcascades\\haarcascade_frontalface_alt.xml");
 								//sprintf(cascade_name,"%s","C:/OpenCV2.1/data/haarcascades/haarcascade_frontalface_alt_tree.xml");	
 								
-								accuracyConstant_a = 8.555; //8.597e-13;
-								accuracyConstant_b = -1.121; //-3.654;
-								accuracyConstant_c = 0.5711; //0.08355;
+								accuracyConstant_a = 5.48; //2.179;//4.353; //8.555; //8.597e-13;
+								accuracyConstant_b = -0.6845; //-0.6566;//-0.6561; //-1.121; //-3.654;
+								accuracyConstant_c = 0.0306; //0.5515; ///1.103; //0.5711; //0.08355;
 								
 								}
 							

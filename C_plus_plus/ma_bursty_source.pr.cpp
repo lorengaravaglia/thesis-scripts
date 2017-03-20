@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58BDF5B5 58BDF5B5 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char ma_bursty_source_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58CB3187 58CB3187 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -146,6 +146,8 @@ char 				 parentName[60];
 int 				 nodeNumber = 0;
 int 				 allocateFlag = 0;
 int					 numOff = 5;
+int					 totalFramesSent = 0;
+double			     lastTime = 0.0;					 
 
 
 //int					 bitrateAdjuster = 3750000;
@@ -1899,10 +1901,29 @@ ma_bursty_source_state::ma_bursty_source (OP_SIM_CONTEXT_ARG_OPT)
 								
 							}while(got_output == 0);
 						
+							/*totalFramesSent++;
+						
+							if((op_sim_time() - 1.0) > lastTime)
+							{
+								printf("total Frames sent = %d\n", totalFramesSent);
+								lastTime = op_sim_time();
+							}*/
+						
+							char bandwidth_allocation_method[101] =  "" ;
+							op_ima_sim_attr_get_str("Bnadwidth Allocation Method",100, bandwidth_allocation_method);
+							bandwidth_allocation_method[100]='\0';
 							
-							//Increment the number of faces that have been generated.
-							vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
-							
+							if(strcmp(bandwidth_allocation_method,"EDCA")==0)
+							{
+								transitionTimeApp = 10;
+							}
+				
+							if ((float)op_sim_time () >= (float)EAestimationTimeApp+transitionTimeApp-0.01)
+							{
+								//Increment the number of faces that have been generated.
+								vidData[ID].nodeTotal = vidData[ID].nodeTotal + 1.0;
+							}
+						
 							int packetSize = inputPacketSize * 8;
 							
 							//printf("%s: ffmpeg packet size = %d\n", parentName, vidData[ID].pkt.size);
