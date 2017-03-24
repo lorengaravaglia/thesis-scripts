@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58CEDB98 58CEDB98 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58D46E39 58D46E39 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -468,7 +468,7 @@ unsigned int	WLANC_AC_BITMAP_ARRAY [WLANC_HCF_AC_COUNT] = {0x0001, 0x0002, 0x000
 static char myString[3000];
 						
 int pruning_flag = 1;
-int Weighted_Flag = 0;
+int Weighted_Flag = 1;
 //int accu_woe_flag = 0;
 char curve[101];
 						
@@ -771,7 +771,7 @@ double sumsumD=0;
 float error;
 float  Kprop  = 5.25;//0.5;
 float  Kinteg = 6.0;//0.25;
-float  Kderv  = 0.75;//0.25;
+float  Kderv  = 0.75;// 0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
 double  Athresh = 0.005;//0.005;
@@ -10589,7 +10589,6 @@ wlan_hcf_physical_layer_data_arrival (void)
 						{
 						double tempError, prunedError;
 						
-						printf("in pruning flag statement\n");
 							
 							if(f * last_sent_physicalRate <=0)
 								op_sim_end ("f * last_sent_physicalRate - last_sent_droppedBRate is less than 0", "", "", "");
@@ -10597,7 +10596,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 							
 							
 														
-							tempFrameSize = (double)( f * last_sent_physicalRate )/8.0/1024.0/1024.0/(double)op_stat_local_read(APPL_FRAMERATE_INSTAT);//1024.0
+							tempFrameSize = ((double)( f * last_sent_physicalRate ));//(double)op_stat_local_read(APPL_FRAMERATE_INSTAT))/8.0;//1024.0  /*8.0/1024.0/1024.0/*/
 							
 							
 							
@@ -10637,7 +10636,7 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
-						appRateBits = (double) f * ((100 - pruning_percent)/100) * last_sent_physicalRate;//(double) tempFrameSize*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8*1024*1024;
+						appRateBits = (double) tempFrameSize;//*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8.0; //(double) f * ((100 - pruning_percent)/100) * last_sent_physicalRate; /**8*1024*1024*/
 						printf("appratebits = %f\n", (float)appRateBits);
 							
 						//appRateBits = (double) f * last_sent_physicalRate - (double) f * last_sent_physicalRate *pruning_percent/100.0;//-last_sent_droppedBRate;
