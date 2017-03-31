@@ -4,7 +4,7 @@
 
 
 /* This variable carries the header into the object file */
-const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58D46E39 58D46E39 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
+const char wlan_mac_hcf_pr_cpp [] = "MIL_3_Tfile_Hdr_ 145A 30A modeler 7 58DAFB2C 58DAFB2C 1 Loren Loren 0 0 none none 0 0 none 0 0 0 0 0 0 0 0 1e80 8                                                                                                                                                                                                                                                                                                                                                                                                              ";
 #include <string.h>
 
 
@@ -468,7 +468,7 @@ unsigned int	WLANC_AC_BITMAP_ARRAY [WLANC_HCF_AC_COUNT] = {0x0001, 0x0002, 0x000
 static char myString[3000];
 						
 int pruning_flag = 1;
-int Weighted_Flag = 1;
+int Weighted_Flag = 0;
 //int accu_woe_flag = 0;
 char curve[101];
 						
@@ -769,9 +769,9 @@ double sumsumD=0;
 
 //PID stuff
 float error;
-float  Kprop  = 5.25;//0.5;
-float  Kinteg = 6.0;//0.25;
-float  Kderv  = 0.75;// 0.75;//0.25;
+float  Kprop  = 0.025;//5.25;//0.5;
+float  Kinteg = 0.0125;//6.0;//0.25;
+float  Kderv  = 0.0125;//0.75;// 0.75;//0.25;
 float  LastError = 0;
 float  BeforeLastError = 0;
 double  Athresh = 0.005;//0.005;
@@ -10587,19 +10587,19 @@ wlan_hcf_physical_layer_data_arrival (void)
 					{
 					if(pruning_flag == 1 && current_time > EAestimationTime+transitionTime )
 						{
-						double tempError, prunedError;
+						double tempAccuracyError, positiveInd, negativeInd, prunedError, temp;
 						
 							
 							if(f * last_sent_physicalRate <=0)
 								op_sim_end ("f * last_sent_physicalRate - last_sent_droppedBRate is less than 0", "", "", "");
 							
 							
-							
+							accuracyConstant_c = 0.9396;
 														
-							tempFrameSize = ((double)( f * last_sent_physicalRate ));//(double)op_stat_local_read(APPL_FRAMERATE_INSTAT))/8.0;//1024.0  /*8.0/1024.0/1024.0/*/
+							tempFrameSize = ((double)( f * last_sent_physicalRate )/1024);//(double)op_stat_local_read(APPL_FRAMERATE_INSTAT))/8.0;//1024.0  /*8.0/1024.0/1024.0/*/
 							
 							
-							
+							/*
 							if(strcmp(bnadwidth_allocation_method,"accu")==0)
 								tempError = accuracyConstant_a*pow(tempFrameSize,accuracyConstant_b)+accuracyConstant_c;
 							else
@@ -10625,10 +10625,33 @@ wlan_hcf_physical_layer_data_arrival (void)
 								
 						
 							tempAccuracy = accuracyConstant_a*pow(tempFrameSize,accuracyConstant_b)+accuracyConstant_c;
+							*/
+
+						tempAccuracyError = accuracyConstant_a*pow(tempFrameSize,accuracyConstant_b)+accuracyConstant_c;								
+											
+						sprintf(myString,"I am  %d:frame size before reduction is calculated as %f, accuracy is %f",(int)my_address,(double)tempFrameSize, (float)tempAccuracyError);
+						
+						op_prg_odb_print_major(myString,OPC_NIL);
+						
+						positiveInd = (2.0 - tempAccuracyError)/2.0;
+						
+						negativeInd = (1.0 - positiveInd);
+						
+						temp = (positiveInd * (1 - (pruning_percent/100.0)));
+			
+						prunedError = (1.0 - temp) + (1.0 - temp);
+						
+						printf("pruned error = %f, positiveInd = %f, negativeInd = %f, pruning percent = %d\n", (float)prunedError, (float)positiveInd, (float)negativeInd, (int)pruning_percent);
+						
+						
+						if(prunedError-accuracyConstant_c <=0)
+							op_sim_end ("(tempAccuracy + pruning_percent/100.0*tempAccuracy)-accuracyConstant_c is less than 0", "", "", "");
 							
+						if(strcmp(bnadwidth_allocation_method,"accu")==0)
+							tempFrameSize = pow(((prunedError - accuracyConstant_c) / accuracyConstant_a), 1/accuracyConstant_b);
 							
 						
-						sprintf(myString,"I am  %d:frame size after reduction is calculated as %f, accuracy is %f",(int)my_address,(double)tempFrameSize,tempAccuracy);
+						sprintf(myString,"I am  %d:frame size after reduction is calculated as %f",(int)my_address,(double)tempFrameSize);
 			
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
@@ -10636,8 +10659,8 @@ wlan_hcf_physical_layer_data_arrival (void)
 			
 						op_prg_odb_print_major(myString,OPC_NIL);
 						
-						appRateBits = (double) tempFrameSize;//*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8.0; //(double) f * ((100 - pruning_percent)/100) * last_sent_physicalRate; /**8*1024*1024*/
-						printf("appratebits = %f\n", (float)appRateBits);
+						appRateBits = (double) tempFrameSize*1024;//*(double)op_stat_local_read(APPL_FRAMERATE_INSTAT)*8.0; //(double) f * ((100 - pruning_percent)/100) * last_sent_physicalRate; /**8*1024*1024*/
+						//printf("appratebits = %f\n", (float)appRateBits);
 							
 						//appRateBits = (double) f * last_sent_physicalRate - (double) f * last_sent_physicalRate *pruning_percent/100.0;//-last_sent_droppedBRate;
 						
